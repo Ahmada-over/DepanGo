@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgis/postgis:15-3.3
+    container_name: techconnect_db
+    environment:
+      POSTGRES_USER: mirahtec
+      POSTGRES_PASSWORD: Msasu2025@.
+      POSTGRES_DB: techconnect
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mirahtec"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    container_name: techconnect_backend
+    ports:
+      - "8000:8000"
+    environment:
+      POSTGRES_USER: mirahtec
+      POSTGRES_PASSWORD: Msasu2025@.
+      POSTGRES_SERVER: db
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: techconnect
+      SECRET_KEY: techconnect-super-secret-key-2026
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web_pro:
+    build:
+      context: ./web_pro
+      dockerfile: Dockerfile
+    container_name: techconnect_web_pro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:

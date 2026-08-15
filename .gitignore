@@ -1,0 +1,42 @@
+# ===== Secrets & Env =====
+.env
+backend/.env
+*.env
+
+# ===== Python =====
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# ===== Testing =====
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ===== IDEs =====
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+
+# ===== Node / Vue =====
+node_modules/
+web_pro/dist/
+
+# ===== Flutter =====
+mobile_client/.dart_tool/
+mobile_client/build/
+mobile_client/.flutter-plugins
+mobile_client/.flutter-plugins-dependencies

@@ -56,8 +56,10 @@ class Settings(BaseSettings):
 
     # Matching config — configurable via environment
     MATCHING_RESPONSE_WINDOW_SECONDS: int = int(os.getenv("MATCHING_TIMEOUT_SECONDS", "90"))
-    MAX_RADIUS_KM: float = float(os.getenv("MAX_RADIUS_KM", "25.0"))
-    INITIAL_SEARCH_RADIUS_KM: float = float(os.getenv("INITIAL_RADIUS_KM", "10.0"))
+    MATCHING_INITIAL_RADIUS_KM: float = float(os.getenv("MATCHING_INITIAL_RADIUS_KM", "3.0"))
+    MATCHING_SECOND_RADIUS_KM: float = float(os.getenv("MATCHING_SECOND_RADIUS_KM", "5.0"))
+    MATCHING_THIRD_RADIUS_KM: float = float(os.getenv("MATCHING_THIRD_RADIUS_KM", "8.0"))
+    MATCHING_MAX_RADIUS_KM: float = float(os.getenv("MATCHING_MAX_RADIUS_KM", "10.0"))
     EXPANDED_SEARCH_RADIUS_KM: float = float(os.getenv("MAX_RADIUS_KM", "25.0"))
 
     model_config = SettingsConfigDict(

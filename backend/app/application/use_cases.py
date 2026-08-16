@@ -127,146 +127,159 @@ class BookingUseCases:
                 user_repo = SQLAlchemyUserRepository(session)
                 booking_repo = SQLAlchemyBookingRepository(session)
 
-                radius = settings.MAX_RADIUS_KM
-                candidates = []
-                ranked = []
-                online_techs = []
+                radii_to_try = [
+                    settings.MATCHING_INITIAL_RADIUS_KM,
+                    settings.MATCHING_SECOND_RADIUS_KM,
+                    settings.MATCHING_THIRD_RADIUS_KM,
+                    settings.MATCHING_MAX_RADIUS_KM
+                ]
+                
+                contacted_tech_ids = set()
+                accepted = False
 
                 if preferred_technician_id:
-                    # Target specific requested technician
+                    # Target specific requested technician first
                     preferred_tech = await tech_repo.get_by_user_id(preferred_technician_id)
                     if preferred_tech and (preferred_tech.availability_status == AvailabilityStatus.ONLINE or preferred_tech.user_id == "user_tech_demo") and preferred_tech.verified:
                         targets = [preferred_tech]
-                    else:
-                        targets = []
-                else:
-                    # 1. Search qualified technicians within radius
+                        # Just run the logic for this single target
+                        accepted = await self._send_offers_and_wait(
+                            booking, targets, ws_manager, booking_repo, session, timeout=settings.MATCHING_RESPONSE_WINDOW_SECONDS
+                        )
+                        if accepted:
+                            return
+
+                # If no preferred tech or preferred tech rejected/timeout, run concentric matching
+                timeout = settings.MATCHING_RESPONSE_WINDOW_SECONDS
+                client_user = await user_repo.get_by_id(booking.client_id)
+                client_name = client_user.name if client_user else "Client App"
+                
+                for radius in radii_to_try:
+                    logger.info(f"[MATCHING] Searching for technicians within {radius}km for booking {booking.id}")
                     candidates = await tech_repo.get_available_near(
                         category_id=booking.category_id,
                         lat=booking.latitude,
                         lon=booking.longitude,
                         radius_km=radius
                     )
+                    
+                    # Filter out those already contacted in previous smaller radii
+                    new_candidates = [c for c in candidates if c.user_id not in contacted_tech_ids]
+                    
+                    if not new_candidates:
+                        logger.info(f"[MATCHING] No new candidates found within {radius}km. Expanding search...")
+                        continue
+                        
                     ranked = MatchingEngine.filter_and_rank_technicians(
-                        candidates, booking.latitude, booking.longitude, booking.category_id, max_radius_km=radius
+                        new_candidates, booking.latitude, booking.longitude, booking.category_id, max_radius_km=radius
                     )
+                    
+                    if not ranked:
+                        logger.info(f"[MATCHING] Candidates found but none passed ranking within {radius}km. Expanding search...")
+                        continue
 
-                    # Fallback: all online technicians with matching category
-                    all_techs = await tech_repo.get_all_registered()
-                    online_techs = [
-                        t for t in all_techs
-                        if (t.availability_status == AvailabilityStatus.ONLINE or t.user_id == "user_tech_demo")
-                        and t.verified
-                        and booking.category_id in (t.category_ids or [])
-                    ]
-
-                    targets = ranked if ranked else online_techs
-
-                logger.info(
-                    f"[MATCHING] booking={booking.id} category={booking.category_id} "
-                    f"radius={radius}km candidates={len(candidates)} ranked={len(ranked)} "
-                    f"fallback={len(online_techs)} targets={len(targets)}"
-                )
-
-                if not targets:
-                    logger.warning(
-                        f"[MATCHING] FAILED booking={booking.id} category={booking.category_id} "
-                        f"— no qualified technician found within {radius}km"
+                    # Send offers to the ranked technicians
+                    accepted = await self._send_offers_and_wait(
+                        booking, ranked, ws_manager, booking_repo, session, timeout, client_name
                     )
-                    # Mark booking as no_technician_found
-                    await booking_repo.update_status(booking.id, "no_technician_found")
-                    # Notify client
-                    await ws_manager.send_personal_message(booking.client_id, {
-                        "type": "NO_TECHNICIAN",
-                        "booking_id": booking.id,
-                        "message": "Aucun technicien disponible pour cette demande. Veuillez réessayer dans quelques instants."
-                    })
-                    return
-
-                client_user = await user_repo.get_by_id(booking.client_id)
-                client_name = client_user.name if client_user else "Client App"
-
-                timeout = settings.MATCHING_RESPONSE_WINDOW_SECONDS
-                match_offer = {
-                    "type": "MATCH_OFFER",
-                    "booking_id": booking.id,
-                    "client_name": client_name,
-                    "address": booking.address_text,
-                    "description": booking.description,
-                    "category_id": booking.category_id,
-                    "timeout_seconds": timeout
-                }
-
-                from sqlalchemy import select
-                accepted = False
-                for tech in targets:
-                    await ws_manager.send_personal_message(tech.user_id, match_offer)
-                    logger.info(f"[MATCHING] OFFER sent booking={booking.id} -> tech={tech.user_id}")
-                    # Log the offer
-                    log = MatchingLogModel(booking_id=booking.id, technician_id=tech.user_id, status="offered")
-                    session.add(log)
-                    await session.commit()
-
-                    # Wait up to timeout seconds for this tech to accept or reject
-                    waited = 0
-                    while waited < timeout:
-                        await asyncio.sleep(1)
-                        waited += 1
-                        
-                        # Check if booking was accepted
-                        current = await booking_repo.get_by_id(booking.id)
-                        if current and current.status in (BookingStatus.MATCHED, BookingStatus.IN_PROGRESS):
-                            logger.info(f"[MATCHING] ACCEPTED booking={booking.id} tech={current.technician_id}")
-                            log_accepted = MatchingLogModel(booking_id=booking.id, technician_id=current.technician_id, status="accepted")
-                            session.add(log_accepted)
-                            await session.commit()
-                            accepted = True
-                            break
-                            
-                        # Check if tech rejected
-                        stmt = select(MatchingLogModel).where(
-                            MatchingLogModel.booking_id == booking.id,
-                            MatchingLogModel.technician_id == tech.user_id,
-                            MatchingLogModel.status == "rejected"
-                        )
-                        result = await session.execute(stmt)
-                        if result.scalars().first():
-                            logger.info(f"[MATCHING] REJECTED booking={booking.id} tech={tech.user_id}")
-                            break # Move to next tech immediately
-                            
-                        # Commit to close implicit transaction and ensure fresh DB read on next tick
-                        await session.commit()
-                            
+                    
+                    # Add them to contacted set so we don't spam them again in the next radius loop
+                    for tech in ranked:
+                        contacted_tech_ids.add(tech.user_id)
+                    
                     if accepted:
-                        break # Stop matching cycle entirely
+                        break # Stop expanding radius
                         
-                    if not accepted:
-                        # Log timeout if not explicitly rejected
-                        stmt_rej = select(MatchingLogModel).where(
-                            MatchingLogModel.booking_id == booking.id,
-                            MatchingLogModel.technician_id == tech.user_id,
-                            MatchingLogModel.status == "rejected"
-                        )
-                        res = await session.execute(stmt_rej)
-                        if not res.scalars().first():
-                            log_timeout = MatchingLogModel(booking_id=booking.id, technician_id=tech.user_id, status="timeout")
-                            session.add(log_timeout)
-                            await session.commit()
-
                 if accepted:
                     return
 
-                logger.warning(f"[MATCHING] EXHAUSTED booking={booking.id} — no technician accepted")
+                logger.warning(f"[MATCHING] EXHAUSTED booking={booking.id} — max radius {settings.MATCHING_MAX_RADIUS_KM}km reached, no technician accepted")
                 # Mark booking as no_technician_found
                 await booking_repo.update_status(booking.id, "no_technician_found")
                 # Notify client
                 await ws_manager.send_personal_message(booking.client_id, {
                     "type": "NO_TECHNICIAN",
                     "booking_id": booking.id,
-                    "message": "Aucun technicien n'a accepté votre demande. Veuillez réessayer."
+                    "message": "Aucun technicien n'a accepté votre demande ou n'est disponible dans votre zone. Veuillez réessayer plus tard."
                 })
         except Exception as e:
             logger.error(f"[MATCHING] ERROR booking={booking.id}: {e}", exc_info=True)
+
+    async def _send_offers_and_wait(self, booking: BookingDomain, targets: list, ws_manager, booking_repo, session, timeout: int, client_name: str = "Client App") -> bool:
+        from sqlalchemy import select
+        from app.infrastructure.database.models import MatchingLogModel
+        
+        match_offer = {
+            "type": "MATCH_OFFER",
+            "booking_id": booking.id,
+            "client_name": client_name,
+            "address": booking.address_text,
+            "description": booking.description,
+            "category_id": booking.category_id,
+            "timeout_seconds": timeout
+        }
+        
+        accepted = False
+        for tech in targets:
+            await ws_manager.send_personal_message(tech.user_id, match_offer)
+            import logging
+            logger = logging.getLogger("depango")
+            logger.info(f"[MATCHING] OFFER sent booking={booking.id} -> tech={tech.user_id}")
+            
+            # Log the offer
+            log = MatchingLogModel(booking_id=booking.id, technician_id=tech.user_id, status="offered")
+            session.add(log)
+            await session.commit()
+
+            # Wait up to timeout seconds for this tech to accept or reject
+            waited = 0
+            while waited < timeout:
+                import asyncio
+                await asyncio.sleep(1)
+                waited += 1
+                
+                # Check if booking was accepted
+                current = await booking_repo.get_by_id(booking.id)
+                from app.domain.models import BookingStatus
+                if current and current.status in (BookingStatus.MATCHED, BookingStatus.IN_PROGRESS):
+                    logger.info(f"[MATCHING] ACCEPTED booking={booking.id} tech={current.technician_id}")
+                    log_accepted = MatchingLogModel(booking_id=booking.id, technician_id=current.technician_id, status="accepted")
+                    session.add(log_accepted)
+                    await session.commit()
+                    accepted = True
+                    break
+                    
+                # Check if tech rejected
+                stmt = select(MatchingLogModel).where(
+                    MatchingLogModel.booking_id == booking.id,
+                    MatchingLogModel.technician_id == tech.user_id,
+                    MatchingLogModel.status == "rejected"
+                )
+                result = await session.execute(stmt)
+                if result.scalars().first():
+                    logger.info(f"[MATCHING] REJECTED booking={booking.id} tech={tech.user_id}")
+                    break # Move to next tech immediately
+                    
+                # Commit to close implicit transaction and ensure fresh DB read on next tick
+                await session.commit()
+                    
+            if accepted:
+                return True
+                
+            if not accepted:
+                # Log timeout if not explicitly rejected
+                stmt_rej = select(MatchingLogModel).where(
+                    MatchingLogModel.booking_id == booking.id,
+                    MatchingLogModel.technician_id == tech.user_id,
+                    MatchingLogModel.status == "rejected"
+                )
+                res = await session.execute(stmt_rej)
+                if not res.scalars().first():
+                    log_timeout = MatchingLogModel(booking_id=booking.id, technician_id=tech.user_id, status="timeout")
+                    session.add(log_timeout)
+                    await session.commit()
+                    
+        return accepted
 
     async def update_status(self, booking_id: str, status: str, technician_id: Optional[str] = None, cancellation_reason: Optional[str] = None) -> Optional[BookingDomain]:
         booking = await self.booking_repo.get_by_id(booking_id)

@@ -6,6 +6,15 @@ from app.infrastructure.repositories.sqlalchemy_repositories import SQLAlchemyBo
 
 router = APIRouter(tags=["WebSockets"])
 
+@router.get("/ws/debug")
+async def get_ws_debug():
+    from app.infrastructure.websockets.connection_manager import manager
+    return {
+        "user_connections": list(manager.user_connections.keys()),
+        "active_booking_connections": list(manager.active_booking_connections.keys()),
+        "area_connections": list(manager.area_connections.keys())
+    }
+
 @router.websocket("/ws/bookings/{booking_id}")
 async def websocket_booking_endpoint(websocket: WebSocket, booking_id: str, token: str = Query(None)):
     await websocket.accept()

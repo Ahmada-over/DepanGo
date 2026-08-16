@@ -95,7 +95,13 @@ class SQLAlchemyTechnicianRepository(TechnicianRepositoryPort):
         return profile
 
     async def get_by_user_id(self, user_id: str) -> Optional[TechnicianProfileDomain]:
-        stmt = select(TechnicianProfileModel, UserModel).join(UserModel, TechnicianProfileModel.user_id == UserModel.id).where(TechnicianProfileModel.user_id == user_id)
+        from sqlalchemy import or_
+        stmt = select(TechnicianProfileModel, UserModel).join(UserModel, TechnicianProfileModel.user_id == UserModel.id).where(
+            or_(
+                TechnicianProfileModel.user_id == user_id,
+                TechnicianProfileModel.id == user_id
+            )
+        )
         result = await self.db.execute(stmt)
         row = result.first()
         if not row:
@@ -254,7 +260,8 @@ class SQLAlchemyCategoryRepository(CategoryRepositoryPort):
             {"id": "cat_plumbing", "name": "Plomberie", "description": "Dépannage, fuites d'eau, débouchage", "icon_name": "water_drop", "base_price": 5000.0},
             {"id": "cat_electrical", "name": "Électricité", "description": "Pannes, tableaux électriques, installation", "icon_name": "bolt", "base_price": 5000.0},
             {"id": "cat_hvac", "name": "Froid / Climatisation", "description": "Recharge gaz, réparation clim & frigo", "icon_name": "ac_unit", "base_price": 10000.0},
-            {"id": "cat_appliances", "name": "Électroménager", "description": "Machine à laver, micro-ondes, four", "icon_name": "kitchen", "base_price": 5000.0}
+            {"id": "cat_appliances", "name": "Électroménager", "description": "Machine à laver, micro-ondes, four", "icon_name": "kitchen", "base_price": 5000.0},
+            {"id": "cat_express", "name": "Recherche Rapide", "description": "Recherche immédiate d'un technicien", "icon_name": "bolt", "base_price": 5000.0}
         ]
         for item in defaults:
             res = await self.db.execute(select(ServiceCategoryModel).where(ServiceCategoryModel.id == item["id"]))

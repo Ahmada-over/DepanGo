@@ -171,7 +171,18 @@
                   {{ item.date }}
                 </td>
                 <td class="text-right">
-                  <v-btn @click="viewMission(item)" icon="mdi-eye-outline" size="x-small" variant="text" color="primary"></v-btn>
+                  <v-btn
+                    v-if="item.status === 'pending'"
+                    @click="missionStore.acceptManualMission(item.id)"
+                    icon="mdi-check-circle"
+                    size="x-small"
+                    variant="flat"
+                    color="success"
+                    class="mr-2"
+                    :loading="missionStore.acceptLoading"
+                    title="Accepter cette demande"
+                  ></v-btn>
+                  <v-btn @click="viewMission(item)" icon="mdi-eye-outline" size="x-small" variant="text" color="primary" title="Consulter le dossier"></v-btn>
                 </td>
               </tr>
             </tbody>

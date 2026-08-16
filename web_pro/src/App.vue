@@ -312,6 +312,11 @@ function connectWs() {
   const token = authStore.token
   if (!userId || !token) return
 
+  if (wsInstance) {
+    wsInstance.onclose = null
+    try { wsInstance.close() } catch (e) {}
+  }
+
   try {
     wsInstance = new WebSocket(`${WS_BASE}/users/${userId}?token=${token}`)
 

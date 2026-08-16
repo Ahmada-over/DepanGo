@@ -64,6 +64,7 @@ async def create_booking(
         lon=req.longitude,
         address_text=req.address_text,
         photo_url=req.photo_url,
+        preferred_technician_id=req.preferred_technician_id,
     )
     return _booking_to_response(booking)
 

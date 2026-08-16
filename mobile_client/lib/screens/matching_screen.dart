@@ -7,7 +7,12 @@ import '../providers/app_providers.dart';
 import 'tracking_chat_screen.dart';
 
 class MatchingScreen extends ConsumerStatefulWidget {
-  const MatchingScreen({super.key});
+  final String? preferredTechnicianName;
+
+  const MatchingScreen({
+    super.key,
+    this.preferredTechnicianName,
+  });
 
   @override
   ConsumerState<MatchingScreen> createState() => _MatchingScreenState();
@@ -102,15 +107,17 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen>
         ),
 
         const SizedBox(height: 40),
-        const Text(
-          'En attente d\'une réponse...',
-          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+        Text(
+          widget.preferredTechnicianName != null
+              ? 'En attente de ${widget.preferredTechnicianName}...'
+              : 'En attente d\'une réponse...',
+          style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 8),
 
-        // Show only qualified technicians count
-        if (categoryId != null)
+        // Show only qualified technicians count if not targeted
+        if (widget.preferredTechnicianName == null && categoryId != null)
           ref.watch(categoryFilteredTechniciansProvider(categoryId)).when(
             data: (techs) {
               final online = techs.where((t) => t['availability_status'] == 'online').length;
@@ -129,6 +136,12 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen>
               style: TextStyle(color: Colors.white60, fontSize: 12),
               textAlign: TextAlign.center,
             ),
+          )
+        else if (widget.preferredTechnicianName != null)
+          const Text(
+            'Transmission exclusive à ce technicien.',
+            style: TextStyle(color: Colors.white60, fontSize: 12),
+            textAlign: TextAlign.center,
           )
         else
           const Text(

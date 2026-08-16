@@ -1,6 +1,7 @@
-# TechConnect — Implémentation des Fonctionnalités (Phase 3 à 5)
+# DepanGo — Un problème ? Un technicien, rapidement.
 
-Ce document résume les fonctionnalités et correctifs apportés au monorepo `tekservice` (FastAPI backend, Flutter mobile client, Vue 3 web pro) conformément aux recommandations d'amélioration.
+Ce document résume les fonctionnalités et correctifs apportés au monorepo `tekservice` (FastAPI backend, Flutter mobile client, Vue 3 web pro) conformément à la logique : 
+**Identity → Location → Services → Request → Availability → Matching → Dispatch → Booking → Tracking → Routing/ETA → Intervention → Rating → Admin → Analytics**
 
 ## 1. Annulation avec motif (Phase 3.3)
 - **Backend (FastAPI)**:

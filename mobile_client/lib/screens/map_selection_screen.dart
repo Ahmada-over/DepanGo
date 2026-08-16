@@ -433,6 +433,7 @@ class _MapSelectionScreenState extends ConsumerState<MapSelectionScreen> {
                               latitude: _currentPosition?.latitude,
                               longitude: _currentPosition?.longitude,
                               preferredTechnicianId: _selectedTech?.id,
+                              preferredTechnicianName: _selectedTech?.name,
                             ),
                           ),
                         );

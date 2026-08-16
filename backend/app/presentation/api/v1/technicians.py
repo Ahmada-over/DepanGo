@@ -106,7 +106,7 @@ async def update_location(
         for cat in broadcast_cats:
             payload = {
                 "type": "LOCATION_UPDATE",
-                "technician_id": profile.id,
+                "technician_id": profile.user_id,
                 "user_id": profile.user_id,
                 "name": profile.user_name,
                 "average_rating": profile.average_rating,

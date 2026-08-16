@@ -10,6 +10,7 @@ class CreateBookingScreen extends ConsumerStatefulWidget {
   final String categoryName;
   final double? basePrice;
   final String? preferredTechnicianId;
+  final String? preferredTechnicianName;
   final double? latitude;
   final double? longitude;
   final String? address;
@@ -20,6 +21,7 @@ class CreateBookingScreen extends ConsumerStatefulWidget {
     required this.categoryName,
     this.basePrice,
     this.preferredTechnicianId,
+    this.preferredTechnicianName,
     this.latitude,
     this.longitude,
     this.address,
@@ -225,7 +227,9 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
       if (booking != null) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const MatchingScreen()),
+          MaterialPageRoute(builder: (_) => MatchingScreen(
+            preferredTechnicianName: widget.preferredTechnicianName,
+          )),
         );
       } else {
         AppToast.show(

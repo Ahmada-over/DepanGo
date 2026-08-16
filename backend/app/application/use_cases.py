@@ -53,7 +53,7 @@ class AuthUseCases:
                 longitude=-17.4441,
                 availability_status=AvailabilityStatus.ONLINE,
                 average_rating=5.0,
-                verified=False,
+                verified=True,
                 user_name=name,
                 user_phone=phone
             )
@@ -96,7 +96,7 @@ class BookingUseCases:
         self.tech_repo = tech_repo
         self.user_repo = user_repo
 
-    async def create_booking(self, client_id: str, category_id: str, description: str, lat: float, lon: float, address_text: str, photo_url: Optional[str] = None) -> BookingDomain:
+    async def create_booking(self, client_id: str, category_id: str, description: str, lat: float, lon: float, address_text: str, photo_url: Optional[str] = None, preferred_technician_id: Optional[str] = None) -> BookingDomain:
         booking_id = str(uuid.uuid4())
         booking = BookingDomain(
             id=booking_id,
@@ -112,10 +112,10 @@ class BookingUseCases:
         created_booking = await self.booking_repo.create(booking)
 
         # Trigger automatic matching async
-        asyncio.create_task(self.run_matching_cycle(created_booking))
+        asyncio.create_task(self.run_matching_cycle(created_booking, preferred_technician_id=preferred_technician_id))
         return created_booking
 
-    async def run_matching_cycle(self, booking: BookingDomain):
+    async def run_matching_cycle(self, booking: BookingDomain, preferred_technician_id: Optional[str] = None):
         try:
             from app.infrastructure.database.session import AsyncSessionLocal
             from app.infrastructure.repositories.sqlalchemy_repositories import (
@@ -128,28 +128,39 @@ class BookingUseCases:
                 booking_repo = SQLAlchemyBookingRepository(session)
 
                 radius = settings.MAX_RADIUS_KM
+                candidates = []
+                ranked = []
+                online_techs = []
 
-                # 1. Search qualified technicians within radius
-                candidates = await tech_repo.get_available_near(
-                    category_id=booking.category_id,
-                    lat=booking.latitude,
-                    lon=booking.longitude,
-                    radius_km=radius
-                )
-                ranked = MatchingEngine.filter_and_rank_technicians(
-                    candidates, booking.latitude, booking.longitude, booking.category_id, max_radius_km=radius
-                )
+                if preferred_technician_id:
+                    # Target specific requested technician
+                    preferred_tech = await tech_repo.get_by_user_id(preferred_technician_id)
+                    if preferred_tech and (preferred_tech.availability_status == AvailabilityStatus.ONLINE or preferred_tech.user_id == "user_tech_demo") and preferred_tech.verified:
+                        targets = [preferred_tech]
+                    else:
+                        targets = []
+                else:
+                    # 1. Search qualified technicians within radius
+                    candidates = await tech_repo.get_available_near(
+                        category_id=booking.category_id,
+                        lat=booking.latitude,
+                        lon=booking.longitude,
+                        radius_km=radius
+                    )
+                    ranked = MatchingEngine.filter_and_rank_technicians(
+                        candidates, booking.latitude, booking.longitude, booking.category_id, max_radius_km=radius
+                    )
 
-                # Fallback: all online technicians with matching category
-                all_techs = await tech_repo.get_all_registered()
-                online_techs = [
-                    t for t in all_techs
-                    if (t.availability_status == AvailabilityStatus.ONLINE or t.user_id == "user_tech_demo")
-                    and t.verified
-                    and booking.category_id in (t.category_ids or [])
-                ]
+                    # Fallback: all online technicians with matching category
+                    all_techs = await tech_repo.get_all_registered()
+                    online_techs = [
+                        t for t in all_techs
+                        if (t.availability_status == AvailabilityStatus.ONLINE or t.user_id == "user_tech_demo")
+                        and t.verified
+                        and booking.category_id in (t.category_ids or [])
+                    ]
 
-                targets = ranked if ranked else online_techs
+                    targets = ranked if ranked else online_techs
 
                 logger.info(
                     f"[MATCHING] booking={booking.id} category={booking.category_id} "

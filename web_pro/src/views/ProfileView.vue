@@ -442,7 +442,7 @@ async function saveProfileInfo() {
   })
   
   // Update transport mode
-  const API_BASE = 'http://127.0.0.1:8001/api/v1' // or env var
+  const API_BASE = 'https://backend-depango-346078879462.europe-west1.run.app/api/v1' // or env var
   try {
     await fetch(`${API_BASE}/technicians/me/transport`, {
       method: 'PATCH',

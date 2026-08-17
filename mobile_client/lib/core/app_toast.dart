@@ -3,14 +3,24 @@ import 'theme.dart';
 
 enum AppToastType { success, info, warning, error }
 
+final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey =
+    GlobalKey<ScaffoldMessengerState>();
+
 class AppToast {
   static void show(
-    BuildContext context, {
+    BuildContext? context, {
     required String title,
     String? message,
     AppToastType type = AppToastType.success,
     Duration duration = const Duration(seconds: 3),
   }) {
+    final messenger = rootScaffoldMessengerKey.currentState ??
+        (context != null && context.mounted
+            ? ScaffoldMessenger.maybeOf(context)
+            : null);
+
+    if (messenger == null) return;
+
     Color bgGradientStart;
     Color bgGradientEnd;
     IconData icon;
@@ -43,8 +53,9 @@ class AppToast {
         break;
     }
 
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
+    try {
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
       SnackBar(
         elevation: 0,
         behavior: SnackBarBehavior.floating,
@@ -123,5 +134,8 @@ class AppToast {
         ),
       ),
     );
+    } catch (e) {
+      debugPrint('[AppToast] Error displaying toast: $e');
+    }
   }
 }

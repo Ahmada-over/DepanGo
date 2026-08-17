@@ -29,10 +29,13 @@ class ConnectionManager:
         if booking_id not in self.active_booking_connections:
             self.active_booking_connections[booking_id] = set()
         self.active_booking_connections[booking_id].add(websocket)
+        print(f"[WS] 🔌 New booking connection for {booking_id} (total: {len(self.active_booking_connections[booking_id])})")
 
     def disconnect_booking(self, booking_id: str, websocket: WebSocket):
         if booking_id in self.active_booking_connections:
             self.active_booking_connections[booking_id].discard(websocket)
+            remaining = len(self.active_booking_connections[booking_id])
+            print(f"[WS] 🔌 Booking disconnected for {booking_id} (remaining: {remaining})")
             if not self.active_booking_connections[booking_id]:
                 del self.active_booking_connections[booking_id]
 
@@ -41,19 +44,29 @@ class ConnectionManager:
             ws = self.user_connections[user_id]
             try:
                 await ws.send_json(message)
-            except Exception:
+                print(f"[WS] ✅ Personal message sent to user {user_id}: {message.get('type', '?')}")
+            except Exception as e:
+                print(f"[WS] ❌ Failed to send personal message to user {user_id}: {e}")
                 self.disconnect_user(user_id)
+        else:
+            print(f"[WS] ⚠️ No personal connection for user {user_id} (active users: {list(self.user_connections.keys())})")
 
     async def broadcast_to_booking(self, booking_id: str, message: dict):
         if booking_id in self.active_booking_connections:
             dead_sockets = set()
-            for ws in self.active_booking_connections[booking_id]:
+            sockets = self.active_booking_connections[booking_id]
+            print(f"[WS] 📡 Broadcasting to booking {booking_id}: {message.get('type', '?')} → {len(sockets)} socket(s)")
+            for ws in sockets:
                 try:
                     await ws.send_json(message)
-                except Exception:
+                    print(f"[WS] ✅ Sent to a socket for booking {booking_id}")
+                except Exception as e:
+                    print(f"[WS] ❌ Failed to send to a socket for booking {booking_id}: {e}")
                     dead_sockets.add(ws)
             for ws in dead_sockets:
                 self.active_booking_connections[booking_id].discard(ws)
+        else:
+            print(f"[WS] ⚠️ No booking connections for {booking_id} (active bookings: {list(self.active_booking_connections.keys())})")
 
     async def connect_area(self, category_id: str, websocket: WebSocket):
         await websocket.accept()

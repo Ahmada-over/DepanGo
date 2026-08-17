@@ -63,7 +63,10 @@ export const useMissionStore = defineStore('mission', () => {
     refreshLoading.value = true
     try {
       const authStore = useAuthStore()
-      const response = await fetch(`${API_BASE}/bookings/user/${userId}?role=technician&_ts=${Date.now()}`, {
+      const currentUserId = userId || authStore.user?.id
+      if (!currentUserId || currentUserId === 'undefined') return
+      
+      const response = await fetch(`${API_BASE}/bookings/user/${currentUserId}?role=technician&_ts=${Date.now()}`, {
         headers: { 'Authorization': `Bearer ${authStore.token}` }
       })
       if (response.ok) {
@@ -182,9 +185,19 @@ notificationAudio.volume = 1.0
         activeOffer.value = null
       } else {
         console.warn('Failed to accept offer:', await response.text())
+        activeOffer.value = null
+        const notifStore = useNotificationStore()
+        notifStore.addNotification({
+          title: 'Offre expirée',
+          message: "L'offre a expiré ou a été assignée à un autre technicien.",
+          type: 'warning',
+          icon: 'mdi-alert-circle-outline',
+          color: 'warning'
+        })
       }
     } catch (e) {
       console.warn('API accept error:', e)
+      activeOffer.value = null
     } finally {
       acceptLoading.value = false
       await fetchInterventions()
@@ -216,6 +229,16 @@ notificationAudio.volume = 1.0
           color: 'primary',
           eta: '15 mins'
         }
+      } else {
+        console.warn('Failed to accept manual mission:', await response.text())
+        const notifStore = useNotificationStore()
+        notifStore.addNotification({
+          title: 'Action impossible',
+          message: "L'offre a expiré ou a déjà été assignée.",
+          type: 'error',
+          icon: 'mdi-alert-circle',
+          color: 'error'
+        })
       }
     } catch (e) {
       console.warn('API accept error:', e)
@@ -264,7 +287,7 @@ notificationAudio.volume = 1.0
         payload.cancellation_reason = cancellationReason
       }
       
-      await fetch(`${API_BASE}/bookings/${activeMission.value.id}/status`, {
+      const response = await fetch(`${API_BASE}/bookings/${activeMission.value.id}/status`, {
         method: 'PATCH',
         headers: { 
           'Content-Type': 'application/json',
@@ -272,17 +295,29 @@ notificationAudio.volume = 1.0
         },
         body: JSON.stringify(payload)
       })
+
+      if (response.ok) {
+        activeMission.value.status = nextStatus
+        activeMission.value.status_label = statusMap[nextStatus]?.label || nextStatus
+        activeMission.value.color = statusMap[nextStatus]?.color || 'primary'
+
+        if (nextStatus === 'completed') {
+          activeMission.value = null
+        }
+      } else {
+        console.warn('Failed to update status:', await response.text())
+        const notifStore = useNotificationStore()
+        notifStore.addNotification({
+          title: 'Action impossible',
+          message: "Impossible de changer le statut (conflit avec l'état serveur).",
+          type: 'error',
+          icon: 'mdi-alert',
+          color: 'error'
+        })
+      }
     } catch (e) {
       console.warn('API status error:', e)
     } finally {
-      activeMission.value.status = nextStatus
-      activeMission.value.status_label = statusMap[nextStatus]?.label || nextStatus
-      activeMission.value.color = statusMap[nextStatus]?.color || 'primary'
-
-      if (nextStatus === 'completed') {
-        activeMission.value = null
-      }
-
       statusLoading.value = false
       await fetchInterventions()
     }

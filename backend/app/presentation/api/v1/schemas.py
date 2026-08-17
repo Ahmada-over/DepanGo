@@ -66,6 +66,7 @@ class AvailabilityUpdateRequest(BaseModel):
 class LocationUpdateRequest(BaseModel):
     latitude: float
     longitude: float
+    eta: Optional[str] = None
 
 class TransportUpdateRequest(BaseModel):
     transport_mode: str # moto | voiture

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
 import '../core/theme.dart';
 import '../core/app_toast.dart';
 import '../core/map_markers.dart';
@@ -21,12 +24,20 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final _msgController = TextEditingController();
+  GoogleMapController? _mapController;
+  final DraggableScrollableController _sheetController =
+      DraggableScrollableController();
+  String? _resolvedAddress;
+  String? _lastGeocodedBookingId;
+
   BitmapDescriptor? _destinationIcon;
   BitmapDescriptor? _techMotoIcon;
   BitmapDescriptor? _techCarIcon;
-  List<LatLng> _polylineCoordinates = [];
-  LatLng? _lastRouteStart;
-  LatLng? _lastRouteEnd;
+  List<LatLng> _fullRouteCoordinates = [];
+  List<LatLng> _activePolylineCoordinates = [];
+  LatLng? _lastCalculatedDestination;
+  bool _isFetchingRoute = false;
+  DateTime? _lastRouteFetchTime;
   bool _reviewShown = false;
 
   @override
@@ -46,19 +57,94 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
   }
 
   Future<void> _fetchRoute(double startLat, double startLng, double endLat, double endLng) async {
-    PolylinePoints polylinePoints = PolylinePoints(apiKey: AppConfig.googleMapsApiKey);
-    PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
-      request: PolylineRequest(
-        origin: PointLatLng(startLat, startLng),
-        destination: PointLatLng(endLat, endLng),
-        mode: TravelMode.driving,
-      ),
-    );
-    if (result.points.isNotEmpty) {
-      if (!mounted) return;
-      setState(() {
-        _polylineCoordinates = result.points.map((point) => LatLng(point.latitude, point.longitude)).toList();
-      });
+    if (_isFetchingRoute) return;
+    _isFetchingRoute = true;
+    _lastRouteFetchTime = DateTime.now();
+    _lastCalculatedDestination = LatLng(endLat, endLng);
+
+    try {
+      PolylinePoints polylinePoints = PolylinePoints(apiKey: AppConfig.googleMapsApiKey);
+      PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
+        request: PolylineRequest(
+          origin: PointLatLng(startLat, startLng),
+          destination: PointLatLng(endLat, endLng),
+          mode: TravelMode.driving,
+        ),
+      );
+      if (result.points.isNotEmpty) {
+        final pts = result.points.map((point) => LatLng(point.latitude, point.longitude)).toList();
+        if (mounted) {
+          setState(() {
+            _fullRouteCoordinates = pts;
+            _activePolylineCoordinates = pts;
+          });
+        }
+      } else {
+        if (_fullRouteCoordinates.isEmpty && mounted) {
+          final directLine = [LatLng(startLat, startLng), LatLng(endLat, endLng)];
+          setState(() {
+            _fullRouteCoordinates = directLine;
+            _activePolylineCoordinates = directLine;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('[Navigation] Route fetch error: $e');
+      if (_fullRouteCoordinates.isEmpty && mounted) {
+        final directLine = [LatLng(startLat, startLng), LatLng(endLat, endLng)];
+        setState(() {
+          _fullRouteCoordinates = directLine;
+          _activePolylineCoordinates = directLine;
+        });
+      }
+    } finally {
+      _isFetchingRoute = false;
+    }
+  }
+
+  void _updateOrRecalculateRoute(double techLat, double techLng, double destLat, double destLng) {
+    final dest = LatLng(destLat, destLng);
+    final isNewDestination = _lastCalculatedDestination == null ||
+        (_lastCalculatedDestination!.latitude != dest.latitude ||
+         _lastCalculatedDestination!.longitude != dest.longitude);
+
+    // Initial fetch or new destination
+    if (_fullRouteCoordinates.isEmpty || isNewDestination) {
+      _fetchRoute(techLat, techLng, destLat, destLng);
+      return;
+    }
+
+    // Check distance between technician and the planned route
+    double minDistance = double.infinity;
+    int closestIndex = 0;
+    for (int i = 0; i < _fullRouteCoordinates.length; i++) {
+      final pt = _fullRouteCoordinates[i];
+      final dist = Geolocator.distanceBetween(techLat, techLng, pt.latitude, pt.longitude);
+      if (dist < minDistance) {
+        minDistance = dist;
+        closestIndex = i;
+      }
+    }
+
+    // If technician deviated (>80 meters from route), recalculate new path
+    if (minDistance > 80.0) {
+      final now = DateTime.now();
+      if (_lastRouteFetchTime == null || now.difference(_lastRouteFetchTime!).inSeconds >= 5) {
+        debugPrint('[Navigation] Deviation detected (${minDistance.toStringAsFixed(1)}m from route). Recalculating path...');
+        _fetchRoute(techLat, techLng, destLat, destLng);
+      }
+      return;
+    }
+
+    // Technician is on route: keep existing route and slice from closest point forward
+    final remaining = _fullRouteCoordinates.sublist(closestIndex);
+    final updatedList = [LatLng(techLat, techLng), ...remaining];
+    if (_activePolylineCoordinates.length != updatedList.length) {
+      if (mounted) {
+        setState(() {
+          _activePolylineCoordinates = updatedList;
+        });
+      }
     }
   }
 
@@ -66,7 +152,68 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
   void dispose() {
     _tabController.dispose();
     _msgController.dispose();
+    _sheetController.dispose();
+    _mapController?.dispose();
     super.dispose();
+  }
+
+  Future<void> _resolveBookingAddress(BookingModel booking) async {
+    if (_lastGeocodedBookingId == booking.id && _resolvedAddress != null) return;
+    _lastGeocodedBookingId = booking.id;
+
+    if (booking.addressText.isNotEmpty &&
+        !['Dakar', 'Point E, Dakar, Sénégal', 'Dakar, Sénégal', 'Position sélectionnée', 'Position sélectionnée, Dakar']
+            .contains(booking.addressText.trim())) {
+      if (mounted) {
+        setState(() => _resolvedAddress = booking.addressText);
+      }
+      return;
+    }
+
+    try {
+      final placemarks = await placemarkFromCoordinates(
+        booking.latitude,
+        booking.longitude,
+      );
+      if (placemarks.isNotEmpty) {
+        final place = placemarks.first;
+        final List<String> parts = [];
+        final street = place.street?.trim();
+        final subLocality = place.subLocality?.trim();
+        final locality = place.locality?.trim();
+        final name = place.name?.trim();
+
+        if (street != null &&
+            street.isNotEmpty &&
+            !street.contains('+') &&
+            !street.toLowerCase().contains('unnamed')) {
+          parts.add(street);
+        } else if (name != null &&
+            name.isNotEmpty &&
+            !name.contains('+') &&
+            !name.toLowerCase().contains('unnamed')) {
+          parts.add(name);
+        }
+        if (subLocality != null &&
+            subLocality.isNotEmpty &&
+            !parts.contains(subLocality)) {
+          parts.add(subLocality);
+        }
+        if (locality != null &&
+            locality.isNotEmpty &&
+            !parts.contains(locality)) {
+          parts.add(locality);
+        }
+
+        final resolved =
+            parts.isNotEmpty ? parts.join(', ') : booking.addressText;
+        if (mounted && resolved.isNotEmpty) {
+          setState(() => _resolvedAddress = resolved);
+        }
+      }
+    } catch (e) {
+      debugPrint('[Tracking] Reverse geocoding error: $e');
+    }
   }
 
   int _getStepIndex(String status) {
@@ -109,6 +256,22 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
     return Colors.grey;
   }
 
+  IconData _getCategoryIcon(String catId) {
+    if (catId.contains('plumb')) return Icons.plumbing_rounded;
+    if (catId.contains('hvac') || catId.contains('clim')) return Icons.ac_unit_rounded;
+    if (catId.contains('electr')) return Icons.electric_bolt_rounded;
+    if (catId.contains('appliance')) return Icons.kitchen_rounded;
+    return Icons.build_rounded;
+  }
+
+  String _getCategoryName(String catId) {
+    if (catId == 'cat_plumbing' || catId.contains('plumb')) return 'Plomberie & Sanitaire';
+    if (catId == 'cat_hvac' || catId.contains('clim')) return 'Froid & Climatisation';
+    if (catId == 'cat_electrical' || catId.contains('electr')) return 'Électricité Générale';
+    if (catId == 'cat_appliances' || catId.contains('appliance')) return 'Électroménager';
+    return 'Dépannage Express';
+  }
+
   @override
   Widget build(BuildContext context) {
     ref.listen<BookingModel?>(activeBookingProvider, (previous, next) {
@@ -127,6 +290,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
 
     final activeBooking = ref.watch(activeBookingProvider);
     final registeredTechsAsync = ref.watch(registeredTechniciansProvider);
+    final liveTechLocation = ref.watch(techLiveLocationProvider);
     final notifier = ref.read(activeBookingProvider.notifier);
 
     final status = activeBooking?.status ?? 'matched';
@@ -156,6 +320,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
       }
       techLat = found['latitude'] as double?;
       techLng = found['longitude'] as double?;
+      
       techName =
           (found['name'] ?? found['user_name'] ?? 'Technicien').toString();
       techRating = (found['average_rating'] as num?)?.toDouble() ?? 4.9;
@@ -169,14 +334,23 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
       }
     });
 
+    // Override with live location from WebSocket / GPS stream
+    if (liveTechLocation != null) {
+      techLat = liveTechLocation['latitude'];
+      techLng = liveTechLocation['longitude'];
+    }
+
     if (activeBooking != null && techLat != null && techLng != null) {
-      final start = LatLng(techLat!, techLng!);
-      final end = LatLng(activeBooking.latitude, activeBooking.longitude);
-      if (_lastRouteStart != start || _lastRouteEnd != end) {
-        _lastRouteStart = start;
-        _lastRouteEnd = end;
-        _fetchRoute(start.latitude, start.longitude, end.latitude, end.longitude);
-      }
+      _updateOrRecalculateRoute(
+        techLat!,
+        techLng!,
+        activeBooking.latitude,
+        activeBooking.longitude,
+      );
+    }
+
+    if (activeBooking != null) {
+      _resolveBookingAddress(activeBooking);
     }
 
     return Scaffold(
@@ -186,6 +360,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
           if (activeBooking != null)
             Positioned.fill(
               child: GoogleMap(
+                onMapCreated: (controller) => _mapController = controller,
                 initialCameraPosition: CameraPosition(
                   target: LatLng(
                     activeBooking.latitude,
@@ -200,7 +375,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
                 compassEnabled: false,
                 mapToolbarEnabled: false,
                 polylines: {
-                  if (techLat != null && techLng != null)
+                  if (techLat != null && techLng != null && !['completed', 'cancelled', 'no_technician_found'].contains(status))
                     Polyline(
                       polylineId: const PolylineId('route'),
                       color: AppTheme.primaryEmerald.withValues(alpha: 0.85),
@@ -208,8 +383,8 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
                       startCap: Cap.roundCap,
                       endCap: Cap.roundCap,
                       jointType: JointType.round,
-                      points: _polylineCoordinates.isNotEmpty 
-                        ? _polylineCoordinates 
+                      points: _activePolylineCoordinates.isNotEmpty 
+                        ? _activePolylineCoordinates 
                         : [
                             LatLng(techLat!, techLng!),
                             LatLng(activeBooking.latitude, activeBooking.longitude),
@@ -224,7 +399,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
                       icon: _destinationIcon!,
                       anchor: const Offset(0.5, 0.92),
                     ),
-                  if (techLat != null && techLng != null)
+                  if (techLat != null && techLng != null && !['completed', 'cancelled', 'no_technician_found'].contains(status))
                     Marker(
                       markerId: const MarkerId('tech'),
                       position: LatLng(techLat!, techLng!),
@@ -267,9 +442,10 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
 
           // 3. Bottom Modal Sheet (Draggable)
           DraggableScrollableSheet(
-            initialChildSize: 0.45,
-            minChildSize: 0.15,
-            maxChildSize: 0.9,
+            controller: _sheetController,
+            initialChildSize: 0.50,
+            minChildSize: 0.18,
+            maxChildSize: 0.95,
             builder: (context, scrollController) {
               return Container(
                 decoration: const BoxDecoration(
@@ -411,38 +587,45 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
                                 ),
                                 const SizedBox(height: 14),
 
+                                // Request Details Card (Panne, Lieu, Heure, Catégorie)
+                                if (activeBooking != null) ...[
+                                  _buildRequestDetailsCard(activeBooking, techLat, techLng),
+                                  const SizedBox(height: 14),
+                                ],
+
                                 // Action Buttons
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: SizedBox(
-                                        height: 48,
-                                        child: ElevatedButton(
-                                          onPressed: () => _showReviewDialog(context, notifier),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: AppTheme.primaryEmerald,
-                                            shape: const StadiumBorder(),
+                                if (!['completed', 'cancelled', 'no_technician_found'].contains(status))
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: SizedBox(
+                                          height: 48,
+                                          child: ElevatedButton(
+                                            onPressed: () => _showReviewDialog(context, notifier),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: AppTheme.primaryEmerald,
+                                              shape: const StadiumBorder(),
+                                            ),
+                                            child: const Text('Clôturer', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white)),
                                           ),
-                                          child: const Text('Clôturer', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white)),
                                         ),
                                       ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: SizedBox(
-                                        height: 48,
-                                        child: ElevatedButton(
-                                          onPressed: () => _showCancelDialog(context, notifier),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.redAccent,
-                                            shape: const StadiumBorder(),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: SizedBox(
+                                          height: 48,
+                                          child: ElevatedButton(
+                                            onPressed: () => _showCancelDialog(context, notifier),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.redAccent,
+                                              shape: const StadiumBorder(),
+                                            ),
+                                            child: const Text('Annuler', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white)),
                                           ),
-                                          child: const Text('Annuler', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white)),
                                         ),
                                       ),
-                                    ),
-                                  ],
-                                ),
+                                    ],
+                                  ),
                                 const SizedBox(height: 24),
                               ],
                             ),
@@ -626,20 +809,23 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Annuler'),
+              onPressed: () {
+                Navigator.pop(ctx);
+                Navigator.pop(context);
+              },
+              child: const Text('Plus tard'),
             ),
             ElevatedButton(
               onPressed: () {
                 notifier.submitReview(selectedStars, commentController.text);
-                Navigator.pop(ctx);
-                Navigator.pop(context);
                 AppToast.show(
                   context,
                   title: 'Prestation Clôturée !',
                   message: 'Merci pour votre évaluation $selectedStars ★.',
                   type: AppToastType.success,
                 );
+                Navigator.pop(ctx);
+                Navigator.pop(context);
               },
               child: const Text('Valider'),
             ),
@@ -723,19 +909,394 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
                     : selectedReason!;
                 // Simulate sending cancellation with reason to backend. The notifier would need a cancelMethod.
                 notifier.cancelBooking(finalReason);
-                Navigator.pop(ctx);
-                Navigator.pop(context);
                 AppToast.show(
                   context,
                   title: 'Intervention annulée',
-                  message: 'L\'intervention a bien été annulée.',
+                  message: 'Votre demande a été annulée.',
                   type: AppToastType.error,
                 );
+                Navigator.pop(ctx);
+                Navigator.pop(context);
               },
               child: const Text('Confirmer'),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildRequestDetailsCard(
+      BookingModel booking, double? techLat, double? techLng) {
+    final catName = _getCategoryName(booking.categoryId);
+    final catIcon = _getCategoryIcon(booking.categoryId);
+    final dateStr =
+        '${booking.createdAt.day.toString().padLeft(2, '0')}/${booking.createdAt.month.toString().padLeft(2, '0')}/${booking.createdAt.year} à ${booking.createdAt.hour.toString().padLeft(2, '0')}:${booking.createdAt.minute.toString().padLeft(2, '0')}';
+    final shortId =
+        booking.id.length > 8 ? booking.id.substring(0, 8) : booking.id;
+
+    // Calculate dynamic live distance from technician to client
+    String? distanceText;
+    if (techLat != null && techLng != null) {
+      final meters = Geolocator.distanceBetween(
+        techLat,
+        techLng,
+        booking.latitude,
+        booking.longitude,
+      );
+      if (meters < 100) {
+        distanceText = 'Sur place';
+      } else if (meters < 1000) {
+        distanceText = '${meters.round()} m';
+      } else {
+        distanceText = '${(meters / 1000).toStringAsFixed(1)} km';
+      }
+    }
+
+    final displayAddress = _resolvedAddress ??
+        (booking.addressText.isNotEmpty
+            ? booking.addressText
+            : 'Dakar, Sénégal');
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFF1F5F9)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header: Category badge + Dossier Reference ID
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryLight,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(catIcon, size: 16, color: AppTheme.primaryEmerald),
+                    const SizedBox(width: 6),
+                    Text(
+                      catName,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primaryDark,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Text(
+                  '#$shortId',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textMuted,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // Problem Description
+          const Text(
+            'Description de la panne',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.textDark,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFF1F5F9)),
+            ),
+            child: Text(
+              booking.description.isNotEmpty
+                  ? booking.description
+                  : 'Aucune description précisée.',
+              style: const TextStyle(
+                fontSize: 13,
+                color: Color(0xFF334155),
+                height: 1.4,
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // Dynamic Location Section
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryLight,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.location_on_rounded,
+                            size: 16,
+                            color: AppTheme.primaryEmerald,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Lieu d\'intervention',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.textDark,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (distanceText != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.near_me_rounded,
+                                size: 12, color: Colors.deepOrange),
+                            const SizedBox(width: 4),
+                            Text(
+                              distanceText,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.deepOrange,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  displayAddress,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textDark,
+                    height: 1.3,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    // Recenter on map button
+                    Expanded(
+                      child: InkWell(
+                        onTap: () {
+                          _mapController?.animateCamera(
+                            CameraUpdate.newLatLngZoom(
+                              LatLng(booking.latitude, booking.longitude),
+                              16.5,
+                            ),
+                          );
+                          if (_sheetController.isAttached) {
+                            _sheetController.animateTo(
+                              0.22,
+                              duration: const Duration(milliseconds: 350),
+                              curve: Curves.easeInOut,
+                            );
+                          }
+                        },
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 7),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryLight,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                                color: AppTheme.primaryEmerald
+                                    .withOpacity(0.3)),
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.center_focus_strong_rounded,
+                                  size: 14, color: AppTheme.primaryEmerald),
+                              SizedBox(width: 6),
+                              Text(
+                                'Centrer sur la carte',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.primaryDark,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Copy address button
+                    InkWell(
+                      onTap: () {
+                        Clipboard.setData(
+                            ClipboardData(text: displayAddress));
+                        AppToast.show(
+                          context,
+                          title: 'Adresse copiée',
+                          message: displayAddress,
+                          type: AppToastType.info,
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFFCBD5E1)),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.copy_rounded,
+                                size: 14, color: AppTheme.textMuted),
+                            SizedBox(width: 4),
+                            Text(
+                              'Copier',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.textMuted,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Divider(color: Color(0xFFF1F5F9), height: 1),
+          const SizedBox(height: 12),
+
+          // Payment mode & Date info
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Row(
+                children: [
+                  Icon(
+                    Icons.payments_outlined,
+                    size: 15,
+                    color: AppTheme.textMuted,
+                  ),
+                  SizedBox(width: 6),
+                  Text(
+                    'Direct technicien (Devis)',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: AppTheme.textMuted,
+                    ),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.access_time_rounded,
+                    size: 14,
+                    color: AppTheme.textMuted,
+                  ),
+                  SizedBox(width: 4),
+                  Text(
+                    dateStr,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: AppTheme.textMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+
+          // Optional Photo Preview
+          if (booking.photoUrl != null && booking.photoUrl!.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            const Text(
+              'Photo jointe',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.textDark,
+              ),
+            ),
+            const SizedBox(height: 6),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.network(
+                booking.photoUrl!,
+                height: 120,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

@@ -2,10 +2,11 @@ import 'dart:convert';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import '../models/models.dart';
 import '../core/config.dart';
+import '../core/api_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
@@ -20,8 +21,9 @@ final selectedLocationProvider =
 
 class AuthNotifier extends StateNotifier<UserModel?> {
   final SharedPreferences prefs;
+  final Ref ref;
 
-  AuthNotifier(this.prefs) : super(null) {
+  AuthNotifier(this.prefs, this.ref) : super(null) {
     _loadSession();
   }
 
@@ -44,16 +46,15 @@ class AuthNotifier extends StateNotifier<UserModel?> {
     isLoading = true;
     errorMessage = null;
     try {
-      final response = await http.post(
-        Uri.parse('$apiBaseUrl/auth/login'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email, 'password': password}),
+      final dio = ref.read(apiClientProvider);
+      final response = await dio.post(
+        '/auth/login',
+        data: {'email': email, 'password': password},
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final user =
-            UserModel.fromJson(data['user'], token: data['access_token']);
+        final data = response.data;
+        final user = UserModel.fromJson(data['user'], token: data['access_token']);
         state = user;
         
         final sessionData = data['user'];
@@ -62,9 +63,14 @@ class AuthNotifier extends StateNotifier<UserModel?> {
         
         isLoading = false;
         return true;
+      }
+    } on DioException catch (e) {
+      debugPrint('Login Error: $e');
+      if (e.response != null) {
+        final err = e.response!.data;
+        errorMessage = err is Map ? err['detail'] : 'Identifiants invalides';
       } else {
-        final err = jsonDecode(response.body);
-        errorMessage = err['detail'] ?? 'Identifiants invalides';
+        errorMessage = 'Erreur de connexion';
       }
     } catch (e) {
       debugPrint('Login Error: $e');
@@ -83,22 +89,21 @@ class AuthNotifier extends StateNotifier<UserModel?> {
     isLoading = true;
     errorMessage = null;
     try {
-      final response = await http.post(
-        Uri.parse('$apiBaseUrl/auth/register'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
+      final dio = ref.read(apiClientProvider);
+      final response = await dio.post(
+        '/auth/register',
+        data: {
           'name': name,
           'email': email,
           'phone': phone,
           'password': password,
           'role': 'client',
-        }),
+        },
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final user =
-            UserModel.fromJson(data['user'], token: data['access_token']);
+        final data = response.data;
+        final user = UserModel.fromJson(data['user'], token: data['access_token']);
         state = user;
         
         final sessionData = data['user'];
@@ -107,9 +112,14 @@ class AuthNotifier extends StateNotifier<UserModel?> {
         
         isLoading = false;
         return true;
+      }
+    } on DioException catch (e) {
+      debugPrint('Register Error: $e');
+      if (e.response != null) {
+        final err = e.response!.data;
+        errorMessage = err is Map ? err['detail'] : 'Échec de l\'inscription';
       } else {
-        final err = jsonDecode(response.body);
-        errorMessage = err['detail'] ?? 'Échec de l\'inscription';
+        errorMessage = 'Erreur lors de l\'inscription';
       }
     } catch (e) {
       debugPrint('Register Error: $e');
@@ -134,10 +144,10 @@ class AuthNotifier extends StateNotifier<UserModel?> {
       token: state!.token,
     );
     try {
-      await http.patch(
-        Uri.parse('$apiBaseUrl/technicians/me/profile?user_id=${state!.id}'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'name': name, 'email': email, 'phone': phone}),
+      final dio = ref.read(apiClientProvider);
+      await dio.patch(
+        '/technicians/me/profile?user_id=${state!.id}',
+        data: {'name': name, 'email': email, 'phone': phone},
       );
     } catch (e) {
       debugPrint('Client profile update error: $e');
@@ -154,7 +164,7 @@ class AuthNotifier extends StateNotifier<UserModel?> {
 
 final authProvider = StateNotifierProvider<AuthNotifier, UserModel?>((ref) {
   final prefs = ref.watch(sharedPreferencesProvider);
-  return AuthNotifier(prefs);
+  return AuthNotifier(prefs, ref);
 });
 
 class NotificationNotifier extends StateNotifier<List<AppNotificationModel>> {
@@ -210,9 +220,10 @@ final appNotificationsProvider =
 final categoryListProvider =
     FutureProvider<List<ServiceCategoryModel>>((ref) async {
   try {
-    final response = await http.get(Uri.parse('$apiBaseUrl/categories'));
+    final dio = ref.read(apiClientProvider);
+    final response = await dio.get('/categories');
     if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
+      final List<dynamic> data = response.data;
       return data.map((e) => ServiceCategoryModel.fromJson(e)).toList();
     }
   } catch (e) {
@@ -244,17 +255,11 @@ final categoryListProvider =
 
 final registeredTechniciansProvider =
     FutureProvider<List<Map<String, dynamic>>>((ref) async {
-  final currentUser = ref.watch(authProvider);
   try {
-    final response = await http.get(
-      Uri.parse('$apiBaseUrl/technicians'),
-      headers: {
-        if (currentUser?.token != null)
-          'Authorization': 'Bearer ${currentUser!.token}',
-      },
-    );
+    final dio = ref.read(apiClientProvider);
+    final response = await dio.get('/technicians');
     if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
+      final List<dynamic> data = response.data;
       return List<Map<String, dynamic>>.from(data);
     }
   } catch (e) {
@@ -277,20 +282,17 @@ final categoryFilteredTechniciansProvider =
   }).toList();
 });
 
+final techLiveLocationProvider = StateProvider<Map<String, double>?>((ref) => null);
+
 final userBookingsProvider = FutureProvider<List<BookingModel>>((ref) async {
   final currentUser = ref.watch(authProvider);
   final clientId = currentUser?.id ?? 'user_client_demo';
 
   try {
-    final response = await http.get(
-      Uri.parse('$apiBaseUrl/bookings/user/$clientId?role=client'),
-      headers: {
-        if (currentUser?.token != null)
-          'Authorization': 'Bearer ${currentUser!.token}',
-      },
-    );
+    final dio = ref.read(apiClientProvider);
+    final response = await dio.get('/bookings/user/$clientId?role=client');
     if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
+      final List<dynamic> data = response.data;
       return data.map((e) => BookingModel.fromJson(e)).toList();
     }
   } catch (e) {
@@ -314,31 +316,24 @@ class BookingNotifier extends StateNotifier<BookingModel?> {
     required double longitude,
     String? preferredTechnicianId,
   }) async {
-    final currentUser = _ref.read(authProvider);
-    final clientId = currentUser?.id ?? 'user_client_demo';
-
     try {
-      final response = await http.post(
-        Uri.parse('$apiBaseUrl/bookings'),
-        headers: {
-          'Content-Type': 'application/json',
-          if (currentUser?.token != null)
-            'Authorization': 'Bearer ${currentUser!.token}',
-        },
-        body: jsonEncode({
+      final dio = _ref.read(apiClientProvider);
+      final response = await dio.post(
+        '/bookings',
+        data: {
           'category_id': categoryId,
           'description': description,
           'latitude': latitude,
           'longitude': longitude,
           'address_text': addressText,
           if (preferredTechnicianId != null) 'preferred_technician_id': preferredTechnicianId,
-        }),
+        },
       );
 
       if (response.statusCode == 200) {
-        final booking = BookingModel.fromJson(jsonDecode(response.body));
+        final booking = BookingModel.fromJson(response.data);
         state = booking;
-        _connectWebSocket(booking.id);
+        _startStatusSync(booking.id);
         _ref.refresh(userBookingsProvider);
 
         _ref.read(appNotificationsProvider.notifier).addNotification(
@@ -359,48 +354,111 @@ class BookingNotifier extends StateNotifier<BookingModel?> {
 
   int _reconnectDelay = 1; // seconds, doubles on each retry
   bool _intentionalClose = false;
+  bool _pollingActive = false;
+
+  void loadActiveBooking(BookingModel booking) {
+    state = booking;
+    _startStatusSync(booking.id);
+  }
+
+  /// Fetch user's bookings and auto-load the first active one
+  Future<void> fetchActiveBooking() async {
+    if (state != null && !['completed', 'cancelled', 'no_technician_found'].contains(state!.status)) {
+      return; // Already have an active booking
+    }
+    try {
+      final currentUser = _ref.read(authProvider);
+      if (currentUser == null) return;
+      final dio = _ref.read(apiClientProvider);
+      final response = await dio.get('/bookings/user/${currentUser.id}?role=client');
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data;
+        final bookings = data.map((e) => BookingModel.fromJson(e)).toList();
+        final active = bookings.where((b) =>
+          !['completed', 'cancelled', 'no_technician_found'].contains(b.status)
+        ).toList();
+        if (active.isNotEmpty) {
+          state = active.first;
+          _startStatusSync(active.first.id);
+        }
+      }
+    } catch (e) {
+      debugPrint('Fetch Active Booking Error: $e');
+    }
+  }
+
+  /// Start both WebSocket and polling for a booking
+  void _startStatusSync(String bookingId) {
+    _connectWebSocket(bookingId);
+    _startPolling(bookingId);
+  }
+
+  /// Poll the booking status every 5 seconds as a reliable fallback
+  void _startPolling(String bookingId) {
+    _pollingActive = true;
+    _pollLoop(bookingId);
+  }
+
+  void _stopPolling() {
+    _pollingActive = false;
+  }
+
+  Future<void> _pollLoop(String bookingId) async {
+    while (_pollingActive && state != null) {
+      await Future.delayed(const Duration(seconds: 5));
+      if (!_pollingActive || state == null) break;
+      try {
+        final dio = _ref.read(apiClientProvider);
+        final response = await dio.get('/bookings/$bookingId');
+        if (response.statusCode == 200 && state != null) {
+          final fresh = BookingModel.fromJson(response.data);
+          if (fresh.status != state!.status) {
+            debugPrint('[POLL] Status changed: ${state!.status} → ${fresh.status}');
+            state = fresh;
+            _ref.refresh(userBookingsProvider);
+            _ref.read(appNotificationsProvider.notifier).addNotification(
+              title: 'Changement de Statut !',
+              message: 'Statut actuel du dossier : ${fresh.status}',
+              type: 'status',
+            );
+          }
+          // Stop polling if booking is terminal
+          if (['completed', 'cancelled', 'no_technician_found'].contains(fresh.status)) {
+            _pollingActive = false;
+          }
+        }
+      } catch (e) {
+        debugPrint('[POLL] Error: $e');
+      }
+    }
+  }
 
   void _connectWebSocket(String bookingId) {
     _intentionalClose = true;
     _channel?.sink.close();
     _intentionalClose = false;
+
     try {
       final token = _ref.read(authProvider)?.token ?? '';
       final wsChannel = WebSocketChannel.connect(
           Uri.parse('$wsBaseUrl/bookings/$bookingId?token=$token'));
       _channel = wsChannel;
-      _reconnectDelay = 1; // Reset on successful connect
+      _reconnectDelay = 1;
       _channel!.stream.listen(
         (event) {
           final data = jsonDecode(event);
           _handleWsEvent(data);
         },
         onDone: () {
-          if (!_intentionalClose && _channel == wsChannel) {
-            debugPrint(
-                '[WS] Connection closed. Reconnecting in ${_reconnectDelay}s...');
-            Future.delayed(Duration(seconds: _reconnectDelay), () {
-              _reconnectDelay = (_reconnectDelay * 2).clamp(1, 30);
-              _connectWebSocket(bookingId);
-            });
-          }
+          debugPrint('[WS] Connection closed for booking $bookingId');
+          // Don't aggressively reconnect — polling handles status sync
         },
         onError: (e) {
-          if (!_intentionalClose && _channel == wsChannel) {
-            debugPrint('[WS] Error: $e. Reconnecting in ${_reconnectDelay}s...');
-            Future.delayed(Duration(seconds: _reconnectDelay), () {
-              _reconnectDelay = (_reconnectDelay * 2).clamp(1, 30);
-              _connectWebSocket(bookingId);
-            });
-          }
+          debugPrint('[WS] Error: $e');
         },
       );
     } catch (e) {
-      debugPrint('[WS] Connect Error: $e. Retrying in ${_reconnectDelay}s...');
-      Future.delayed(Duration(seconds: _reconnectDelay), () {
-        _reconnectDelay = (_reconnectDelay * 2).clamp(1, 30);
-        _connectWebSocket(bookingId);
-      });
+      debugPrint('[WS] Connect Error: $e — polling will handle sync');
     }
   }
 
@@ -408,6 +466,7 @@ class BookingNotifier extends StateNotifier<BookingModel?> {
     final type = data['type'] as String? ?? '';
 
     if (type == 'STATUS_UPDATE') {
+      final newStatus = data['status'] as String? ?? 'matched';
       if (state != null) {
         state = BookingModel(
           id: state!.id,
@@ -415,7 +474,7 @@ class BookingNotifier extends StateNotifier<BookingModel?> {
           categoryId: state!.categoryId,
           description: state!.description,
           photoUrl: state!.photoUrl,
-          status: data['status'] ?? state!.status,
+          status: newStatus,
           latitude: state!.latitude,
           longitude: state!.longitude,
           addressText: state!.addressText,
@@ -423,11 +482,18 @@ class BookingNotifier extends StateNotifier<BookingModel?> {
           scheduledEta: data['scheduled_eta'] ?? state!.scheduledEta,
           createdAt: state!.createdAt,
         );
+      } else if (data['booking_id'] != null) {
+        fetchActiveBooking();
       }
+      
+      if (['completed', 'cancelled', 'no_technician_found'].contains(newStatus)) {
+        _stopPolling();
+      }
+
       _ref.refresh(userBookingsProvider);
       _ref.read(appNotificationsProvider.notifier).addNotification(
             title: 'Changement de Statut !',
-            message: 'Statut actuel du dossier : ${data["status"]}',
+            message: 'Statut actuel du dossier : $newStatus',
             type: 'status',
           );
     } else if (type == 'NO_TECHNICIAN') {
@@ -455,22 +521,16 @@ class BookingNotifier extends StateNotifier<BookingModel?> {
             type: 'warning',
           );
     } else if (type == 'LOCATION_UPDATE') {
-      if (state != null) {
-        state = BookingModel(
-          id: state!.id,
-          clientId: state!.clientId,
-          categoryId: state!.categoryId,
-          description: state!.description,
-          photoUrl: state!.photoUrl,
-          status: state!.status,
-          latitude: (data['latitude'] as num?)?.toDouble() ?? state!.latitude,
-          longitude:
-              (data['longitude'] as num?)?.toDouble() ?? state!.longitude,
-          addressText: state!.addressText,
-          technicianId: state!.technicianId,
-          scheduledEta: data['eta'] ?? state!.scheduledEta ?? '12 mins',
-          createdAt: state!.createdAt,
-        );
+      final lat = (data['latitude'] as num?)?.toDouble();
+      final lng = (data['longitude'] as num?)?.toDouble();
+      if (lat != null && lng != null) {
+        _ref.read(techLiveLocationProvider.notifier).state = {
+          'latitude': lat,
+          'longitude': lng,
+        };
+      }
+      if (state != null && data['eta'] != null) {
+        state = state!.copyWith(scheduledEta: data['eta']);
       }
     } else if (type == 'NEW_MESSAGE') {
       final msg = ChatMessageModel.fromJson(data);
@@ -506,19 +566,15 @@ class BookingNotifier extends StateNotifier<BookingModel?> {
 
   Future<void> submitReview(int rating, String comment) async {
     if (state == null) return;
-    final token = _ref.read(authProvider)?.token;
 
     try {
-      await http.post(
-        Uri.parse('$apiBaseUrl/bookings/${state!.id}/review'),
-        headers: {
-          'Content-Type': 'application/json',
-          if (token != null) 'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode({
+      final dio = _ref.read(apiClientProvider);
+      await dio.post(
+        '/bookings/${state!.id}/review',
+        data: {
           'rating': rating,
           'comment': comment,
-        }),
+        },
       );
     } catch (e) {
       debugPrint('Submit Review Error: $e');
@@ -527,19 +583,15 @@ class BookingNotifier extends StateNotifier<BookingModel?> {
 
   Future<void> cancelBooking(String reason) async {
     if (state == null) return;
-    final token = _ref.read(authProvider)?.token;
 
     try {
-      final response = await http.patch(
-        Uri.parse('$apiBaseUrl/bookings/${state!.id}/status'),
-        headers: {
-          'Content-Type': 'application/json',
-          if (token != null) 'Authorization': 'Bearer $token',
-        },
-        body:
-            jsonEncode({'status': 'cancelled', 'cancellation_reason': reason}),
+      final dio = _ref.read(apiClientProvider);
+      final response = await dio.patch(
+        '/bookings/${state!.id}/status',
+        data: {'status': 'cancelled', 'cancellation_reason': reason},
       );
       if (response.statusCode == 200) {
+        _stopPolling();
         state = state!.copyWith(status: 'cancelled');
       }
     } catch (e) {

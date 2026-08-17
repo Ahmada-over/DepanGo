@@ -94,7 +94,7 @@ async def update_location(
             "booking_id": booking_id,
             "latitude": req.latitude,
             "longitude": req.longitude,
-            "eta": "12 mins",
+            "eta": req.eta or "10 mins",
         }
         await ws_manager.broadcast_to_booking(booking_id, payload)
 

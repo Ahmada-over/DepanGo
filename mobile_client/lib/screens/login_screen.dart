@@ -37,6 +37,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           _passwordController.text.trim(),
         );
 
+    if (!mounted) return;
+
     setState(() {
       _isLoading = false;
     });

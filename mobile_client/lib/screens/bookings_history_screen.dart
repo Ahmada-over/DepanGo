@@ -39,6 +39,7 @@ class BookingsHistoryScreen extends ConsumerWidget {
               const SizedBox(height: 8),
               GestureDetector(
                 onTap: () {
+                  ref.read(activeBookingProvider.notifier).loadActiveBooking(activeBooking);
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const TrackingChatScreen()));
                 },
                 child: Container(

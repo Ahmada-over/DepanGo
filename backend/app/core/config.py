@@ -50,7 +50,7 @@ class Settings(BaseSettings):
     # CORS — comma-separated list of allowed origins
     ALLOWED_ORIGINS: List[str] = [
         o.strip() for o in
-        os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:3002,http://localhost:8080,http://localhost:5173").split(",")
+        os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:3002,http://localhost:8080,http://localhost:5173,http://127.0.0.1:3002,http://127.0.0.1:5173").split(",")
         if o.strip()
     ]
 
@@ -61,6 +61,8 @@ class Settings(BaseSettings):
     MATCHING_THIRD_RADIUS_KM: float = float(os.getenv("MATCHING_THIRD_RADIUS_KM", "8.0"))
     MATCHING_MAX_RADIUS_KM: float = float(os.getenv("MATCHING_MAX_RADIUS_KM", "10.0"))
     EXPANDED_SEARCH_RADIUS_KM: float = float(os.getenv("MAX_RADIUS_KM", "25.0"))
+    TECHNICIAN_LOCATION_FRESHNESS_MINUTES: int = int(os.getenv("TECHNICIAN_LOCATION_FRESHNESS_MINUTES", "15"))
+    GOOGLE_MAPS_API_KEY: Optional[str] = os.getenv("GOOGLE_MAPS_API_KEY")
 
     model_config = SettingsConfigDict(
         env_file=".env",

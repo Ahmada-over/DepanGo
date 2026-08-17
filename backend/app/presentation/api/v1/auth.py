@@ -35,14 +35,14 @@ async def login(request: Request, req: LoginRequest, db: AsyncSession = Depends(
     """
     from app.main import limiter  # import here to avoid circular imports
 
-    @limiter.limit("5/minute")
+    @limiter.limit("50/minute")
     async def _inner(request: Request):
         pass
 
     try:
         await _inner(request)
     except Exception:
-        raise HTTPException(status_code=429, detail="Trop de tentatives. Réessayez dans une minute.")
+        raise HTTPException(status_code=429, detail="Trop de tentatives. Réessayez plus tard.")
 
     user_repo = SQLAlchemyUserRepository(db)
     tech_repo = SQLAlchemyTechnicianRepository(db)

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme.dart';
+import 'core/app_toast.dart';
 import 'providers/app_providers.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
@@ -29,6 +30,7 @@ class TechConnectApp extends ConsumerWidget {
     final user = ref.watch(authProvider);
 
     return MaterialApp(
+      scaffoldMessengerKey: rootScaffoldMessengerKey,
       title: 'depanGo Client',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,

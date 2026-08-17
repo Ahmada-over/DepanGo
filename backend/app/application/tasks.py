@@ -14,24 +14,24 @@ async def expire_stale_bookings_loop():
         try:
             await asyncio.sleep(10)
             async with AsyncSessionLocal() as db:
-                timeout_threshold = datetime.utcnow() - timedelta(seconds=90)
+                from app.core.config import settings
+                timeout_threshold = datetime.utcnow() - timedelta(seconds=settings.MATCHING_RESPONSE_WINDOW_SECONDS)
                 
-                # We need to find MATCHED bookings whose latest MatchingLogModel (offered) is older than 90s
+                # We need to find MATCHED bookings whose latest MatchingLogModel (offered) is older than the timeout
                 stmt = select(BookingModel).where(BookingModel.status == "matched")
                 result = await db.execute(stmt)
                 bookings = result.scalars().all()
                 
                 for booking in bookings:
                     log_stmt = select(MatchingLogModel).where(
-                        MatchingLogModel.booking_id == booking.id,
-                        MatchingLogModel.status == "offered"
+                        MatchingLogModel.booking_id == booking.id
                     ).order_by(MatchingLogModel.created_at.desc())
                     
                     log_result = await db.execute(log_stmt)
                     latest_log = log_result.scalars().first()
                     
-                    if latest_log and latest_log.created_at < timeout_threshold:
-                        # Timeout! 
+                    # Only timeout if the latest state is still 'offered' (not accepted or rejected)
+                    if latest_log and latest_log.status == "offered" and latest_log.created_at < timeout_threshold:
                         latest_log.status = "timeout"
                         booking.status = "pending"
                         booking.version += 1

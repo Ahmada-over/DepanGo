@@ -8,6 +8,8 @@ import 'package:techconnect_mobile/models/models.dart';
 import '../providers/app_providers.dart';
 import 'create_booking_screen.dart';
 import 'bookings_history_screen.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 import 'login_screen.dart';
 import 'map_selection_screen.dart';
 import 'map_screen.dart';
@@ -21,6 +23,112 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _currentIndex = 0;
+  bool _isFetchingLocation = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchCurrentLocation();
+      ref.read(activeBookingProvider.notifier).fetchActiveBooking();
+    });
+  }
+
+  Future<void> _fetchCurrentLocation() async {
+    if (!mounted) return;
+    setState(() => _isFetchingLocation = true);
+
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        debugPrint('[Location] Location services disabled, checking last known or requesting...');
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        debugPrint('[Location] Location permission denied: $permission');
+        return;
+      }
+
+      // 1. Try fast last known position first (instant)
+      Position? position = await Geolocator.getLastKnownPosition();
+
+      // 2. If no cached position, get fresh current position with 8s timeout
+      position ??= await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.medium,
+        timeLimit: const Duration(seconds: 8),
+      );
+
+      if (position == null) return;
+
+      debugPrint('[Location] GPS coordinates: ${position.latitude}, ${position.longitude}');
+
+      // 3. Reverse geocode coordinates to human-readable address
+      String address = '';
+      try {
+        final placemarks = await placemarkFromCoordinates(
+          position.latitude,
+          position.longitude,
+        );
+
+        if (placemarks.isNotEmpty) {
+          final place = placemarks.first;
+          final List<String> parts = [];
+
+          final street = place.street?.trim();
+          final subLocality = place.subLocality?.trim();
+          final locality = place.locality?.trim();
+          final name = place.name?.trim();
+
+          if (street != null &&
+              street.isNotEmpty &&
+              !street.contains('+') &&
+              !street.toLowerCase().contains('unnamed')) {
+            parts.add(street);
+          } else if (name != null &&
+              name.isNotEmpty &&
+              !name.contains('+') &&
+              !name.toLowerCase().contains('unnamed')) {
+            parts.add(name);
+          }
+
+          if (subLocality != null &&
+              subLocality.isNotEmpty &&
+              !parts.contains(subLocality)) {
+            parts.add(subLocality);
+          }
+
+          if (locality != null &&
+              locality.isNotEmpty &&
+              !parts.contains(locality)) {
+            parts.add(locality);
+          }
+
+          address = parts.join(', ');
+        }
+      } catch (geoError) {
+        debugPrint('[Location] Reverse geocoding error: $geoError');
+      }
+
+      if (address.isEmpty) {
+        address = 'Dakar (${position.latitude.toStringAsFixed(3)}, ${position.longitude.toStringAsFixed(3)})';
+      }
+
+      if (mounted) {
+        ref.read(selectedLocationProvider.notifier).state = address;
+        debugPrint('[Location] Topbar location updated to: $address');
+      }
+    } catch (e) {
+      debugPrint('[Location] Error fetching location: $e');
+    } finally {
+      if (mounted) setState(() => _isFetchingLocation = false);
+    }
+  }
 
   final List<Map<String, dynamic>> _popularServices = [
     {
@@ -125,7 +233,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Active Booking Banner
-          if (ref.watch(activeBookingProvider) != null) ...[
+          if (ref.watch(activeBookingProvider) != null &&
+              !['completed', 'cancelled', 'no_technician_found'].contains(ref.watch(activeBookingProvider)!.status)) ...[
             _buildActiveBookingBanner(ref.watch(activeBookingProvider)!),
             const SizedBox(height: 16),
           ],
@@ -151,15 +260,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               Row(
                                 children: [
                                   Expanded(
-                                    child: Text(
-                                      selectedLocation,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 13,
-                                          color: AppTheme.textDark),
-                                    ),
+                                    child: _isFetchingLocation
+                                        ? Shimmer.fromColors(
+                                            baseColor: Colors.grey[400]!,
+                                            highlightColor: Colors.grey[100]!,
+                                            child: const Text(
+                                              'Recherche de votre position...',
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 13,
+                                                  color: AppTheme.textDark),
+                                            ),
+                                          )
+                                        : Text(
+                                            selectedLocation,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 13,
+                                                color: AppTheme.textDark),
+                                          ),
                                   ),
                                   const Icon(Icons.keyboard_arrow_down,
                                       size: 18, color: AppTheme.textDark),
@@ -846,16 +969,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   const SizedBox(height: 16),
                   InkWell(
-                    onTap: () {
-                      ref.read(selectedLocationProvider.notifier).state =
-                          'Position GPS (14.6937, -17.4441) • Dakar';
+                    onTap: () async {
                       Navigator.pop(context);
-                      AppToast.show(
-                        context,
-                        title: 'Position GPS Détectée !',
-                        message: 'Coordonnées (14.6937, -17.4441) configurées.',
-                        type: AppToastType.success,
-                      );
+                      await _fetchCurrentLocation();
+                      if (mounted) {
+                        AppToast.show(
+                          context,
+                          title: 'Position GPS Détectée !',
+                          message: 'Votre adresse a été mise à jour.',
+                          type: AppToastType.success,
+                        );
+                      }
                     },
                     borderRadius: BorderRadius.circular(16),
                     child: Container(
@@ -1509,6 +1633,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return InkWell(
       onTap: () {
+        ref.read(activeBookingProvider.notifier).loadActiveBooking(booking);
         Navigator.push(
           context,
           MaterialPageRoute(

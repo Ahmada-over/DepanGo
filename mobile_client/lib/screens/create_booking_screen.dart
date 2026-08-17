@@ -41,7 +41,15 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
   @override
   void initState() {
     super.initState();
-    final currentLoc = widget.address ?? ref.read(selectedLocationProvider);
+    String currentLoc = widget.address ?? ref.read(selectedLocationProvider);
+    if (currentLoc == 'Position sélectionnée' || currentLoc.isEmpty) {
+      if (widget.latitude != null && widget.longitude != null) {
+        currentLoc =
+            'Dakar (${widget.latitude!.toStringAsFixed(3)}, ${widget.longitude!.toStringAsFixed(3)})';
+      } else {
+        currentLoc = 'Dakar, Sénégal';
+      }
+    }
     _addressController = TextEditingController(text: currentLoc);
   }
 

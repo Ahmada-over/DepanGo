@@ -6,9 +6,10 @@ import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
 import '../providers/map_providers.dart';
 import '../providers/app_providers.dart';
+import '../core/api_client.dart';
 import '../core/theme.dart';
 import '../core/config.dart';
 import '../core/map_markers.dart';
@@ -115,12 +116,18 @@ class _MapSelectionScreenState extends ConsumerState<MapSelectionScreen> {
 
   Future<void> _fetchNearbyTechnicians(LatLng position) async {
     try {
-      final uri = Uri.parse(
-        '${AppConfig.apiBaseUrl}/technicians/nearby?category_id=${widget.categoryId}&lat=${position.latitude}&lng=${position.longitude}&radius_km=25.0',
+      final dio = ref.read(apiClientProvider);
+      final response = await dio.get(
+        '/technicians/nearby',
+        queryParameters: {
+          'category_id': widget.categoryId,
+          'lat': position.latitude,
+          'lng': position.longitude,
+          'radius_km': 25.0,
+        },
       );
-      final response = await http.get(uri);
       if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
+        final List<dynamic> data = response.data;
         final newLocations = <String, TechnicianLocation>{};
         for (var item in data) {
           final techId = item['id'];
@@ -181,17 +188,58 @@ class _MapSelectionScreenState extends ConsumerState<MapSelectionScreen> {
       );
       if (placemarks.isNotEmpty) {
         final place = placemarks[0];
-        final street = place.street?.isNotEmpty == true ? place.street : null;
-        final locality = place.locality?.isNotEmpty == true ? place.locality : null;
-        final address = [street, locality].whereType<String>().join(', ');
-        setState(() {
-          _addressText = address.isNotEmpty ? address : 'Position sélectionnée';
-        });
-        ref.read(selectedLocationProvider.notifier).state = _addressText;
+        final List<String> parts = [];
+
+        final street = place.street?.trim();
+        final subLocality = place.subLocality?.trim();
+        final locality = place.locality?.trim();
+        final name = place.name?.trim();
+
+        if (street != null &&
+            street.isNotEmpty &&
+            !street.contains('+') &&
+            !street.toLowerCase().contains('unnamed')) {
+          parts.add(street);
+        } else if (name != null &&
+            name.isNotEmpty &&
+            !name.contains('+') &&
+            !name.toLowerCase().contains('unnamed')) {
+          parts.add(name);
+        }
+
+        if (subLocality != null &&
+            subLocality.isNotEmpty &&
+            !parts.contains(subLocality)) {
+          parts.add(subLocality);
+        }
+
+        if (locality != null &&
+            locality.isNotEmpty &&
+            !parts.contains(locality)) {
+          parts.add(locality);
+        }
+
+        final address = parts.isNotEmpty
+            ? parts.join(', ')
+            : 'Dakar (${position.latitude.toStringAsFixed(3)}, ${position.longitude.toStringAsFixed(3)})';
+
+        if (mounted) {
+          setState(() {
+            _addressText = address;
+          });
+          ref.read(selectedLocationProvider.notifier).state = _addressText;
+        }
+        return;
       }
     } catch (e) {
+      debugPrint('[MapSelection] Geocoding error: $e');
+    }
+
+    final fallback =
+        'Dakar (${position.latitude.toStringAsFixed(3)}, ${position.longitude.toStringAsFixed(3)})';
+    if (mounted) {
       setState(() {
-        _addressText = 'Position sélectionnée';
+        _addressText = fallback;
       });
       ref.read(selectedLocationProvider.notifier).state = _addressText;
     }

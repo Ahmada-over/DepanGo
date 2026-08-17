@@ -15,7 +15,7 @@ class MatchingEngine:
     """
     Domain service handling technician matching logic.
     1. Filter candidates by category and online status
-    2. Sort candidates by distance (ascending) then average rating (descending)
+    2. Sort candidates by ETA (ascending) then average rating (descending)
     3. Return ordered list of candidates to offer the mission to sequentially
     """
     @staticmethod
@@ -24,7 +24,8 @@ class MatchingEngine:
         client_lat: float,
         client_lon: float,
         category_id: str,
-        max_radius_km: float = 15.0
+        max_radius_km: float = 15.0,
+        eta_dict: Optional[dict[tuple, Optional[int]]] = None
     ) -> List[TechnicianProfileDomain]:
         valid_candidates = []
         for tech in candidates:
@@ -35,8 +36,16 @@ class MatchingEngine:
             
             dist = haversine_distance(client_lat, client_lon, tech.latitude, tech.longitude)
             if dist <= max_radius_km:
-                valid_candidates.append((dist, tech.average_rating, tech))
+                # Get ETA if available, otherwise fallback to a large number (so they rank last among those without ETA)
+                eta = float('inf')
+                if eta_dict:
+                    loc = (tech.latitude, tech.longitude)
+                    tech_eta = eta_dict.get(loc)
+                    if tech_eta is not None:
+                        eta = tech_eta
+                
+                valid_candidates.append((eta, tech.average_rating, dist, tech))
         
-        # Sort by distance asc, rating desc
-        valid_candidates.sort(key=lambda item: (item[0], -item[1]))
-        return [item[2] for item in valid_candidates]
+        # Sort by ETA asc, rating desc, distance asc
+        valid_candidates.sort(key=lambda item: (item[0], -item[1], item[2]))
+        return [item[3] for item in valid_candidates]

@@ -2,7 +2,8 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import '../core/config.dart';
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
+import '../core/api_client.dart';
 import '../providers/app_providers.dart';
 
 // Modèle pour le technicien sur la carte
@@ -54,19 +55,28 @@ class MapTechnician {
 class MapTechniciansNotifier extends StateNotifier<List<MapTechnician>> {
   WebSocketChannel? _channel;
   String? _currentCategoryId;
+  final Ref ref;
 
-  MapTechniciansNotifier() : super([]);
+  MapTechniciansNotifier(this.ref) : super([]);
 
   Future<void> initMap(String categoryId, double lat, double lng) async {
     _currentCategoryId = categoryId;
     
     // 1. Fetch initial nearby technicians
     try {
-      final uri = Uri.parse('${AppConfig.apiBaseUrl}/technicians/nearby?category_id=$categoryId&lat=$lat&lng=$lng&radius_km=50');
-      final response = await http.get(uri);
+      final dio = ref.read(apiClientProvider);
+      final response = await dio.get(
+        '/technicians/nearby',
+        queryParameters: {
+          'category_id': categoryId,
+          'lat': lat,
+          'lng': lng,
+          'radius_km': 50,
+        },
+      );
       
       if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
+        final List<dynamic> data = response.data;
         state = data.map((json) => MapTechnician.fromJson(json)).toList();
       }
     } catch (e) {
@@ -127,7 +137,7 @@ class MapTechniciansNotifier extends StateNotifier<List<MapTechnician>> {
 }
 
 final mapTechniciansProvider = StateNotifierProvider.autoDispose<MapTechniciansNotifier, List<MapTechnician>>((ref) {
-  final notifier = MapTechniciansNotifier();
+  final notifier = MapTechniciansNotifier(ref);
   ref.onDispose(() {
     notifier.closeMap();
   });

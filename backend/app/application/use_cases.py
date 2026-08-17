@@ -154,6 +154,9 @@ class BookingUseCases:
                 client_user = await user_repo.get_by_id(booking.client_id)
                 client_name = client_user.name if client_user else "Client App"
                 
+                from app.infrastructure.external_apis.maps import GoogleMapsEtaService
+                eta_service = GoogleMapsEtaService()
+                
                 for radius in radii_to_try:
                     logger.info(f"[MATCHING] Searching for technicians within {radius}km for booking {booking.id}")
                     candidates = await tech_repo.get_available_near(
@@ -170,8 +173,12 @@ class BookingUseCases:
                         logger.info(f"[MATCHING] No new candidates found within {radius}km. Expanding search...")
                         continue
                         
+                    # Fetch ETAs for all new candidates
+                    tech_locations = [(c.latitude, c.longitude) for c in new_candidates]
+                    eta_dict = await eta_service.get_etas(booking.latitude, booking.longitude, tech_locations)
+                        
                     ranked = MatchingEngine.filter_and_rank_technicians(
-                        new_candidates, booking.latitude, booking.longitude, booking.category_id, max_radius_km=radius
+                        new_candidates, booking.latitude, booking.longitude, booking.category_id, max_radius_km=radius, eta_dict=eta_dict
                     )
                     
                     if not ranked:
@@ -282,52 +289,62 @@ class BookingUseCases:
         return accepted
 
     async def update_status(self, booking_id: str, status: str, technician_id: Optional[str] = None, cancellation_reason: Optional[str] = None) -> Optional[BookingDomain]:
-        booking = await self.booking_repo.get_by_id(booking_id)
-        if not booking:
-            return None
+        max_retries = 3
+        for attempt in range(max_retries):
+            booking = await self.booking_repo.get_by_id(booking_id)
+            if not booking:
+                return None
 
-        # FSM: Valid transitions
-        current_status = booking.status.value if hasattr(booking.status, "value") else str(booking.status)
-        
-        valid_transitions = {
-            "pending": ["matched", "cancelled", "no_technician_found"],
-            "matched": ["accepted", "in_progress", "on_site", "completed", "pending", "cancelled"],
-            "accepted": ["in_progress", "on_site", "completed", "cancelled"],
-            "in_progress": ["on_site", "completed", "cancelled"],
-            "on_site": ["completed", "cancelled"],
-            "completed": [],
-            "cancelled": [],
-            "no_technician_found": ["cancelled"]
-        }
-
-        if status not in valid_transitions.get(current_status, []):
-            raise ValueError(f"Invalid state transition from {current_status} to {status}")
-
-        updated = await self.booking_repo.update_status(
-            booking_id=booking_id,
-            status=status,
-            technician_id=technician_id,
-            cancellation_reason=cancellation_reason,
-            expected_version=booking.version
-        )
-        if not updated:
-            raise ValueError("Concurrency conflict: booking was modified by another transaction.")
-        
-        # Broadcast status update via WebSocket
-        payload = {
-            "type": "STATUS_UPDATE",
-            "booking_id": booking_id,
-            "status": updated.status.value if hasattr(updated.status, "value") else str(updated.status),
-            "technician_id": updated.technician_id,
-            "scheduled_eta": updated.scheduled_eta
-        }
-        if cancellation_reason:
-            payload["cancellation_reason"] = cancellation_reason
+            # FSM: Valid transitions
+            current_status = booking.status.value if hasattr(booking.status, "value") else str(booking.status)
             
-        await ws_manager.broadcast_to_booking(booking_id, payload)
-        if updated.client_id:
-            await ws_manager.send_personal_message(updated.client_id, payload)
-        if technician_id:
-            await ws_manager.send_personal_message(technician_id, payload)
+            # Idempotency: if already in requested status, return success
+            if current_status == status:
+                return booking
+
+            valid_transitions = {
+                "pending": ["matched", "accepted", "in_progress", "cancelled", "no_technician_found"],
+                "matched": ["matched", "accepted", "in_progress", "on_site", "completed", "pending", "cancelled"],
+                "accepted": ["accepted", "in_progress", "on_site", "completed", "cancelled"],
+                "in_progress": ["in_progress", "on_site", "completed", "cancelled"],
+                "on_site": ["on_site", "completed", "cancelled"],
+                "completed": ["completed"],
+                "cancelled": ["cancelled"],
+                "no_technician_found": ["cancelled"]
+            }
+
+            if status not in valid_transitions.get(current_status, []):
+                raise ValueError(f"Invalid state transition from {current_status} to {status}")
+
+            updated = await self.booking_repo.update_status(
+                booking_id=booking_id,
+                status=status,
+                technician_id=technician_id,
+                cancellation_reason=cancellation_reason,
+                expected_version=booking.version
+            )
+            if updated:
+                # Broadcast status update via WebSocket
+                payload = {
+                    "type": "STATUS_UPDATE",
+                    "booking_id": booking_id,
+                    "status": updated.status.value if hasattr(updated.status, "value") else str(updated.status),
+                    "technician_id": updated.technician_id,
+                    "scheduled_eta": updated.scheduled_eta
+                }
+                if cancellation_reason:
+                    payload["cancellation_reason"] = cancellation_reason
+                    
+                await ws_manager.broadcast_to_booking(booking_id, payload)
+                if updated.client_id:
+                    await ws_manager.send_personal_message(updated.client_id, payload)
+                if technician_id:
+                    await ws_manager.send_personal_message(technician_id, payload)
+                
+                return updated
+            
+            # Version conflict — retry after a tiny pause
+            import asyncio
+            await asyncio.sleep(0.1 * (attempt + 1))
         
-        return updated
+        raise ValueError("Concurrency conflict: booking was modified by another transaction.")

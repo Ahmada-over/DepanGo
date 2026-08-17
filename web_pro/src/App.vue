@@ -354,7 +354,6 @@ function connectWs() {
               icon: 'mdi-information-outline',
               color: 'info'
             })
-            shouldPlaySound = true;
           } else if (data.type === 'NEW_MESSAGE') {
             notifStore.addNotification({
               title: `Message de ${data.sender_name || 'Client'}`,
@@ -363,7 +362,6 @@ function connectWs() {
               icon: 'mdi-message-text-outline',
               color: 'primary'
             })
-            shouldPlaySound = true;
           } else if (data.type === 'NO_TECHNICIAN') {
             notifStore.addNotification({
               title: 'Aucun technicien disponible',
@@ -372,7 +370,6 @@ function connectWs() {
               icon: 'mdi-account-off-outline',
               color: 'warning'
             })
-            shouldPlaySound = true;
           }
 
           if (shouldPlaySound) {

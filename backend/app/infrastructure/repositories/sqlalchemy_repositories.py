@@ -137,9 +137,15 @@ class SQLAlchemyTechnicianRepository(TechnicianRepositoryPort):
         await self.db.commit()
 
     async def get_available_near(self, category_id: str, lat: float, lon: float, radius_km: float) -> List[TechnicianProfileDomain]:
+        from datetime import datetime, timedelta
+        from app.core.config import settings
+        
+        freshness_threshold = datetime.utcnow() - timedelta(minutes=settings.TECHNICIAN_LOCATION_FRESHNESS_MINUTES)
+        
         stmt = select(TechnicianProfileModel, UserModel).join(UserModel, TechnicianProfileModel.user_id == UserModel.id).where(
             TechnicianProfileModel.availability_status == "online",
-            TechnicianProfileModel.verified == True
+            TechnicianProfileModel.verified == True,
+            TechnicianProfileModel.location_updated_at >= freshness_threshold
         )
         result = await self.db.execute(stmt)
         rows = result.all()

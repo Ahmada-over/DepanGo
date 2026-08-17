@@ -136,16 +136,66 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
       return;
     }
 
-    // Technician is on route: keep existing route and slice from closest point forward
+    // Technician is on route: snap position directly to road polyline and slice from closest point forward
+    final snapped = _snapToPolyline(LatLng(techLat, techLng), _fullRouteCoordinates);
     final remaining = _fullRouteCoordinates.sublist(closestIndex);
-    final updatedList = [LatLng(techLat, techLng), ...remaining];
-    if (_activePolylineCoordinates.length != updatedList.length) {
+    final updatedList = [snapped, ...remaining];
+    if (_activePolylineCoordinates.length != updatedList.length ||
+        (_activePolylineCoordinates.isNotEmpty && _activePolylineCoordinates.first != snapped)) {
       if (mounted) {
         setState(() {
           _activePolylineCoordinates = updatedList;
         });
       }
     }
+  }
+
+  LatLng _snapToPolyline(LatLng point, List<LatLng> polyline) {
+    if (polyline.isEmpty) return point;
+    if (polyline.length == 1) return polyline.first;
+
+    double minDistance = double.infinity;
+    LatLng closestPoint = polyline.first;
+
+    for (int i = 0; i < polyline.length - 1; i++) {
+      final a = polyline[i];
+      final b = polyline[i + 1];
+
+      final projected = _projectPointOnSegment(point, a, b);
+      final dist = Geolocator.distanceBetween(
+        point.latitude,
+        point.longitude,
+        projected.latitude,
+        projected.longitude,
+      );
+
+      if (dist < minDistance) {
+        minDistance = dist;
+        closestPoint = projected;
+      }
+    }
+
+    // If within 80m of the road, snap directly onto the road center line
+    if (minDistance <= 80.0) {
+      return closestPoint;
+    }
+    return point;
+  }
+
+  LatLng _projectPointOnSegment(LatLng p, LatLng a, LatLng b) {
+    final double dx = b.longitude - a.longitude;
+    final double dy = b.latitude - a.latitude;
+
+    if (dx == 0 && dy == 0) return a;
+
+    final double t = ((p.longitude - a.longitude) * dx + (p.latitude - a.latitude) * dy) /
+        (dx * dx + dy * dy);
+
+    final double clampedT = t.clamp(0.0, 1.0);
+    return LatLng(
+      a.latitude + clampedT * dy,
+      a.longitude + clampedT * dx,
+    );
   }
 
   @override
@@ -232,12 +282,13 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
     return 'Demande Reçue';
   }
 
-  String _getStatusDescription(String status, String? eta) {
+  String _getStatusDescription(String status, String? eta, [String? distance]) {
     if (status == 'matched') {
       return 'Technicien assigné • Préparation en cours';
     }
     if (status == 'in_progress') {
-      return 'En route • ETA ${eta ?? '15 min'}';
+      final distInfo = distance != null && distance.isNotEmpty ? ' ($distance)' : '';
+      return 'En route • ETA ${eta ?? '15 min'}$distInfo';
     }
     if (status == 'on_site' || status == 'arrived') {
       return 'Sur place • Diagnostic en cours';
@@ -295,7 +346,6 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
 
     final status = activeBooking?.status ?? 'matched';
     final stepIdx = _getStepIndex(status);
-    final etaText = activeBooking?.scheduledEta ?? '15 mins';
 
     String techName = 'Technicien';
     String techInitials = 'TE';
@@ -353,6 +403,50 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
       _resolveBookingAddress(activeBooking);
     }
 
+    // Compute exact real-time distance and ETA along the route
+    double remainingDistanceMeters = 0.0;
+    if (_activePolylineCoordinates.length >= 2) {
+      for (int i = 0; i < _activePolylineCoordinates.length - 1; i++) {
+        remainingDistanceMeters += Geolocator.distanceBetween(
+          _activePolylineCoordinates[i].latitude,
+          _activePolylineCoordinates[i].longitude,
+          _activePolylineCoordinates[i + 1].latitude,
+          _activePolylineCoordinates[i + 1].longitude,
+        );
+      }
+    } else if (techLat != null && techLng != null && activeBooking != null) {
+      remainingDistanceMeters = Geolocator.distanceBetween(
+        techLat!,
+        techLng!,
+        activeBooking.latitude,
+        activeBooking.longitude,
+      );
+    }
+
+    String dynamicDistanceText = '';
+    if (remainingDistanceMeters >= 1000) {
+      dynamicDistanceText = '${(remainingDistanceMeters / 1000).toStringAsFixed(1)} km';
+    } else if (remainingDistanceMeters > 0) {
+      dynamicDistanceText = '${remainingDistanceMeters.round()} m';
+    }
+
+    String dynamicEtaText;
+    if (status == 'on_site' || status == 'arrived' || (status == 'in_progress' && remainingDistanceMeters < 50)) {
+      dynamicEtaText = 'Sur place';
+    } else if (status == 'completed') {
+      dynamicEtaText = 'Terminé';
+    } else if (remainingDistanceMeters > 0) {
+      // Speed in Dakar urban traffic: ~24 km/h = ~400 meters/min
+      final int minutes = (remainingDistanceMeters / 400).ceil();
+      if (minutes <= 1) {
+        dynamicEtaText = '< 1 min';
+      } else {
+        dynamicEtaText = '$minutes min';
+      }
+    } else {
+      dynamicEtaText = activeBooking?.scheduledEta ?? '15 min';
+    }
+
     return Scaffold(
       body: Stack(
         children: [
@@ -402,11 +496,13 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
                   if (techLat != null && techLng != null && !['completed', 'cancelled', 'no_technician_found'].contains(status))
                     Marker(
                       markerId: const MarkerId('tech'),
-                      position: LatLng(techLat!, techLng!),
+                      position: _activePolylineCoordinates.isNotEmpty
+                          ? _snapToPolyline(LatLng(techLat!, techLng!), _activePolylineCoordinates)
+                          : LatLng(techLat!, techLng!),
                       icon: techTransport == 'voiture'
                           ? (_techCarIcon ?? BitmapDescriptor.defaultMarker)
                           : (_techMotoIcon ?? BitmapDescriptor.defaultMarker),
-                      anchor: const Offset(0.5, 0.85),
+                      anchor: const Offset(0.5, 0.92),
                       infoWindow: InfoWindow(
                         title: techName,
                         snippet: '${techRating.toStringAsFixed(1)} ★',
@@ -433,7 +529,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
                         ? Icons.navigation_rounded
                         : Icons.info_outline_rounded,
                     title: _getStatusTitle(status),
-                    subtitle: _getStatusDescription(status, etaText),
+                    subtitle: _getStatusDescription(status, dynamicEtaText, dynamicDistanceText),
                   ),
                 ),
               ],
@@ -578,7 +674,9 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
                                         child: Column(
                                           children: [
                                             const Text('ETA', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppTheme.primaryDark)),
-                                            Text(etaText, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryDark)),
+                                            Text(dynamicEtaText, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryDark)),
+                                            if (dynamicDistanceText.isNotEmpty && status == 'in_progress')
+                                              Text(dynamicDistanceText, style: const TextStyle(fontSize: 9, color: AppTheme.primaryDark, fontWeight: FontWeight.w600)),
                                           ],
                                         ),
                                       ),

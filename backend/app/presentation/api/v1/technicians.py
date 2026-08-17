@@ -85,9 +85,21 @@ async def update_location(
 ):
     """Update technician GPS location, broadcast to booking WS if active, and area WS."""
     repo = SQLAlchemyTechnicianRepository(db)
-    await repo.update_location(current_user_id, req.latitude, req.longitude)
+    # Auto-detect active mission for technician if booking_id not provided
+    if not booking_id:
+        from app.infrastructure.database.models import BookingModel
+        from sqlalchemy import select
+        res = await db.execute(
+            select(BookingModel).where(
+                BookingModel.technician_id == current_user_id,
+                BookingModel.status.in_(["matched", "in_progress", "on_site"])
+            )
+        )
+        active_b = res.scalars().first()
+        if active_b:
+            booking_id = active_b.id
 
-    # Broadcast to booking WS if an active booking is provided
+    # Broadcast to booking WS if an active booking is identified
     if booking_id:
         payload = {
             "type": "LOCATION_UPDATE",

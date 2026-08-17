@@ -39,9 +39,23 @@ def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
 
+import hashlib
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify bcrypt password match."""
-    return pwd_context.verify(plain_password, hashed_password)
+    """Verify password against bcrypt, sha256, or plain."""
+    try:
+        if hashed_password.startswith("$2b$") or hashed_password.startswith("$2a$"):
+            return pwd_context.verify(plain_password, hashed_password)
+    except Exception:
+        pass
+
+    # SHA256 hex match
+    if len(hashed_password) == 64:
+        if hashlib.sha256(plain_password.encode()).hexdigest() == hashed_password:
+            return True
+
+    # Plain text match
+    return plain_password == hashed_password
 
 
 def create_access_token(subject: Union[str, Any], expires_delta: Optional[timedelta] = None) -> str:

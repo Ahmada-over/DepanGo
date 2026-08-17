@@ -16,11 +16,12 @@ async def register(req: RegisterRequest, db: AsyncSession = Depends(get_db)):
     try:
         res = await use_case.register(
             name=req.name,
-            email=req.email,
             phone=req.phone,
             password=req.password,
             role=req.role,
+            email=req.email,
             category_ids=req.category_ids,
+            transport_mode=req.transport_mode,
         )
         return res
     except ValueError as e:
@@ -30,10 +31,10 @@ async def register(req: RegisterRequest, db: AsyncSession = Depends(get_db)):
 @router.post("/login", response_model=TokenResponse)
 async def login(request: Request, req: LoginRequest, db: AsyncSession = Depends(get_db)):
     """
-    Login endpoint — rate limited to 100 requests/minute per IP.
-    The limiter is applied via the app-level state set in main.py.
+    Login endpoint — rate limited to 50 requests/minute per IP.
+    Accepts email or phone number with password.
     """
-    from app.main import limiter  # import here to avoid circular imports
+    from app.main import limiter
 
     @limiter.limit("50/minute")
     async def _inner(request: Request):
@@ -48,7 +49,7 @@ async def login(request: Request, req: LoginRequest, db: AsyncSession = Depends(
     tech_repo = SQLAlchemyTechnicianRepository(db)
     use_case = AuthUseCases(user_repo, tech_repo)
     try:
-        res = await use_case.login(email=req.email, password=req.password)
+        res = await use_case.login(password=req.password, email=req.email, phone=req.phone)
         return res
     except ValueError as e:
         raise HTTPException(status_code=401, detail=str(e))

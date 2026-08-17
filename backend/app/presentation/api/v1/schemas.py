@@ -5,15 +5,17 @@ from datetime import datetime
 # Auth Schemas
 class RegisterRequest(BaseModel):
     name: str
-    email: str
     phone: str
     password: str
+    email: Optional[str] = None
     role: str = "client" # client | technician
     category_ids: Optional[List[str]] = None
+    transport_mode: Optional[str] = "moto"
 
 class LoginRequest(BaseModel):
-    email: str
     password: str
+    email: Optional[str] = None
+    phone: Optional[str] = None
 
 class TokenResponse(BaseModel):
     access_token: str

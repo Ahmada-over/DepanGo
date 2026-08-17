@@ -59,6 +59,32 @@ class SQLAlchemyUserRepository(UserRepositoryPort):
             created_at=model.created_at
         )
 
+    async def get_by_phone(self, phone: str) -> Optional[UserDomain]:
+        clean_phone = phone.replace(" ", "").replace("-", "")
+        result = await self.db.execute(select(UserModel))
+        users = result.scalars().all()
+        for u in users:
+            u_clean = u.phone.replace(" ", "").replace("-", "") if u.phone else ""
+            if u_clean == clean_phone or (len(clean_phone) >= 9 and clean_phone[-9:] in u_clean):
+                return UserDomain(
+                    id=u.id,
+                    name=u.name,
+                    phone=u.phone,
+                    email=u.email,
+                    role=UserRole(u.role),
+                    password_hash=u.password_hash,
+                    created_at=u.created_at
+                )
+        return None
+
+    async def get_by_identifier(self, identifier: str) -> Optional[UserDomain]:
+        if "@" in identifier:
+            return await self.get_by_email(identifier)
+        user = await self.get_by_email(identifier)
+        if user:
+            return user
+        return await self.get_by_phone(identifier)
+
     async def get_by_id(self, user_id: str) -> Optional[UserDomain]:
         result = await self.db.execute(select(UserModel).where(UserModel.id == user_id))
         model = result.scalars().first()

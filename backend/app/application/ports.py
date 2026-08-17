@@ -12,6 +12,12 @@ class UserRepositoryPort(ABC):
     
     @abstractmethod
     async def get_by_email(self, email: str) -> Optional[UserDomain]: pass
+
+    @abstractmethod
+    async def get_by_phone(self, phone: str) -> Optional[UserDomain]: pass
+
+    @abstractmethod
+    async def get_by_identifier(self, identifier: str) -> Optional[UserDomain]: pass
     
     @abstractmethod
     async def get_by_id(self, user_id: str) -> Optional[UserDomain]: pass

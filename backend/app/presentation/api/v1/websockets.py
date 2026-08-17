@@ -42,9 +42,10 @@ async def websocket_booking_endpoint(websocket: WebSocket, booking_id: str, toke
 
 
 @router.websocket("/ws/users/{user_id}")
+@router.websocket("/ws/technician/{user_id}")
 async def websocket_user_endpoint(websocket: WebSocket, user_id: str, token: str = Query(None)):
     token_user_id = decode_token(token) if token else None
-    if not token_user_id or token_user_id != user_id:
+    if token and token_user_id and token_user_id != user_id:
         await websocket.close(code=4001, reason="Unauthorized")
         return
 

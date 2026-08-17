@@ -24,10 +24,13 @@ class AuthUseCases:
         self.user_repo = user_repo
         self.tech_repo = tech_repo
 
-    async def register(self, name: str, email: str, phone: str, password: str, role: str, category_ids: Optional[List[str]] = None) -> dict:
-        existing = await self.user_repo.get_by_email(email)
+    async def register(self, name: str, phone: str, password: str, role: str, email: Optional[str] = None, category_ids: Optional[List[str]] = None, transport_mode: Optional[str] = "moto") -> dict:
+        user_email = email or f"{phone.replace(' ', '').replace('+', '')}@techconnect.sn"
+        existing = await self.user_repo.get_by_email(user_email)
+        if not existing:
+            existing = await self.user_repo.get_by_phone(phone)
         if existing:
-            raise ValueError("Email already registered")
+            raise ValueError("Un compte avec cet email ou ce numéro de téléphone existe déjà.")
         
         user_id = str(uuid.uuid4())
         hashed = hash_password(password)
@@ -37,7 +40,7 @@ class AuthUseCases:
             id=user_id,
             name=name,
             phone=phone,
-            email=email,
+            email=user_email,
             role=user_role,
             password_hash=hashed
         )
@@ -55,7 +58,8 @@ class AuthUseCases:
                 average_rating=5.0,
                 verified=True,
                 user_name=name,
-                user_phone=phone
+                user_phone=phone,
+                transport_mode=transport_mode or "moto"
             )
             await self.tech_repo.create_profile(tech_profile)
 
@@ -72,10 +76,14 @@ class AuthUseCases:
             }
         }
 
-    async def login(self, email: str, password: str) -> dict:
-        user = await self.user_repo.get_by_email(email)
+    async def login(self, password: str, email: Optional[str] = None, phone: Optional[str] = None) -> dict:
+        identifier = email or phone
+        if not identifier:
+            raise ValueError("Veuillez fournir un numéro de téléphone ou un email.")
+        
+        user = await self.user_repo.get_by_identifier(identifier)
         if not user or not verify_password(password, user.password_hash):
-            raise ValueError("Invalid email or password")
+            raise ValueError("Identifiants incorrects (numéro/email ou mot de passe invalide)")
         
         token = create_access_token(user.id)
         return {

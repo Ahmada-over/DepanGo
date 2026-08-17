@@ -1,9 +1,13 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
+
 import '../core/theme.dart';
 import '../core/app_toast.dart';
 import '../core/map_markers.dart';
@@ -11,7 +15,6 @@ import '../core/map_style.dart';
 import '../core/config.dart';
 import '../models/models.dart';
 import '../providers/app_providers.dart';
-import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 
 class TrackingChatScreen extends ConsumerStatefulWidget {
   const TrackingChatScreen({super.key});
@@ -20,10 +23,7 @@ class TrackingChatScreen extends ConsumerStatefulWidget {
   ConsumerState<TrackingChatScreen> createState() => _TrackingChatScreenState();
 }
 
-class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  final _msgController = TextEditingController();
+class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
   GoogleMapController? _mapController;
   final DraggableScrollableController _sheetController =
       DraggableScrollableController();
@@ -43,17 +43,133 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
     _loadMapIcons();
+  }
+
+  Future<BitmapDescriptor> _createCustomMarkerBitmap({
+    required IconData icon,
+    required Color primaryColor,
+    required Color iconColor,
+    double size = 110.0,
+  }) async {
+    final pictureRecorder = ui.PictureRecorder();
+    final canvas = Canvas(pictureRecorder);
+    final width = size;
+    final height = size * 1.25;
+
+    // 1. Drop shadow
+    final shadowPaint = Paint()
+      ..color = Colors.black.withValues(alpha: 0.35)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+    canvas.drawCircle(Offset(width / 2, width * 0.45), width * 0.38, shadowPaint);
+
+    // 2. Pin pointer triangle
+    final path = Path();
+    path.moveTo(width * 0.34, width * 0.72);
+    path.lineTo(width / 2, height - 2);
+    path.lineTo(width * 0.66, width * 0.72);
+    path.close();
+
+    final pinPaint = Paint()
+      ..color = primaryColor
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(path, pinPaint);
+
+    // 3. Outer border circle
+    final borderPaint = Paint()
+      ..color = Colors.white
+      ..strokeWidth = 4.0
+      ..style = PaintingStyle.stroke;
+    final circlePaint = Paint()
+      ..color = primaryColor
+      ..style = PaintingStyle.fill;
+
+    canvas.drawCircle(Offset(width / 2, width * 0.45), width * 0.38, circlePaint);
+    canvas.drawCircle(Offset(width / 2, width * 0.45), width * 0.38, borderPaint);
+
+    // 4. Center icon
+    final textPainter = TextPainter(textDirection: TextDirection.ltr);
+    textPainter.text = TextSpan(
+      text: String.fromCharCode(icon.codePoint),
+      style: TextStyle(
+        fontSize: width * 0.44,
+        fontFamily: icon.fontFamily,
+        package: icon.fontPackage,
+        color: iconColor,
+      ),
+    );
+    textPainter.layout();
+    textPainter.paint(
+      canvas,
+      Offset(
+        width / 2 - textPainter.width / 2,
+        width * 0.45 - textPainter.height / 2,
+      ),
+    );
+
+    final picture = pictureRecorder.endRecording();
+    final image = await picture.toImage(width.toInt(), height.toInt());
+    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+    return BitmapDescriptor.fromBytes(byteData!.buffer.asUint8List());
   }
 
   Future<void> _loadMapIcons() async {
     if (!mounted) return;
-    setState(() {
-      _destinationIcon = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed);
-      _techMotoIcon = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange);
-      _techCarIcon = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue);
-    });
+    try {
+      final moto = await _createCustomMarkerBitmap(
+        icon: Icons.two_wheeler_rounded,
+        primaryColor: const Color(0xFF0F766E), // Emerald
+        iconColor: Colors.white,
+      );
+      final car = await _createCustomMarkerBitmap(
+        icon: Icons.directions_car_rounded,
+        primaryColor: const Color(0xFF1E40AF), // Deep Blue
+        iconColor: Colors.white,
+      );
+      final dest = await _createCustomMarkerBitmap(
+        icon: Icons.person_pin_circle_rounded,
+        primaryColor: const Color(0xFFDC2626), // Red
+        iconColor: Colors.white,
+      );
+      if (mounted) {
+        setState(() {
+          _techMotoIcon = moto;
+          _techCarIcon = car;
+          _destinationIcon = dest;
+        });
+      }
+    } catch (e) {
+      debugPrint('[MapIcons] Error generating custom markers: $e');
+      if (mounted) {
+        setState(() {
+          _destinationIcon = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed);
+          _techMotoIcon = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange);
+          _techCarIcon = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue);
+        });
+      }
+    }
+  }
+
+  Future<void> _makePhoneCall(String phoneNumber) async {
+    final clean = phoneNumber.replaceAll(RegExp(r'[^\d+]'), '');
+    final uri = Uri(scheme: 'tel', path: clean.isNotEmpty ? clean : '+221770000000');
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        await launchUrl(uri);
+      }
+    } catch (e) {
+      debugPrint('Could not launch dialer: $e');
+      if (mounted) {
+        AppToast.show(
+          context,
+          title: 'Numéro de téléphone',
+          message: 'Contact : $phoneNumber',
+          type: AppToastType.info,
+        );
+      }
+    }
   }
 
   Future<void> _fetchRoute(double startLat, double startLng, double endLat, double endLng) async {
@@ -108,13 +224,11 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
         (_lastCalculatedDestination!.latitude != dest.latitude ||
          _lastCalculatedDestination!.longitude != dest.longitude);
 
-    // Initial fetch or new destination
     if (_fullRouteCoordinates.isEmpty || isNewDestination) {
       _fetchRoute(techLat, techLng, destLat, destLng);
       return;
     }
 
-    // Check distance between technician and the planned route
     double minDistance = double.infinity;
     int closestIndex = 0;
     for (int i = 0; i < _fullRouteCoordinates.length; i++) {
@@ -126,17 +240,14 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
       }
     }
 
-    // If technician deviated (>80 meters from route), recalculate new path
-    if (minDistance > 80.0) {
+    if (minDistance > 100.0) {
       final now = DateTime.now();
-      if (_lastRouteFetchTime == null || now.difference(_lastRouteFetchTime!).inSeconds >= 5) {
-        debugPrint('[Navigation] Deviation detected (${minDistance.toStringAsFixed(1)}m from route). Recalculating path...');
+      if (_lastRouteFetchTime == null || now.difference(_lastRouteFetchTime!).inSeconds >= 10) {
         _fetchRoute(techLat, techLng, destLat, destLng);
       }
       return;
     }
 
-    // Technician is on route: snap position directly to road polyline and slice from closest point forward
     final snapped = _snapToPolyline(LatLng(techLat, techLng), _fullRouteCoordinates);
     final remaining = _fullRouteCoordinates.sublist(closestIndex);
     final updatedList = [snapped, ...remaining];
@@ -175,11 +286,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
       }
     }
 
-    // If within 80m of the road, snap directly onto the road center line
-    if (minDistance <= 80.0) {
-      return closestPoint;
-    }
-    return point;
+    return (minDistance < 80.0) ? closestPoint : point;
   }
 
   LatLng _projectPointOnSegment(LatLng p, LatLng a, LatLng b) {
@@ -200,69 +307,47 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
 
   @override
   void dispose() {
-    _tabController.dispose();
-    _msgController.dispose();
-    _sheetController.dispose();
     _mapController?.dispose();
+    _sheetController.dispose();
     super.dispose();
   }
 
-  Future<void> _resolveBookingAddress(BookingModel booking) async {
+  void _resolveBookingAddress(BookingModel booking) async {
     if (_lastGeocodedBookingId == booking.id && _resolvedAddress != null) return;
     _lastGeocodedBookingId = booking.id;
 
     if (booking.addressText.isNotEmpty &&
-        !['Dakar', 'Point E, Dakar, Sénégal', 'Dakar, Sénégal', 'Position sélectionnée', 'Position sélectionnée, Dakar']
-            .contains(booking.addressText.trim())) {
-      if (mounted) {
-        setState(() => _resolvedAddress = booking.addressText);
-      }
+        !booking.addressText.toLowerCase().contains('position sélectionnée')) {
+      if (mounted) setState(() => _resolvedAddress = booking.addressText);
       return;
     }
 
     try {
-      final placemarks = await placemarkFromCoordinates(
+      List<Placemark> placemarks = await placemarkFromCoordinates(
         booking.latitude,
         booking.longitude,
       );
-      if (placemarks.isNotEmpty) {
-        final place = placemarks.first;
-        final List<String> parts = [];
-        final street = place.street?.trim();
-        final subLocality = place.subLocality?.trim();
-        final locality = place.locality?.trim();
-        final name = place.name?.trim();
+      if (placemarks.isNotEmpty && mounted) {
+        final p = placemarks.first;
+        final parts = <String>[];
+        if (p.subLocality != null && p.subLocality!.isNotEmpty) parts.add(p.subLocality!);
+        if (p.street != null && p.street!.isNotEmpty && p.street != p.subLocality) parts.add(p.street!);
+        if (p.locality != null && p.locality!.isNotEmpty && !parts.contains(p.locality)) parts.add(p.locality!);
 
-        if (street != null &&
-            street.isNotEmpty &&
-            !street.contains('+') &&
-            !street.toLowerCase().contains('unnamed')) {
-          parts.add(street);
-        } else if (name != null &&
-            name.isNotEmpty &&
-            !name.contains('+') &&
-            !name.toLowerCase().contains('unnamed')) {
-          parts.add(name);
-        }
-        if (subLocality != null &&
-            subLocality.isNotEmpty &&
-            !parts.contains(subLocality)) {
-          parts.add(subLocality);
-        }
-        if (locality != null &&
-            locality.isNotEmpty &&
-            !parts.contains(locality)) {
-          parts.add(locality);
-        }
+        final dynamicAddress = parts.isNotEmpty
+            ? parts.join(', ')
+            : '${booking.latitude.toStringAsFixed(4)}, ${booking.longitude.toStringAsFixed(4)} (Dakar)';
 
-        final resolved =
-            parts.isNotEmpty ? parts.join(', ') : booking.addressText;
-        if (mounted && resolved.isNotEmpty) {
-          setState(() => _resolvedAddress = resolved);
-        }
+        setState(() {
+          _resolvedAddress = dynamicAddress;
+        });
       }
     } catch (e) {
-      debugPrint('[Tracking] Reverse geocoding error: $e');
+      if (mounted) {
+        setState(() {
+          _resolvedAddress = '${booking.latitude.toStringAsFixed(4)}, ${booking.longitude.toStringAsFixed(4)} (Dakar)';
+        });
+      }
     }
   }
 
@@ -271,7 +356,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
     if (status == 'in_progress') return 2;
     if (status == 'on_site' || status == 'arrived') return 3;
     if (status == 'completed') return 4;
-    return 1;
+    return 0;
   }
 
   String _getStatusTitle(String status) {
@@ -299,14 +384,6 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
     return 'Recherche de technicien…';
   }
 
-  Color _getStatusColor(String status) {
-    if (status == 'matched') return Colors.blue;
-    if (status == 'in_progress') return Colors.orange;
-    if (status == 'on_site' || status == 'arrived') return AppTheme.primaryEmerald;
-    if (status == 'completed') return Colors.green;
-    return Colors.grey;
-  }
-
   IconData _getCategoryIcon(String catId) {
     if (catId.contains('plumb')) return Icons.plumbing_rounded;
     if (catId.contains('hvac') || catId.contains('clim')) return Icons.ac_unit_rounded;
@@ -316,10 +393,10 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
   }
 
   String _getCategoryName(String catId) {
-    if (catId == 'cat_plumbing' || catId.contains('plumb')) return 'Plomberie & Sanitaire';
-    if (catId == 'cat_hvac' || catId.contains('clim')) return 'Froid & Climatisation';
-    if (catId == 'cat_electrical' || catId.contains('electr')) return 'Électricité Générale';
-    if (catId == 'cat_appliances' || catId.contains('appliance')) return 'Électroménager';
+    if (catId.contains('plumb')) return 'Plomberie Express';
+    if (catId.contains('hvac') || catId.contains('clim')) return 'Climatisation & Froid';
+    if (catId.contains('electr')) return 'Électricité Générale';
+    if (catId.contains('appliance')) return 'Électroménager';
     return 'Dépannage Express';
   }
 
@@ -347,8 +424,9 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
     final status = activeBooking?.status ?? 'matched';
     final stepIdx = _getStepIndex(status);
 
-    String techName = 'Technicien';
+    String techName = 'Technicien Pro';
     String techInitials = 'TE';
+    String techPhone = '+221 77 000 00 00';
     double techRating = 4.9;
     double? techLat;
     double? techLng;
@@ -356,8 +434,10 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
 
     registeredTechsAsync.whenData((techList) {
       final Map<String, dynamic> defaultTech = {
-        'name': 'Technicien',
-        'average_rating': 4.9
+        'name': 'Technicien Pro',
+        'average_rating': 4.9,
+        'phone': '+221 77 000 00 00',
+        'transport_mode': 'moto',
       };
       Map<String, dynamic> found = defaultTech;
       if (techList.isNotEmpty) {
@@ -371,16 +451,16 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
       techLat = found['latitude'] as double?;
       techLng = found['longitude'] as double?;
       
-      techName =
-          (found['name'] ?? found['user_name'] ?? 'Technicien').toString();
+      techName = (found['name'] ?? found['user_name'] ?? 'Technicien Pro').toString();
+      techPhone = (found['phone'] ?? found['user_phone'] ?? '+221 77 000 00 00').toString();
       techRating = (found['average_rating'] as num?)?.toDouble() ?? 4.9;
       techTransport = (found['transport_mode'] ?? 'moto').toString();
+      
       final parts = techName.split(' ');
       if (parts.length >= 2) {
         techInitials = '${parts[0][0]}${parts[1][0]}'.toUpperCase();
       } else if (techName.isNotEmpty) {
-        techInitials =
-            techName.substring(0, techName.length.clamp(0, 2)).toUpperCase();
+        techInitials = techName.substring(0, techName.length.clamp(0, 2)).toUpperCase();
       }
     });
 
@@ -436,7 +516,6 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
     } else if (status == 'completed') {
       dynamicEtaText = 'Terminé';
     } else if (remainingDistanceMeters > 0) {
-      // Speed in Dakar urban traffic: ~24 km/h = ~400 meters/min
       final int minutes = (remainingDistanceMeters / 400).ceil();
       if (minutes <= 1) {
         dynamicEtaText = '< 1 min';
@@ -463,7 +542,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
                   zoom: 14.0,
                 ),
                 style: kMinimalMapStyle,
-                padding: const EdgeInsets.only(bottom: 300),
+                padding: const EdgeInsets.only(bottom: 260),
                 myLocationEnabled: false,
                 zoomControlsEnabled: false,
                 compassEnabled: false,
@@ -491,7 +570,8 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
                       markerId: const MarkerId('client'),
                       position: LatLng(activeBooking.latitude, activeBooking.longitude),
                       icon: _destinationIcon!,
-                      anchor: const Offset(0.5, 0.92),
+                      anchor: const Offset(0.5, 0.95),
+                      infoWindow: const InfoWindow(title: 'Votre Lieu d\'intervention'),
                     ),
                   if (techLat != null && techLng != null && !['completed', 'cancelled', 'no_technician_found'].contains(status))
                     Marker(
@@ -502,16 +582,17 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
                       icon: techTransport == 'voiture'
                           ? (_techCarIcon ?? BitmapDescriptor.defaultMarker)
                           : (_techMotoIcon ?? BitmapDescriptor.defaultMarker),
-                      anchor: const Offset(0.5, 0.92),
+                      anchor: const Offset(0.5, 0.95),
                       infoWindow: InfoWindow(
-                        title: techName,
-                        snippet: '${techRating.toStringAsFixed(1)} ★',
+                        title: '$techName (${techTransport == 'voiture' ? 'Voiture' : 'Moto'})',
+                        snippet: '${techRating.toStringAsFixed(1)} ★ • $techPhone',
                       ),
                     ),
                 },
               ),
             ),
 
+          // 2. Top Header Navigation Bar
           Positioned(
             top: MediaQuery.of(context).padding.top + 12,
             left: 16,
@@ -526,7 +607,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
                 Expanded(
                   child: MapInfoChip(
                     icon: status == 'in_progress'
-                        ? Icons.navigation_rounded
+                        ? (techTransport == 'voiture' ? Icons.directions_car_rounded : Icons.two_wheeler_rounded)
                         : Icons.info_outline_rounded,
                     title: _getStatusTitle(status),
                     subtitle: _getStatusDescription(status, dynamicEtaText, dynamicDistanceText),
@@ -536,12 +617,12 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
             ),
           ),
 
-          // 3. Bottom Modal Sheet (Draggable)
+          // 3. Bottom Modal Sheet (Single Fluid View)
           DraggableScrollableSheet(
             controller: _sheetController,
-            initialChildSize: 0.50,
-            minChildSize: 0.18,
-            maxChildSize: 0.95,
+            initialChildSize: 0.44,
+            minChildSize: 0.20,
+            maxChildSize: 0.92,
             builder: (context, scrollController) {
               return Container(
                 decoration: const BoxDecoration(
@@ -551,16 +632,18 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
                     topRight: Radius.circular(24),
                   ),
                   boxShadow: [
-                    BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -2))
+                    BoxShadow(color: Colors.black12, blurRadius: 12, offset: Offset(0, -3))
                   ],
                 ),
-                child: Column(
+                child: ListView(
+                  controller: scrollController,
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
                   children: [
                     // Drag Handle
                     Center(
                       child: Container(
-                        margin: const EdgeInsets.only(top: 12, bottom: 8),
-                        width: 40,
+                        margin: const EdgeInsets.only(bottom: 12),
+                        width: 44,
                         height: 5,
                         decoration: BoxDecoration(
                           color: Colors.grey[300],
@@ -568,259 +651,180 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
                         ),
                       ),
                     ),
-                    
-                    // TabBar inside Modal
-                    TabBar(
-                      controller: _tabController,
-                      labelColor: AppTheme.primaryEmerald,
-                      unselectedLabelColor: AppTheme.textMuted,
-                      indicatorColor: AppTheme.primaryEmerald,
-                      tabs: const [
-                        Tab(icon: Icon(Icons.info_outline), text: 'Détails'),
-                        Tab(icon: Icon(Icons.chat_bubble_outline), text: 'Chat'),
-                      ],
-                    ),
-                    
-                    // TabBarView Content
-                    Expanded(
-                      child: TabBarView(
-                        controller: _tabController,
+
+                    // Stepper Bar
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          // Tab 1: Dossier Details
-                          SingleChildScrollView(
-                            controller: scrollController,
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              children: [
-                                // Stepper Bar
-                                Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: const Color(0xFFF1F5F9)),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                    children: [
-                                      _buildStepItem(1, 'Assignée', stepIdx >= 1, Colors.blue),
-                                      _buildStepDivider(stepIdx >= 2),
-                                      _buildStepItem(2, 'En Route', stepIdx >= 2, Colors.orange),
-                                      _buildStepDivider(stepIdx >= 3),
-                                      _buildStepItem(3, 'Sur Place', stepIdx >= 3, AppTheme.primaryEmerald),
-                                      _buildStepDivider(stepIdx >= 4),
-                                      _buildStepItem(4, 'Clôturée', stepIdx >= 4, Colors.green),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 14),
+                          _buildStepItem(1, 'Assignée', stepIdx >= 1, Colors.blue),
+                          _buildStepDivider(stepIdx >= 2),
+                          _buildStepItem(2, 'En Route', stepIdx >= 2, Colors.orange),
+                          _buildStepDivider(stepIdx >= 3),
+                          _buildStepItem(3, 'Sur Place', stepIdx >= 3, AppTheme.primaryEmerald),
+                          _buildStepDivider(stepIdx >= 4),
+                          _buildStepItem(4, 'Clôturée', stepIdx >= 4, Colors.green),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
 
-                                // Technician Info Card
-                                Container(
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(20),
-                                    boxShadow: [
-                                      BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4)),
-                                    ],
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      CircleAvatar(
-                                        radius: 26,
-                                        backgroundColor: AppTheme.primaryEmerald,
-                                        child: Text(techInitials, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                                      ),
-                                      const SizedBox(width: 14),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Expanded(
-                                                  child: Text(techName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15), maxLines: 1, overflow: TextOverflow.ellipsis),
-                                                ),
-                                                const SizedBox(width: 4),
-                                                const Icon(Icons.verified, size: 16, color: AppTheme.primaryEmerald),
-                                              ],
-                                            ),
-                                            const Text('Technicien Spécialiste Pro', style: TextStyle(fontSize: 11, color: AppTheme.textMuted)),
-                                            const SizedBox(height: 4),
-                                            Row(
-                                              children: [
-                                                Flexible(
-                                                  child: Container(
-                                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                                    decoration: BoxDecoration(color: _getStatusColor(status).withOpacity(0.15), borderRadius: BorderRadius.circular(6)),
-                                                    child: Text(
-                                                      _getStatusTitle(status), maxLines: 1, overflow: TextOverflow.ellipsis,
-                                                      style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: _getStatusColor(status)),
-                                                    ),
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 4),
-                                                const Icon(Icons.star, size: 12, color: Colors.amber),
-                                                Text(' ${techRating.toStringAsFixed(1)}', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                                        decoration: BoxDecoration(color: AppTheme.primaryLight, borderRadius: BorderRadius.circular(12)),
-                                        child: Column(
-                                          children: [
-                                            const Text('ETA', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppTheme.primaryDark)),
-                                            Text(dynamicEtaText, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryDark)),
-                                            if (dynamicDistanceText.isNotEmpty && status == 'in_progress')
-                                              Text(dynamicDistanceText, style: const TextStyle(fontSize: 9, color: AppTheme.primaryDark, fontWeight: FontWeight.w600)),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 14),
-
-                                // Request Details Card (Panne, Lieu, Heure, Catégorie)
-                                if (activeBooking != null) ...[
-                                  _buildRequestDetailsCard(activeBooking, techLat, techLng),
-                                  const SizedBox(height: 14),
-                                ],
-
-                                // Action Buttons
-                                if (!['completed', 'cancelled', 'no_technician_found'].contains(status))
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: SizedBox(
-                                          height: 48,
-                                          child: ElevatedButton(
-                                            onPressed: () => _showReviewDialog(context, notifier),
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: AppTheme.primaryEmerald,
-                                              shape: const StadiumBorder(),
-                                            ),
-                                            child: const Text('Clôturer', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white)),
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: SizedBox(
-                                          height: 48,
-                                          child: ElevatedButton(
-                                            onPressed: () => _showCancelDialog(context, notifier),
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.redAccent,
-                                              shape: const StadiumBorder(),
-                                            ),
-                                            child: const Text('Annuler', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white)),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                const SizedBox(height: 24),
-                              ],
-                            ),
-                          ),
-                          
-                          // Tab 2: Chat
-                          Column(
+                    // Technician Info Card
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFFF1F5F9)),
+                        boxShadow: [
+                          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4)),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
                             children: [
+                              CircleAvatar(
+                                radius: 26,
+                                backgroundColor: techTransport == 'voiture' ? const Color(0xFF1E40AF) : AppTheme.primaryEmerald,
+                                child: Text(techInitials, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                              ),
+                              const SizedBox(width: 14),
                               Expanded(
-                                child: ListView.builder(
-                                  controller: scrollController,
-                                  padding: const EdgeInsets.all(16),
-                                  itemCount: notifier.messages.length + 1,
-                                  itemBuilder: (context, index) {
-                                    if (index == 0) {
-                                      return Center(
-                                        child: Container(
-                                          margin: const EdgeInsets.only(bottom: 16),
-                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                          decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(12)),
-                                          child: Text('Canal sécurisé ouvert avec $techName (Pro)', style: const TextStyle(fontSize: 10, color: AppTheme.textMuted)),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(techName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15), maxLines: 1, overflow: TextOverflow.ellipsis),
                                         ),
-                                      );
-                                    }
-                                    final msg = notifier.messages[index - 1];
-                                    final currentUser = ref.watch(authProvider);
-                                    final isMe = msg.senderId == (currentUser?.id ?? 'user_client_demo');
-
-                                    return Align(
-                                      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-                                      child: Container(
-                                        margin: const EdgeInsets.only(bottom: 10),
-                                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                                        decoration: BoxDecoration(
-                                          color: isMe ? AppTheme.primaryEmerald : Colors.white,
-                                          borderRadius: BorderRadius.circular(16),
-                                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 4)],
+                                        const SizedBox(width: 4),
+                                        const Icon(Icons.verified, size: 16, color: AppTheme.primaryEmerald),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFF1F5F9),
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                techTransport == 'voiture' ? Icons.directions_car_rounded : Icons.two_wheeler_rounded,
+                                                size: 13,
+                                                color: techTransport == 'voiture' ? Colors.blue[800] : const Color(0xFF0F766E),
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                techTransport == 'voiture' ? 'Voiture' : 'Moto Express',
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: techTransport == 'voiture' ? Colors.blue[800] : const Color(0xFF0F766E),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
-                                        child: Column(
-                                          crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                                          children: [
-                                            Text(msg.senderName, style: TextStyle(color: isMe ? Colors.white70 : AppTheme.textMuted, fontSize: 9, fontWeight: FontWeight.bold)),
-                                            const SizedBox(height: 2),
-                                            Text(msg.content, style: TextStyle(color: isMe ? Colors.white : AppTheme.textDark, fontSize: 13)),
-                                          ],
-                                        ),
-                                      ),
-                                    );
-                                  },
+                                        const SizedBox(width: 8),
+                                        const Icon(Icons.star, size: 13, color: Colors.amber),
+                                        Text(' ${techRating.toStringAsFixed(1)}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                      ],
+                                    ),
+                                  ],
                                 ),
                               ),
-                              // Chat Input
                               Container(
-                                padding: const EdgeInsets.all(12),
-                                color: Colors.white,
-                                child: Row(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                decoration: BoxDecoration(color: AppTheme.primaryLight, borderRadius: BorderRadius.circular(12)),
+                                child: Column(
                                   children: [
-                                    Expanded(
-                                      child: TextField(
-                                        controller: _msgController,
-                                        decoration: InputDecoration(
-                                          hintText: 'Message au technicien...',
-                                          hintStyle: const TextStyle(fontSize: 12),
-                                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                          filled: true,
-                                          fillColor: const Color(0xFFF8FAFC),
-                                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
-                                        ),
-                                        onSubmitted: (txt) {
-                                          if (txt.trim().isNotEmpty) {
-                                            notifier.sendMessage(txt.trim());
-                                            _msgController.clear();
-                                            setState(() {});
-                                          }
-                                        },
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    IconButton(
-                                      icon: const Icon(Icons.send, color: AppTheme.primaryEmerald),
-                                      onPressed: () {
-                                        final txt = _msgController.text.trim();
-                                        if (txt.isNotEmpty) {
-                                          notifier.sendMessage(txt);
-                                          _msgController.clear();
-                                          setState(() {});
-                                        }
-                                      },
-                                    ),
+                                    const Text('ETA', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppTheme.primaryDark)),
+                                    Text(dynamicEtaText, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryDark)),
+                                    if (dynamicDistanceText.isNotEmpty && status == 'in_progress')
+                                      Text(dynamicDistanceText, style: const TextStyle(fontSize: 9, color: AppTheme.primaryDark, fontWeight: FontWeight.w600)),
                                   ],
                                 ),
                               ),
                             ],
                           ),
+                          const SizedBox(height: 14),
+
+                          // Direct Call Button
+                          SizedBox(
+                            width: double.infinity,
+                            height: 46,
+                            child: ElevatedButton.icon(
+                              onPressed: () => _makePhoneCall(techPhone),
+                              icon: const Icon(Icons.phone_in_talk_rounded, color: Colors.white, size: 20),
+                              label: Text(
+                                'Appeler le Technicien ($techPhone)',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF0F766E),
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
+                    const SizedBox(height: 14),
+
+                    // Request Details Card (Panne, Lieu, Heure, Catégorie)
+                    if (activeBooking != null) ...[
+                      _buildRequestDetailsCard(activeBooking, techLat, techLng),
+                      const SizedBox(height: 14),
+                    ],
+
+                    // Action Buttons (Clôturer / Annuler)
+                    if (!['completed', 'cancelled', 'no_technician_found'].contains(status))
+                      Row(
+                        children: [
+                          Expanded(
+                            child: SizedBox(
+                              height: 48,
+                              child: ElevatedButton(
+                                onPressed: () => _showReviewDialog(context, notifier),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.primaryEmerald,
+                                  shape: const StadiumBorder(),
+                                ),
+                                child: const Text('Clôturer', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white)),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: SizedBox(
+                              height: 48,
+                              child: ElevatedButton(
+                                onPressed: () => _showCancelDialog(context, notifier),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.redAccent,
+                                  shape: const StadiumBorder(),
+                                ),
+                                child: const Text('Annuler', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white)),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    const SizedBox(height: 28),
                   ],
                 ),
               );
@@ -1005,7 +1009,6 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
                 final finalReason = selectedReason == 'Autre'
                     ? reasonController.text
                     : selectedReason!;
-                // Simulate sending cancellation with reason to backend. The notifier would need a cancelMethod.
                 notifier.cancelBooking(finalReason);
                 AppToast.show(
                   context,
@@ -1033,7 +1036,6 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
     final shortId =
         booking.id.length > 8 ? booking.id.substring(0, 8) : booking.id;
 
-    // Calculate dynamic live distance from technician to client
     String? distanceText;
     if (techLat != null && techLng != null) {
       final meters = Geolocator.distanceBetween(
@@ -1065,7 +1067,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
         border: Border.all(color: const Color(0xFFF1F5F9)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -1198,7 +1200,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: Colors.orange.withOpacity(0.12),
+                          color: Colors.orange.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
@@ -1259,7 +1261,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen>
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
                                 color: AppTheme.primaryEmerald
-                                    .withOpacity(0.3)),
+                                    .withValues(alpha: 0.3)),
                           ),
                           child: const Row(
                             mainAxisAlignment: MainAxisAlignment.center,

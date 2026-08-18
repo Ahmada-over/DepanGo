@@ -13,6 +13,7 @@ import '../core/app_toast.dart';
 import '../core/map_markers.dart';
 import '../core/map_style.dart';
 import '../core/config.dart';
+import '../core/category_helper.dart';
 import '../models/models.dart';
 import '../providers/app_providers.dart';
 
@@ -385,19 +386,11 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
   }
 
   IconData _getCategoryIcon(String catId) {
-    if (catId.contains('plumb')) return Icons.plumbing_rounded;
-    if (catId.contains('hvac') || catId.contains('clim')) return Icons.ac_unit_rounded;
-    if (catId.contains('electr')) return Icons.electric_bolt_rounded;
-    if (catId.contains('appliance')) return Icons.kitchen_rounded;
-    return Icons.build_rounded;
+    return CategoryHelper.getCategoryIcon(catId);
   }
 
   String _getCategoryName(String catId) {
-    if (catId.contains('plumb')) return 'Plomberie Express';
-    if (catId.contains('hvac') || catId.contains('clim')) return 'Climatisation & Froid';
-    if (catId.contains('electr')) return 'Électricité Générale';
-    if (catId.contains('appliance')) return 'Électroménager';
-    return 'Dépannage Express';
+    return CategoryHelper.getCategoryName(catId);
   }
 
   @override
@@ -1125,9 +1118,9 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
           ),
           const SizedBox(height: 14),
 
-          // Problem Description
+          // Problem Description & Photo
           const Text(
-            'Description de la panne',
+            'Description de la panne & Photo',
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.bold,
@@ -1143,15 +1136,55 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: const Color(0xFFF1F5F9)),
             ),
-            child: Text(
-              booking.description.isNotEmpty
-                  ? booking.description
-                  : 'Aucune description précisée.',
-              style: const TextStyle(
-                fontSize: 13,
-                color: Color(0xFF334155),
-                height: 1.4,
-              ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (booking.photoUrl != null && booking.photoUrl!.isNotEmpty) ...[
+                  InkWell(
+                    onTap: () {
+                      final fullUrl = booking.photoUrl!.startsWith('http')
+                          ? booking.photoUrl!
+                          : '${AppConfig.apiBaseUrl.replaceAll('/api/v1', '')}${booking.photoUrl}';
+                      showDialog(
+                        context: context,
+                        builder: (ctx) => Dialog(
+                          backgroundColor: Colors.transparent,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: Image.network(fullUrl, fit: BoxFit.contain),
+                          ),
+                        ),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(8),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        booking.photoUrl!.startsWith('http')
+                            ? booking.photoUrl!
+                            : '${AppConfig.apiBaseUrl.replaceAll('/api/v1', '')}${booking.photoUrl}',
+                        width: 54,
+                        height: 54,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const Icon(Icons.broken_image_rounded, size: 40, color: Colors.grey),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                ],
+                Expanded(
+                  child: Text(
+                    booking.description.isNotEmpty
+                        ? booking.description
+                        : 'Aucune description précisée.',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF334155),
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 14),

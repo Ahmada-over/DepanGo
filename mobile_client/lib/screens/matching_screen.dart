@@ -1,16 +1,20 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/theme.dart';
-import '../core/app_toast.dart';
 import '../providers/app_providers.dart';
 import 'tracking_chat_screen.dart';
 
 class MatchingScreen extends ConsumerStatefulWidget {
+  final String? bookingId;
+  final String? categoryId;
+  final String? categoryName;
   final String? preferredTechnicianName;
 
   const MatchingScreen({
     super.key,
+    this.bookingId,
+    this.categoryId,
+    this.categoryName,
     this.preferredTechnicianName,
   });
 
@@ -60,7 +64,7 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen>
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
-          child: noTechFound ? _buildNoTechWidget() : _buildSearchingWidget(activeBooking?.categoryId),
+          child: noTechFound ? _buildNoTechWidget() : _buildSearchingWidget(activeBooking?.categoryId ?? widget.categoryId),
         ),
       ),
     );
@@ -85,16 +89,16 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen>
               alignment: Alignment.center,
               children: [
                 Container(
-                  width: 140 + (_pulseController.value * 60),
-                  height: 140 + (_pulseController.value * 60),
+                  width: 220 * _pulseController.value,
+                  height: 220 * _pulseController.value,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: AppTheme.primaryEmerald.withOpacity(1.0 - _pulseController.value),
                   ),
                 ),
                 Container(
-                  width: 120,
-                  height: 120,
+                  width: 140,
+                  height: 140,
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     color: AppTheme.primaryEmerald,
@@ -110,7 +114,7 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen>
         Text(
           widget.preferredTechnicianName != null
               ? 'En attente de ${widget.preferredTechnicianName}...'
-              : 'En attente d\'une réponse...',
+              : 'Recherche d\'un artisan disponible $categoryLabel...',
           style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
           textAlign: TextAlign.center,
         ),

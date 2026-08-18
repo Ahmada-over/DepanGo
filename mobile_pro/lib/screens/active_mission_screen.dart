@@ -10,6 +10,7 @@ import '../core/config.dart';
 import '../core/theme.dart';
 import '../core/map_style.dart';
 import '../core/app_toast.dart';
+import '../core/category_helper.dart';
 import '../providers/pro_providers.dart';
 
 class ActiveMissionScreen extends ConsumerStatefulWidget {
@@ -659,12 +660,12 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen> {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: ProTheme.primaryEmerald.withValues(alpha: 0.2),
+                                  color: CategoryHelper.getCategoryColor(activeMission.categoryId).withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
-                                  activeMission.categoryId.toUpperCase(),
-                                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: ProTheme.primaryLight),
+                                  '${CategoryHelper.getCategoryEmoji(activeMission.categoryId)} ${CategoryHelper.getShortName(activeMission.categoryId)}',
+                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: CategoryHelper.getCategoryColor(activeMission.categoryId)),
                                 ),
                               ),
                             ],
@@ -693,7 +694,7 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen> {
                     ),
                     const SizedBox(height: 12),
 
-                    // Destination Address & Diagnostic
+                    // Destination Address & Diagnostic + Photo
                     Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
@@ -721,11 +722,51 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen> {
                           const SizedBox(height: 10),
                           const Divider(color: ProTheme.darkBorder, height: 1),
                           const SizedBox(height: 10),
-                          const Text('Panne / Diagnostic :', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: ProTheme.textMuted)),
-                          const SizedBox(height: 4),
-                          Text(
-                            activeMission.description.isNotEmpty ? '"${activeMission.description}"' : '"Diagnostic et devis sur place"',
-                            style: const TextStyle(fontSize: 12, color: Colors.white70, fontStyle: FontStyle.italic),
+                          const Text('Panne / Diagnostic & Photo :', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: ProTheme.textMuted)),
+                          const SizedBox(height: 6),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (activeMission.photoUrl != null && activeMission.photoUrl!.isNotEmpty) ...[
+                                InkWell(
+                                  onTap: () {
+                                    final fullUrl = activeMission.photoUrl!.startsWith('http')
+                                        ? activeMission.photoUrl!
+                                        : '${AppConfig.apiBaseUrl.replaceAll('/api/v1', '')}${activeMission.photoUrl}';
+                                    showDialog(
+                                      context: context,
+                                      builder: (ctx) => Dialog(
+                                        backgroundColor: Colors.transparent,
+                                        child: ClipRRect(
+                                          borderRadius: BorderRadius.circular(16),
+                                          child: Image.network(fullUrl, fit: BoxFit.contain),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.network(
+                                      activeMission.photoUrl!.startsWith('http')
+                                          ? activeMission.photoUrl!
+                                          : '${AppConfig.apiBaseUrl.replaceAll('/api/v1', '')}${activeMission.photoUrl}',
+                                      width: 60,
+                                      height: 60,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => const Icon(Icons.broken_image_rounded, size: 40, color: Colors.grey),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                              ],
+                              Expanded(
+                                child: Text(
+                                  activeMission.description.isNotEmpty ? '"${activeMission.description}"' : '"Diagnostic et devis sur place"',
+                                  style: const TextStyle(fontSize: 12, color: Colors.white70, fontStyle: FontStyle.italic),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),

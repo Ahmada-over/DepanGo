@@ -75,5 +75,9 @@
 	<string>Cette application a besoin de votre position pour vous montrer les techniciens à proximité sur la carte.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>Cette application a besoin de votre position en permanence pour optimiser la recherche de techniciens.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Cette application utilise l'appareil photo pour vous permettre de photographier la panne à réparer.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Cette application accède à vos photos pour joindre une photo de l'installation.</string>
 </dict>
 </plist>

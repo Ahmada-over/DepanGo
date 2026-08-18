@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/theme.dart';
+import '../core/category_helper.dart';
 import '../models/models.dart';
 import '../providers/app_providers.dart';
 import 'tracking_chat_screen.dart';
@@ -136,11 +137,7 @@ class BookingsHistoryScreen extends ConsumerWidget {
   }
 
   static String _formatCategory(String catId) {
-    if (catId == 'cat_plumbing') return 'Plomberie';
-    if (catId == 'cat_hvac') return 'Climatisation';
-    if (catId == 'cat_electrical') return 'Électricité';
-    if (catId == 'cat_appliances') return 'Électroménager';
-    return 'Dépannage';
+    return CategoryHelper.getCategoryName(catId);
   }
 
   static String _formatStatus(String status) {

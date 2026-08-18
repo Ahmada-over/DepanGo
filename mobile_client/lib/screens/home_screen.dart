@@ -6,13 +6,11 @@ import '../core/theme.dart';
 import '../core/app_toast.dart';
 import 'package:techconnect_mobile/models/models.dart';
 import '../providers/app_providers.dart';
-import 'create_booking_screen.dart';
 import 'bookings_history_screen.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'login_screen.dart';
 import 'map_selection_screen.dart';
-import 'map_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -63,8 +61,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         desiredAccuracy: LocationAccuracy.medium,
         timeLimit: const Duration(seconds: 8),
       );
-
-      if (position == null) return;
 
       debugPrint('[Location] GPS coordinates: ${position.latitude}, ${position.longitude}');
 
@@ -132,38 +128,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   final List<Map<String, dynamic>> _popularServices = [
     {
-      'name': 'House Cleaning',
-      'icon': Icons.cleaning_services_outlined,
-      'catId': 'cat_cleaning'
+      'name': 'Froid & Clim',
+      'icon': Icons.ac_unit_outlined,
+      'catId': 'cat_hvac'
     },
-    {'name': 'AC Repair', 'icon': Icons.ac_unit_outlined, 'catId': 'cat_hvac'},
     {
-      'name': 'Plumbing',
+      'name': 'Plomberie',
       'icon': Icons.water_drop_outlined,
       'catId': 'cat_plumbing'
     },
     {
-      'name': 'Electrical',
+      'name': 'Électricité',
       'icon': Icons.bolt_outlined,
       'catId': 'cat_electrical'
     },
     {
-      'name': 'Washing Machine',
-      'icon': Icons.local_laundry_service_outlined,
-      'catId': 'cat_appliances'
-    },
-    {
-      'name': 'Refrigerator',
+      'name': 'Lave-Linge & Frigo',
       'icon': Icons.kitchen_outlined,
       'catId': 'cat_appliances'
     },
     {
-      'name': 'Microwave Oven',
+      'name': 'Électroménager',
       'icon': Icons.microwave_outlined,
       'catId': 'cat_appliances'
     },
     {
-      'name': 'More Services',
+      'name': 'Urgence Express',
+      'icon': Icons.flash_on_outlined,
+      'catId': 'cat_express'
+    },
+    {
+      'name': 'Tous les Métiers',
       'icon': Icons.grid_view_outlined,
       'catId': 'cat_plumbing'
     },
@@ -171,33 +166,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   final List<Map<String, dynamic>> _recommendedServices = [
     {
-      'title': 'AC Repair & Servicing',
-      'category': 'Climatisation',
-      'rating': '4.7',
+      'title': 'Entretien & Recharge Climatisation',
+      'category': 'Climatisation & Froid',
+      'rating': '4.8',
       'reviews': '1.8K',
       'duration': '60 mins',
-      'badge': 'Bestseller',
-      'price': 'Sur devis',
+      'badge': 'Très Demandé',
+      'price': 'Sur devis direct',
       'catId': 'cat_hvac',
     },
     {
-      'title': 'Plumbing Leakage Repair',
-      'category': 'Plomberie',
-      'rating': '4.8',
+      'title': 'Réparation Fuite d\'Eau & Débouchage',
+      'category': 'Plomberie & Sanitaire',
+      'rating': '4.9',
       'reviews': '2.3K',
       'duration': '45 mins',
       'badge': 'Populaire',
-      'price': 'Sur devis',
+      'price': 'Sur devis direct',
       'catId': 'cat_plumbing',
     },
     {
-      'title': 'Electrical Wiring Fix',
-      'category': 'Électricité',
+      'title': 'Dépannage Disjoncteur & Court-Circuit',
+      'category': 'Électricité Générale',
       'rating': '4.9',
       'reviews': '950',
       'duration': '30 mins',
       'badge': 'Recommandé',
-      'price': 'Sur devis',
+      'price': 'Sur devis direct',
       'catId': 'cat_electrical',
     },
   ];

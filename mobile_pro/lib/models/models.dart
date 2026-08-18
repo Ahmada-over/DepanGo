@@ -168,6 +168,7 @@ class MatchOfferModel {
   final String clientPhone;
   final String categoryId;
   final String description;
+  final String? photoUrl;
   final String addressText;
   final double latitude;
   final double longitude;
@@ -180,6 +181,7 @@ class MatchOfferModel {
     required this.clientPhone,
     required this.categoryId,
     required this.description,
+    this.photoUrl,
     required this.addressText,
     required this.latitude,
     required this.longitude,
@@ -194,6 +196,7 @@ class MatchOfferModel {
       clientPhone: json['client_phone'] ?? json['user_phone'] ?? '+221 77 000 00 00',
       categoryId: json['category_id'] ?? 'cat_plumbing',
       description: json['description'] ?? '',
+      photoUrl: json['photo_url'],
       addressText: json['address_text'] ?? json['address'] ?? 'Dakar, Sénégal',
       latitude: (json['latitude'] as num?)?.toDouble() ?? 14.6937,
       longitude: (json['longitude'] as num?)?.toDouble() ?? -17.4441,

@@ -550,12 +550,13 @@ function renderMissions(missions) {
             <div style="font-size: 11px; color: var(--text-muted);">${m.client_phone}</div>
           </td>
           <td>
-            <span style="font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: var(--radius-sm); background: var(--bg-card); color: var(--primary-light);">
-              ${m.category_id.replace('cat_', '').toUpperCase()}
+            <span style="font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: var(--radius-sm); background: rgba(16, 185, 129, 0.15); color: var(--primary-light);">
+              ${{ cat_plumbing: 'Plomberie', cat_hvac: 'Froid & Clim', cat_electrical: 'Électricité', cat_appliances: 'Électroménager', cat_express: 'Urgence Express' }[m.category_id] || m.category_id}
             </span>
           </td>
           <td style="max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
             ${m.address_text}
+            ${m.photo_url ? `<a href="${m.photo_url.startsWith('http') ? m.photo_url : state.apiUrl.replace('/api/v1', '') + m.photo_url}" target="_blank" style="display: inline-block; margin-left: 6px; color: var(--accent-cyan);" title="Voir la photo de la panne"><i class="fa-solid fa-camera"></i></a>` : ''}
           </td>
           <td>
             ${

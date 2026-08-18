@@ -6,8 +6,6 @@ import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
-import 'package:dio/dio.dart';
-import '../providers/map_providers.dart';
 import '../providers/app_providers.dart';
 import '../core/api_client.dart';
 import '../core/theme.dart';
@@ -37,15 +35,11 @@ class _MapSelectionScreenState extends ConsumerState<MapSelectionScreen> {
   GoogleMapController? _mapController;
 
   LatLng? _currentPosition;
-  LatLng? _cameraPosition;
   bool _isLoading = true;
-  bool _isDragging = false;
+  final bool _isDragging = false;
   bool _markersReady = false;
   TechnicianLocation? _selectedTech;
-
-  String _addressText = 'Recherche en cours...';
-  BitmapDescriptor? _techMotoIcon;
-  BitmapDescriptor? _techCarIcon;
+  String _addressText = 'Chargement…';
 
   WebSocketChannel? _channel;
   final Map<String, TechnicianLocation> _techLocations = {};
@@ -54,7 +48,7 @@ class _MapSelectionScreenState extends ConsumerState<MapSelectionScreen> {
   void initState() {
     super.initState();
     _loadMarkerIcons();
-    _initLocation();
+    _getUserLocation();
     _connectWebSocket();
   }
 
@@ -66,15 +60,18 @@ class _MapSelectionScreenState extends ConsumerState<MapSelectionScreen> {
       _markersReady = true;
     });
   }
+  
+  BitmapDescriptor? _techMotoIcon;
+  BitmapDescriptor? _techCarIcon;
 
-  Future<void> _initLocation() async {
-    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+  Future<void> _getUserLocation() async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       _setFallbackLocation();
       return;
     }
 
-    var permission = await Geolocator.checkPermission();
+    LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
@@ -93,7 +90,6 @@ class _MapSelectionScreenState extends ConsumerState<MapSelectionScreen> {
       final latLng = LatLng(position.latitude, position.longitude);
       setState(() {
         _currentPosition = latLng;
-        _cameraPosition = latLng;
         _isLoading = false;
       });
       _getAddressFromLatLng(latLng);
@@ -107,7 +103,6 @@ class _MapSelectionScreenState extends ConsumerState<MapSelectionScreen> {
     const fallback = LatLng(14.6937, -17.4441);
     setState(() {
       _currentPosition = fallback;
-      _cameraPosition = fallback;
       _isLoading = false;
     });
     _getAddressFromLatLng(fallback);

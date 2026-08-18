@@ -1,0 +1,6 @@
+Dockerfile
+default.conf.template
+nginx.conf
+serve.sh
+.git
+.gitignore

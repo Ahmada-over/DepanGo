@@ -314,6 +314,7 @@ class BookingNotifier extends StateNotifier<BookingModel?> {
     required String addressText,
     required double latitude,
     required double longitude,
+    String? photoUrl,
     String? preferredTechnicianId,
   }) async {
     try {
@@ -326,6 +327,7 @@ class BookingNotifier extends StateNotifier<BookingModel?> {
           'latitude': latitude,
           'longitude': longitude,
           'address_text': addressText,
+          if (photoUrl != null) 'photo_url': photoUrl,
           if (preferredTechnicianId != null) 'preferred_technician_id': preferredTechnicianId,
         },
       );

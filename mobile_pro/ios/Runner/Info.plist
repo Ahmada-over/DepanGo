@@ -66,5 +66,13 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Cette application utilise votre position GPS pour vous guider en direct vers l'adresse du client et calculer l'ETA.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Votre position permet de recevoir les missions de dépannage à proximité même en arrière-plan.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Prenez votre photo de profil artisan et vos justificatifs professionnels.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Accédez à votre galerie pour choisir votre photo de profil artisan.</string>
 </dict>
 </plist>

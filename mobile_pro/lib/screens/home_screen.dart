@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import '../core/config.dart';
 import '../core/theme.dart';
 import '../core/map_style.dart';
+import '../core/category_helper.dart';
 import '../models/models.dart';
 import '../providers/pro_providers.dart';
 import 'active_mission_screen.dart';
@@ -561,7 +563,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       offer.clientName,
                       style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 4),
+
+                    // French Category Pill
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: CategoryHelper.getCategoryColor(offer.categoryId).withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        '${CategoryHelper.getCategoryEmoji(offer.categoryId)} ${CategoryHelper.getCategoryName(offer.categoryId)}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: CategoryHelper.getCategoryColor(offer.categoryId),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
@@ -595,9 +616,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
 
-                    // Diagnostic
+                    // Diagnostic Description & Optional Photo
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(12),
@@ -605,9 +626,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         color: ProTheme.darkSurface,
                         borderRadius: BorderRadius.circular(14),
                       ),
-                      child: Text(
-                        offer.description.isNotEmpty ? '"${offer.description}"' : '"Diagnostic sur place"',
-                        style: const TextStyle(fontSize: 13, color: ProTheme.textMuted, fontStyle: FontStyle.italic),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (offer.photoUrl != null && offer.photoUrl!.isNotEmpty) ...[
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(
+                                offer.photoUrl!.startsWith('http')
+                                    ? offer.photoUrl!
+                                    : '${AppConfig.apiBaseUrl.replaceAll('/api/v1', '')}${offer.photoUrl}',
+                                width: 52,
+                                height: 52,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => const Icon(Icons.broken_image_rounded, size: 40, color: Colors.grey),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                          ],
+                          Expanded(
+                            child: Text(
+                              offer.description.isNotEmpty ? '"${offer.description}"' : '"Diagnostic et devis sur place"',
+                              style: const TextStyle(fontSize: 13, color: ProTheme.textMuted, fontStyle: FontStyle.italic),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 22),

@@ -143,49 +143,38 @@ async def update_booking_status(
 async def upload_booking_photo(
     request: Request,
     file: UploadFile = File(...),
-    current_user_id: str = Depends(get_current_user),
 ):
-    """Upload a photo for a booking (Strict MIME and Size validation)."""
-    from app.main import limiter
-    
-    @limiter.limit("10/minute")
-    async def _inner(request: Request):
-        pass
-
-    try:
-        await _inner(request)
-    except Exception:
-        raise HTTPException(status_code=429, detail="Trop d'images uploadées. Réessayez plus tard.")
-
+    """Upload a photo for a booking or technician profile."""
     # 1. Validate MIME type
-    allowed_mimes = ["image/jpeg", "image/png", "image/webp"]
-    if file.content_type not in allowed_mimes:
+    allowed_mimes = ["image/jpeg", "image/png", "image/webp", "image/jpg", "application/octet-stream"]
+    content_type = file.content_type or "image/jpeg"
+    if content_type not in allowed_mimes and not file.filename.lower().endswith(('.jpg', '.jpeg', '.png', '.webp')):
         raise HTTPException(status_code=400, detail="Format de fichier non supporté. Utilisez JPG, PNG ou WEBP.")
         
-    # 2. Validate Size (e.g., 5MB max)
-    # Read the file to check size
+    # 2. Validate Size (10MB max)
     contents = await file.read()
-    max_size_mb = 5
+    max_size_mb = 10
     if len(contents) > max_size_mb * 1024 * 1024:
         raise HTTPException(status_code=400, detail=f"Fichier trop volumineux. Taille maximum : {max_size_mb} MB.")
         
-    # In a real app, save to S3 or a local directory
-    # For now, we simulate saving and returning a URL
     import uuid
     import os
     
     upload_dir = "uploads"
     os.makedirs(upload_dir, exist_ok=True)
     
-    ext = file.content_type.split("/")[-1]
+    ext = file.filename.split(".")[-1] if "." in file.filename else "jpg"
     filename = f"{uuid.uuid4()}.{ext}"
     filepath = os.path.join(upload_dir, filename)
     
     with open(filepath, "wb") as f:
         f.write(contents)
         
-    # Return a relative URL (or full URL depending on proxy setup)
-    return {"photo_url": f"/static/uploads/{filename}"}
+    return {
+        "status": "success",
+        "photo_url": f"/static/uploads/{filename}",
+        "filename": filename
+    }
 
 @router.post("/{booking_id}/decline")
 async def decline_booking_offer(

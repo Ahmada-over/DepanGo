@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DepanGo | Console d'Administration & Supervision Live</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Leaflet Map CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- 1. SIDEBAR -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">
+          <i class="fa-solid fa-bolt-lightning text-white"></i>
+        </div>
+        <div>
+          <div class="brand-title">DepanGo Pro</div>
+          <div style="font-size: 11px; color: var(--text-muted);">Supervision & Monitoring</div>
+        </div>
+        <span class="brand-badge">ADMIN</span>
+      </div>
+
+      <ul class="nav-menu">
+        <li class="nav-item active" data-tab="overview">
+          <button type="button">
+            <i class="fa-solid fa-chart-pie"></i>
+            <span>Vue d'Ensemble</span>
+          </button>
+        </li>
+        <li class="nav-item" data-tab="radar">
+          <button type="button">
+            <i class="fa-solid fa-map-location-dot"></i>
+            <span>Radar Flotte Live</span>
+            <span class="nav-counter live" id="sidebarLiveMissionsCount">0</span>
+          </button>
+        </li>
+        <li class="nav-item" data-tab="missions">
+          <button type="button">
+            <i class="fa-solid fa-clipboard-list"></i>
+            <span>Interventions</span>
+            <span class="nav-counter" id="sidebarTotalBookingsCount">0</span>
+          </button>
+        </li>
+        <li class="nav-item" data-tab="technicians">
+          <button type="button">
+            <i class="fa-solid fa-user-gear"></i>
+            <span>Techniciens & KYC</span>
+            <span class="nav-counter" id="sidebarTotalTechsCount">0</span>
+          </button>
+        </li>
+        <li class="nav-item" data-tab="monitoring">
+          <button type="button">
+            <i class="fa-solid fa-server"></i>
+            <span>Santé & Monitoring</span>
+          </button>
+        </li>
+      </ul>
+
+      <div class="sidebar-footer">
+        <div class="env-switch">
+          <span>Backend Actif :</span>
+          <span class="env-tag" id="currentEnvTag">CLOUD RUN</span>
+        </div>
+        <button class="btn btn-outline btn-sm" id="btnToggleEnv" style="width: 100%;">
+          <i class="fa-solid fa-arrows-rotate"></i> Basculer Local / Cloud
+        </button>
+      </div>
+    </aside>
+
+    <!-- 2. MAIN CONTENT AREA -->
+    <main class="main-content">
+      <!-- Top Navigation Header -->
+      <header class="top-header">
+        <div class="header-title-area">
+          <h1 class="header-title" id="pageTitle">Vue d'Ensemble & KPIs</h1>
+          <div class="system-status-pill" id="systemStatusBadge">
+            <span class="status-dot"></span>
+            <span id="systemStatusText">Système Opérationnel</span>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <div class="refresh-control">
+            <i class="fa-solid fa-rotate"></i>
+            <select class="refresh-select" id="autoRefreshInterval">
+              <option value="5000">Auto 5s</option>
+              <option value="10000" selected>Auto 10s</option>
+              <option value="30000">Auto 30s</option>
+              <option value="0">Désactivé</option>
+            </select>
+          </div>
+
+          <button class="btn-icon" id="btnManualRefresh" title="Actualiser manuellement">
+            <i class="fa-solid fa-arrows-rotate"></i>
+          </button>
+
+          <div class="admin-profile">
+            <div class="admin-avatar">A</div>
+            <div class="admin-info">
+              <span class="admin-name" id="adminNameDisplay">Super Admin</span>
+              <span class="admin-role">Contrôle Flotte Dakar</span>
+            </div>
+            <button class="btn-icon" id="btnLogout" title="Déconnexion" style="width: 28px; height: 28px; border: none; background: transparent;">
+              <i class="fa-solid fa-right-from-bracket text-muted"></i>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Content Body Panes -->
+      <div class="content-body">
+
+        <!-- TAB 1 : VUE D'ENSEMBLE (OVERVIEW) -->
+        <section class="tab-pane active" id="pane-overview">
+          <!-- KPI Metrics Row -->
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <div class="metric-icon-box emerald">
+                <i class="fa-solid fa-person-digging"></i>
+              </div>
+              <div class="metric-info">
+                <div class="metric-label">Techniciens En Ligne</div>
+                <div class="metric-value" id="kpiOnlineTechs">--</div>
+                <div class="metric-sub" id="kpiTotalTechs">Sur -- inscrits</div>
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon-box blue">
+                <i class="fa-solid fa-car-side"></i>
+              </div>
+              <div class="metric-info">
+                <div class="metric-label">Interventions Actives</div>
+                <div class="metric-value" id="kpiActiveMissions">--</div>
+                <div class="metric-sub" id="kpiPendingMissions">-- en attente d'artisan</div>
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon-box purple">
+                <i class="fa-solid fa-circle-check"></i>
+              </div>
+              <div class="metric-info">
+                <div class="metric-label">Dépannages Réussis</div>
+                <div class="metric-value" id="kpiTotalCompleted">--</div>
+                <div class="metric-sub" id="kpiCompletedToday">-- aujourd'hui</div>
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon-box amber">
+                <i class="fa-solid fa-sack-dollar"></i>
+              </div>
+              <div class="metric-info">
+                <div class="metric-label">Volume d'Affaires Estimé</div>
+                <div class="metric-value" id="kpiEstimatedGmv">-- CFA</div>
+                <div class="metric-sub" id="kpiEstimatedCommission">Commissions : -- CFA</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Charts Row -->
+          <div class="panel-grid">
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">
+                  <i class="fa-solid fa-chart-line text-emerald"></i>
+                  Activité des 7 Derniers Jours (Dépannages à Dakar)
+                </div>
+              </div>
+              <div style="height: 280px; position: relative;">
+                <canvas id="trendChart"></canvas>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">
+                  <i class="fa-solid fa-pie-chart text-blue"></i>
+                  Répartition par Métier
+                </div>
+              </div>
+              <div style="height: 280px; position: relative;">
+                <canvas id="categoryChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dispatch Funnel & Matching Success -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-title">
+                <i class="fa-solid fa-tower-broadcast text-amber"></i>
+                Performance de l'Algorithme de Dispatch (Cascade 90s)
+              </div>
+            </div>
+            <div class="metrics-grid" style="margin-bottom: 0;">
+              <div style="background: var(--bg-card); padding: 16px; border-radius: var(--radius-md);">
+                <div class="metric-label">Offres Diffusées</div>
+                <div class="metric-value" id="funnelTotalOffers">--</div>
+              </div>
+              <div style="background: var(--bg-card); padding: 16px; border-radius: var(--radius-md);">
+                <div class="metric-label">Offres Acceptées</div>
+                <div class="metric-value" style="color: var(--primary-light);" id="funnelAcceptedOffers">--</div>
+              </div>
+              <div style="background: var(--bg-card); padding: 16px; border-radius: var(--radius-md);">
+                <div class="metric-label">Timeouts (>90s)</div>
+                <div class="metric-value" style="color: var(--accent-amber);" id="funnelTimeoutOffers">--</div>
+              </div>
+              <div style="background: var(--bg-card); padding: 16px; border-radius: var(--radius-md);">
+                <div class="metric-label">Taux de Conversion</div>
+                <div class="metric-value" style="color: var(--accent-blue);" id="funnelConversionRate">--%</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 2 : RADAR FLOTTE LIVE (MAP SUPERVISION) -->
+        <section class="tab-pane" id="pane-radar">
+          <div class="radar-layout">
+            <!-- Leaflet Map Container -->
+            <div class="map-container">
+              <div id="supervisionMap"></div>
+            </div>
+
+            <!-- Fleet Sidebar Filter & List -->
+            <div class="radar-sidebar">
+              <div class="radar-filter-bar">
+                <button class="radar-filter-btn active" data-filter="all">Tous (<span id="countFilterAll">0</span>)</button>
+                <button class="radar-filter-btn" data-filter="online">En Ligne (<span id="countFilterOnline">0</span>)</button>
+                <button class="radar-filter-btn" data-filter="busy">En Mission (<span id="countFilterBusy">0</span>)</button>
+              </div>
+
+              <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass text-muted"></i>
+                <input type="text" id="fleetSearchInput" placeholder="Rechercher un artisan...">
+              </div>
+
+              <div class="fleet-list" id="fleetCardsList">
+                <!-- Fleet Items Rendered Dynamically -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 3 : INTERVENTIONS (MISSIONS & DISPATCH) -->
+        <section class="tab-pane" id="pane-missions">
+          <div class="panel-card">
+            <div class="filter-bar">
+              <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass text-muted"></i>
+                <input type="text" id="missionSearchInput" placeholder="Filtrer par client, quartier ou artisan...">
+              </div>
+
+              <div style="display: flex; gap: 8px;">
+                <select class="form-select" id="missionStatusFilter" style="padding: 8px 12px;">
+                  <option value="">Tous les statuts</option>
+                  <option value="pending">En attente (Pending)</option>
+                  <option value="matched">Assigné / En route</option>
+                  <option value="in_progress">En cours</option>
+                  <option value="on_site">Sur place</option>
+                  <option value="completed">Terminé</option>
+                  <option value="cancelled">Annulé</option>
+                  <option value="no_technician_found">Échec / Pas de dépanneur</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Réf.</th>
+                    <th>Client & Contact</th>
+                    <th>Métier</th>
+                    <th>Adresse & Quartier</th>
+                    <th>Dépanneur Attribué</th>
+                    <th>Statut</th>
+                    <th>Date / Heure</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="missionsTableBody">
+                  <!-- Rendered dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 4 : TECHNICIENS & KYC -->
+        <section class="tab-pane" id="pane-technicians">
+          <div class="panel-card">
+            <div class="filter-bar">
+              <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass text-muted"></i>
+                <input type="text" id="techSearchInput" placeholder="Rechercher par nom, téléphone, métier...">
+              </div>
+
+              <div style="display: flex; gap: 8px;">
+                <select class="form-select" id="techFilterKyc" style="padding: 8px 12px;">
+                  <option value="">Tous les statuts KYC</option>
+                  <option value="verified">Vérifié ✅</option>
+                  <option value="unverified">En attente ⏳</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Artisan / Profil</th>
+                    <th>Téléphone</th>
+                    <th>Véhicule</th>
+                    <th>Spécialités</th>
+                    <th>Disponibilité</th>
+                    <th>Note</th>
+                    <th>Missions</th>
+                    <th>Statut KYC</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="techniciansTableBody">
+                  <!-- Rendered dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 5 : MONITORING INFRASTRUCTURE -->
+        <section class="tab-pane" id="pane-monitoring">
+          <div class="monitoring-grid">
+            <div class="gauge-card">
+              <div class="gauge-header">
+                <span class="gauge-title">LATENCE BASE DE DONNÉES</span>
+                <i class="fa-solid fa-database text-emerald"></i>
+              </div>
+              <div class="gauge-value" id="monDbLatency">-- ms</div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" id="monDbBar" style="width: 10%;"></div>
+              </div>
+              <div style="font-size: 11px; color: var(--text-muted);" id="monDbEngine">PostgreSQL (AsyncPG)</div>
+            </div>
+
+            <div class="gauge-card">
+              <div class="gauge-header">
+                <span class="gauge-title">CANAUX WEBSOCKET ACTIFS</span>
+                <i class="fa-solid fa-network-wired text-blue"></i>
+              </div>
+              <div class="gauge-value" id="monWsSockets">--</div>
+              <div style="font-size: 12px; color: var(--text-secondary);" id="monWsDetails">-- users • -- bookings</div>
+              <div style="font-size: 11px; color: var(--primary-light);">Diffusion temps réel opérationnelle</div>
+            </div>
+
+            <div class="gauge-card">
+              <div class="gauge-header">
+                <span class="gauge-title">UPTIME SERVEUR</span>
+                <i class="fa-solid fa-clock text-purple"></i>
+              </div>
+              <div class="gauge-value" id="monUptimeFormatted">--</div>
+              <div style="font-size: 11px; color: var(--text-muted);" id="monDispatchEngine">Moteur de matching actif (Cascade 90s)</div>
+            </div>
+          </div>
+
+          <!-- Matching Logs Live Feed -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-title">
+                <i class="fa-solid fa-receipt text-emerald"></i>
+                Derniers Événements de Dispatch & Notifications
+              </div>
+              <span class="badge" style="background: var(--bg-card); color: var(--text-secondary); font-size: 11px;">En temps réel</span>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Intervention</th>
+                    <th>Événement</th>
+                    <th>Technicien Cible</th>
+                    <th>Résultat</th>
+                    <th>Heure</th>
+                  </tr>
+                </thead>
+                <tbody id="logsTableBody">
+                  <tr>
+                    <td colspan="5" style="text-align: center; color: var(--text-muted);">Chargement du flux d'événements...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- 3. MODAL : FORCE DISPATCH / MANUAL ASSIGN -->
+  <div class="modal-overlay" id="manualAssignModal">
+    <div class="modal-card">
+      <div class="modal-title">Assignation Manuelle de Dépannage</div>
+      <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;">
+        Forcer l'attribution de l'intervention à un dépanneur spécifique.
+      </p>
+
+      <input type="hidden" id="assignBookingId">
+
+      <div class="form-group">
+        <label class="form-label">Intervention sélectionnée</label>
+        <div id="assignBookingDesc" style="font-size: 13px; font-weight: 700; color: #fff; background: var(--bg-card); padding: 10px; border-radius: var(--radius-sm);"></div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Choisir le dépanneur</label>
+        <select class="form-select" id="assignTechSelect">
+          <!-- Populated dynamically -->
+        </select>
+      </div>
+
+      <div style="display: flex; gap: 12px; margin-top: 20px;">
+        <button class="btn btn-outline" style="flex: 1;" id="btnCancelAssign">Annuler</button>
+        <button class="btn btn-primary" style="flex: 1;" id="btnConfirmAssign">Confirmer l'Assignation</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. MODAL : ADMIN LOGIN -->
+  <div class="modal-overlay" id="adminLoginModal">
+    <div class="modal-card">
+      <div class="modal-title">Connexion Administrateur</div>
+      <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 18px;">
+        Accès sécurisé à la console de supervision DepanGo.
+      </p>
+
+      <form id="adminLoginForm">
+        <div class="form-group">
+          <label class="form-label">Identifiant / Email</label>
+          <input type="text" class="form-input" id="loginIdentifier" value="admin@tekservice.com" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Mot de passe</label>
+          <input type="password" class="form-input" id="loginPassword" value="admin123" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
+          Se Connecter à la Console
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Area -->
+  <div id="toastContainer"></div>
+
+  <!-- Scripts -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

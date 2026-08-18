@@ -172,6 +172,7 @@ class ProfileUpdateRequest(BaseModel):
     name: Optional[str] = None
     email: Optional[str] = None
     phone: Optional[str] = None
+    transport_mode: Optional[str] = None
     category_ids: Optional[List[str]] = None
 
 
@@ -181,7 +182,7 @@ async def update_profile(
     db: AsyncSession = Depends(get_db),
     current_user_id: str = Depends(get_current_user),
 ):
-    """Update own profile information (name, email, phone, categories)."""
+    """Update own profile information (name, email, phone, categories, transport_mode)."""
     tech_repo = SQLAlchemyTechnicianRepository(db)
 
     if req.name or req.email or req.phone:
@@ -190,4 +191,18 @@ async def update_profile(
     if req.category_ids is not None:
         await tech_repo.update_categories(current_user_id, req.category_ids)
 
-    return {"status": "success", "message": "Profile updated successfully"}
+    if req.transport_mode is not None:
+        await tech_repo.update_transport_mode(current_user_id, req.transport_mode)
+
+    updated = await tech_repo.get_by_user_id(current_user_id)
+    return {
+        "status": "success",
+        "message": "Profil mis à jour avec succès",
+        "profile": {
+            "name": updated.user_name,
+            "phone": updated.user_phone,
+            "transport_mode": updated.transport_mode,
+            "category_ids": updated.category_ids,
+            "verified": updated.verified,
+        } if updated else None
+    }

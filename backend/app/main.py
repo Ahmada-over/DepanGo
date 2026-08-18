@@ -106,3 +106,14 @@ app.include_router(reviews_router, prefix=settings.API_V1_STR)
 app.include_router(subscriptions_router, prefix=settings.API_V1_STR)
 app.include_router(admin_router, prefix=settings.API_V1_STR)
 app.include_router(websockets_router)  # WebSocket routes have no /api/v1 prefix
+
+# ---------------------------------------------------------------------------
+# Static Uploads File Serving
+# ---------------------------------------------------------------------------
+import os
+from fastapi.staticfiles import StaticFiles
+
+uploads_dir = os.path.join(os.getcwd(), "uploads")
+os.makedirs(uploads_dir, exist_ok=True)
+app.mount("/static/uploads", StaticFiles(directory=uploads_dir), name="uploads")
+

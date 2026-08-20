@@ -191,3 +191,50 @@ class AppNotificationModel {
     this.isRead = false,
   });
 }
+
+class TechnicianProfileModel {
+  final String id;
+  final String userId;
+  final String userName;
+  final String userPhone;
+  final List<String> categoryIds;
+  final String transportMode;
+  final String availabilityStatus; // 'online' | 'offline' | 'busy'
+  final double averageRating;
+  final double? latitude;
+  final double? longitude;
+  final bool verified;
+
+  TechnicianProfileModel({
+    required this.id,
+    required this.userId,
+    required this.userName,
+    required this.userPhone,
+    required this.categoryIds,
+    required this.transportMode,
+    required this.availabilityStatus,
+    required this.averageRating,
+    this.latitude,
+    this.longitude,
+    required this.verified,
+  });
+
+  factory TechnicianProfileModel.fromJson(Map<String, dynamic> json) {
+    return TechnicianProfileModel(
+      id: json['id'] ?? '',
+      userId: json['user_id'] ?? '',
+      userName: json['name'] ?? json['user_name'] ?? 'Technicien',
+      userPhone: json['phone'] ?? json['user_phone'] ?? '',
+      categoryIds: (json['category_ids'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          ['cat_plumbing', 'cat_electrical', 'cat_hvac'],
+      transportMode: json['transport_mode'] ?? 'moto',
+      availabilityStatus: json['availability_status'] ?? 'online',
+      averageRating: (json['average_rating'] as num?)?.toDouble() ?? 5.0,
+      latitude: (json['latitude'] as num?)?.toDouble(),
+      longitude: (json['longitude'] as num?)?.toDouble(),
+      verified: json['verified'] ?? true,
+    );
+  }
+}

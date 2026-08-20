@@ -57,8 +57,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       _nameController = TextEditingController(text: user?.name ?? '');
       _phoneController = TextEditingController(text: user?.phone ?? '');
       _emailController = TextEditingController(text: user?.email ?? '');
-      _bioController = TextEditingController(text: 'Artisan qualifié et réactif.');
-      _expController = TextEditingController(text: '5');
+      _bioController = TextEditingController(text: '');
+      _expController = TextEditingController(text: '');
 
       _transportMode = profile?.transportMode ?? 'moto';
       _selectedCategories = List.from(profile?.categoryIds ?? ['cat_plumbing']);

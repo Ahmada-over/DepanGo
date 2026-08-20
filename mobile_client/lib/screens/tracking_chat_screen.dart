@@ -394,6 +394,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
       return 'Technicien Sur Place';
     if (status == 'completed') return 'Intervention Clôturée';
     if (status == 'no_technician_found') return 'Aucun technicien';
+    if (status == 'expired') return 'Demande Expirée';
     return 'Demande Reçue';
   }
 
@@ -413,7 +414,10 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
       return 'Intervention terminée';
     }
     if (status == 'no_technician_found') {
-      return 'Aucun technicien disponible dans votre zone. Veuillez réessayer.';
+      return 'Aucun technicien disponible pour le moment.';
+    }
+    if (status == 'expired') {
+      return 'Votre demande a expiré car aucun technicien n\'a été trouvé.';
     }
     return 'Recherche de technicien…';
   }
@@ -584,8 +588,12 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                 polylines: {
                   if (techLat != null &&
                       techLng != null &&
-                      !['completed', 'cancelled', 'no_technician_found']
-                          .contains(status))
+                      ![
+                        'completed',
+                        'cancelled',
+                        'no_technician_found',
+                        'expired'
+                      ].contains(status))
                     Polyline(
                       polylineId: const PolylineId('route'),
                       color: AppTheme.primaryEmerald.withValues(alpha: 0.85),
@@ -615,8 +623,12 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                     ),
                   if (techLat != null &&
                       techLng != null &&
-                      !['completed', 'cancelled', 'no_technician_found']
-                          .contains(status))
+                      ![
+                        'completed',
+                        'cancelled',
+                        'no_technician_found',
+                        'expired'
+                      ].contains(status))
                     Marker(
                       markerId: const MarkerId('tech'),
                       position: _activePolylineCoordinates.isNotEmpty
@@ -905,8 +917,12 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                     ],
 
                     // Action Buttons (Clôturer / Annuler)
-                    if (!['completed', 'cancelled', 'no_technician_found']
-                        .contains(status))
+                    if (![
+                      'completed',
+                      'cancelled',
+                      'no_technician_found',
+                      'expired'
+                    ].contains(status))
                       Row(
                         children: [
                           Expanded(
@@ -920,6 +936,55 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                                   shape: const StadiumBorder(),
                                 ),
                                 child: const Text('Clôturer',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                        color: Colors.white)),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: SizedBox(
+                              height: 48,
+                              child: ElevatedButton(
+                                onPressed: () =>
+                                    _showCancelDialog(context, notifier),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.redAccent,
+                                  shape: const StadiumBorder(),
+                                ),
+                                child: const Text('Annuler',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                        color: Colors.white)),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                    if (['no_technician_found', 'expired'].contains(status))
+                      Row(
+                        children: [
+                          Expanded(
+                            child: SizedBox(
+                              height: 48,
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  notifier.retryBooking();
+                                  AppToast.show(context,
+                                      title: 'Recherche relancée',
+                                      message:
+                                          'Nouvelle recherche de technicien en cours...',
+                                      type: AppToastType.success);
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.primaryEmerald,
+                                  shape: const StadiumBorder(),
+                                ),
+                                child: const Text('Réessayer maintenant',
                                     style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 14,

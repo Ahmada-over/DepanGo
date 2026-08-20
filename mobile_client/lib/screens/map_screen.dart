@@ -128,7 +128,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                     width: 48,
                     height: 48,
                     child: MapMarkerIcons.flutterMarker(
-                      isCar ? MapMarkerType.technicianCar : MapMarkerType.technicianMoto,
+                      isCar
+                          ? MapMarkerType.technicianCar
+                          : MapMarkerType.technicianMoto,
                       size: 48,
                     ),
                   ),
@@ -148,7 +150,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            const Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 16),
+                            const Icon(Icons.star_rounded,
+                                color: Color(0xFFF59E0B), size: 16),
                             Text(
                               ' ${tech.rating.toStringAsFixed(1)}',
                               style: const TextStyle(
@@ -158,13 +161,16 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                             ),
                             const SizedBox(width: 12),
                             Icon(
-                              isCar ? Icons.directions_car_filled_outlined : Icons.two_wheeler,
+                              isCar
+                                  ? Icons.directions_car_filled_outlined
+                                  : Icons.two_wheeler,
                               size: 15,
                               color: AppTheme.textMuted,
                             ),
                             Text(
                               ' ${isCar ? 'Voiture' : 'Moto'}',
-                              style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
+                              style: const TextStyle(
+                                  color: AppTheme.textMuted, fontSize: 12),
                             ),
                           ],
                         ),
@@ -222,7 +228,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     return Scaffold(
       backgroundColor: AppTheme.bgLight,
       body: _isLoading || _currentPosition == null
-          ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryEmerald))
+          ? const Center(
+              child: CircularProgressIndicator(color: AppTheme.primaryEmerald))
           : Stack(
               children: [
                 FlutterMap(
@@ -236,7 +243,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   ),
                   children: [
                     TileLayer(
-                      urlTemplate: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+                      urlTemplate:
+                          'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
                       subdomains: const ['a', 'b', 'c', 'd'],
                       userAgentPackageName: 'com.techconnect.mobile',
                     ),
@@ -247,7 +255,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                           width: 48,
                           height: 48,
                           alignment: Alignment.center,
-                          child: MapMarkerIcons.flutterMarker(MapMarkerType.clientDot, size: 48),
+                          child: MapMarkerIcons.flutterMarker(
+                              MapMarkerType.clientDot,
+                              size: 48),
                         ),
                         ...technicians.map((tech) {
                           final isCar = tech.transportMode == 'voiture';
@@ -257,7 +267,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                             height: 52,
                             alignment: Alignment.bottomCenter,
                             child: MapMarkerIcons.flutterMarker(
-                              isCar ? MapMarkerType.technicianCar : MapMarkerType.technicianMoto,
+                              isCar
+                                  ? MapMarkerType.technicianCar
+                                  : MapMarkerType.technicianMoto,
                               size: 52,
                               onTap: () => _showTechnicianDetails(tech),
                             ),
@@ -267,7 +279,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                     ),
                   ],
                 ),
-
                 Positioned(
                   top: MediaQuery.of(context).padding.top + 12,
                   left: 16,
@@ -283,13 +294,13 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                         child: MapInfoChip(
                           icon: Icons.handyman_outlined,
                           title: widget.categoryName,
-                          subtitle: '${technicians.length} technicien(s) en ligne',
+                          subtitle:
+                              '${technicians.length} technicien(s) en ligne',
                         ),
                       ),
                     ],
                   ),
                 ),
-
                 if (technicians.isEmpty)
                   Positioned(
                     top: MediaQuery.of(context).padding.top + 72,
@@ -301,13 +312,13 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                       subtitle: 'Nous localisons les techniciens disponibles',
                     ),
                   ),
-
                 Positioned(
                   right: 16,
                   bottom: 24,
                   child: MapFloatingButton(
                     icon: Icons.my_location_rounded,
-                    onPressed: () => _mapController.move(_currentPosition!, 13.5),
+                    onPressed: () =>
+                        _mapController.move(_currentPosition!, 13.5),
                   ),
                 ),
               ],

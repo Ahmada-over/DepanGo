@@ -13,8 +13,8 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _isRegister = false;
-  final _phoneController = TextEditingController(text: '+221 77 999 88 77');
-  final _passController = TextEditingController(text: 'password123');
+  final _phoneController = TextEditingController();
+  final _passController = TextEditingController();
   final _nameController = TextEditingController();
   
   final List<String> _selectedCategories = ['cat_plumbing'];

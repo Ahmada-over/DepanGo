@@ -11,7 +11,8 @@ class AppConfig {
   static const bool isProduction = false;
 
   // Configuration des hôtes
-  static const String _cloudHost = 'backend-depango-346078879462.europe-west1.run.app';
+  static const String _cloudHost =
+      'backend-depango-346078879462.europe-west1.run.app';
   static const String _localPort = '8001';
 
   static String get baseUrl {

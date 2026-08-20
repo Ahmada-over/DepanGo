@@ -23,7 +23,8 @@ class AppTheme {
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: IconThemeData(color: textDark),
-        titleTextStyle: TextStyle(color: textDark, fontWeight: FontWeight.bold, fontSize: 18),
+        titleTextStyle: TextStyle(
+            color: textDark, fontWeight: FontWeight.bold, fontSize: 18),
       ),
       cardTheme: CardThemeData(
         color: cardBg,

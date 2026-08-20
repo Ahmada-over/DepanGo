@@ -3,7 +3,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/config.dart';
 
-final serverConnectivityProvider = StateNotifierProvider<ServerConnectivityNotifier, bool>((ref) {
+final serverConnectivityProvider =
+    StateNotifierProvider<ServerConnectivityNotifier, bool>((ref) {
   return ServerConnectivityNotifier();
 });
 
@@ -29,7 +30,8 @@ class ServerConnectivityNotifier extends StateNotifier<bool> {
     _pingTimer?.cancel();
     _pingTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
       try {
-        final dio = Dio(BaseOptions(connectTimeout: const Duration(seconds: 2)));
+        final dio =
+            Dio(BaseOptions(connectTimeout: const Duration(seconds: 2)));
         final response = await dio.get('${AppConfig.apiBaseUrl}/');
         if (response.statusCode != null) {
           setOnline();

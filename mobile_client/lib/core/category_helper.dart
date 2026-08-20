@@ -8,7 +8,8 @@ class CategoryHelper {
       'icon': Icons.water_drop_rounded,
       'emoji': '🚰',
       'color': Color(0xFF0F766E),
-      'description': 'Fuites d\'eau, robinetterie, tuyauterie, débouchage WC et canalisations.',
+      'description':
+          'Fuites d\'eau, robinetterie, tuyauterie, débouchage WC et canalisations.',
     },
     'cat_hvac': {
       'name': 'Climatisation & Froid',
@@ -16,7 +17,8 @@ class CategoryHelper {
       'icon': Icons.ac_unit_rounded,
       'emoji': '❄️',
       'color': Color(0xFF0284C7),
-      'description': 'Entretien split, recharge de gaz, panne compresseur, frigos et chambres froides.',
+      'description':
+          'Entretien split, recharge de gaz, panne compresseur, frigos et chambres froides.',
     },
     'cat_electrical': {
       'name': 'Électricité Générale',
@@ -24,7 +26,8 @@ class CategoryHelper {
       'icon': Icons.bolt_rounded,
       'emoji': '⚡',
       'color': Color(0xFFD97706),
-      'description': 'Court-circuit, disjoncteur qui saute, tableau électrique, câblage et prises.',
+      'description':
+          'Court-circuit, disjoncteur qui saute, tableau électrique, câblage et prises.',
     },
     'cat_appliances': {
       'name': 'Électroménager',
@@ -32,7 +35,8 @@ class CategoryHelper {
       'icon': Icons.kitchen_rounded,
       'emoji': '🔌',
       'color': Color(0xFF7C3AED),
-      'description': 'Lave-linge, lave-vaisselle, micro-ondes, cuisinière et petits appareils.',
+      'description':
+          'Lave-linge, lave-vaisselle, micro-ondes, cuisinière et petits appareils.',
     },
     'cat_express': {
       'name': 'Dépannage d\'Urgence',
@@ -40,18 +44,21 @@ class CategoryHelper {
       'icon': Icons.flash_on_rounded,
       'emoji': '🚨',
       'color': Color(0xFFDC2626),
-      'description': 'Intervention prioritaire immédiate pour dépannage express à Dakar.',
+      'description':
+          'Intervention prioritaire immédiate pour dépannage express à Dakar.',
     },
   };
 
   static String getCategoryName(String? categoryId) {
     if (categoryId == null || categoryId.isEmpty) return 'Dépannage Général';
-    return _categories[categoryId]?['name'] ?? categoryId.replaceFirst('cat_', '').toUpperCase();
+    return _categories[categoryId]?['name'] ??
+        categoryId.replaceFirst('cat_', '').toUpperCase();
   }
 
   static String getShortName(String? categoryId) {
     if (categoryId == null || categoryId.isEmpty) return 'Dépannage';
-    return _categories[categoryId]?['shortName'] ?? categoryId.replaceFirst('cat_', '').toUpperCase();
+    return _categories[categoryId]?['shortName'] ??
+        categoryId.replaceFirst('cat_', '').toUpperCase();
   }
 
   static IconData getCategoryIcon(String? categoryId) {
@@ -65,13 +72,16 @@ class CategoryHelper {
   }
 
   static Color getCategoryColor(String? categoryId) {
-    if (categoryId == null || categoryId.isEmpty) return const Color(0xFF0F766E);
+    if (categoryId == null || categoryId.isEmpty)
+      return const Color(0xFF0F766E);
     return _categories[categoryId]?['color'] ?? const Color(0xFF0F766E);
   }
 
   static String getCategoryDescription(String? categoryId) {
-    if (categoryId == null || categoryId.isEmpty) return 'Intervention technique de dépannage.';
-    return _categories[categoryId]?['description'] ?? 'Intervention technique de dépannage.';
+    if (categoryId == null || categoryId.isEmpty)
+      return 'Intervention technique de dépannage.';
+    return _categories[categoryId]?['description'] ??
+        'Intervention technique de dépannage.';
   }
 
   static List<Map<String, dynamic>> getAllCategories() {

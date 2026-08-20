@@ -10,6 +10,9 @@ import 'bookings_history_screen.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'login_screen.dart';
+import 'profile_tab.dart';
+import 'notifications_screen.dart';
+import 'all_services_screen.dart';
 import 'map_selection_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -210,9 +213,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           children: [
             _buildHomeContent(context),
             const BookingsHistoryScreen(),
-            _buildPlaceholderTab(
-                'Support & Assistance 24/7', Icons.support_agent),
-            _buildClientAccountTab(context),
+            _buildPlaceholderTab('Calendrier', Icons.calendar_month),
+            _buildPlaceholderTab('Boîte de réception', Icons.inbox),
+            const ProfileTab(),
           ],
         ),
       ),
@@ -316,8 +319,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           IconButton(
                             icon: const Icon(Icons.notifications_none_outlined,
                                 color: AppTheme.textDark),
-                            onPressed: () =>
-                                _showNotificationModalBottomSheet(context),
+                            onPressed: () {
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (_) =>
+                                          const NotificationsScreen()));
+                            },
                           ),
                           if (hasUnread)
                             Positioned(
@@ -462,8 +470,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 Row(
                   children: [
                     ElevatedButton.icon(
-                      onPressed: () => _openBooking(
-                          context, 'cat_express', 'Recherche Rapide'),
+                      onPressed: () => _showQuickBookingCategories(context),
                       icon: const Icon(Icons.flash_on, size: 16),
                       label: const Text('Commander en 1-Clic'),
                       style: ElevatedButton.styleFrom(
@@ -484,17 +491,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           // 4. Popular Services Grid Section
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
-              Text('Services Populaires',
+            children: [
+              const Text('Services Populaires',
                   style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.bold,
                       color: AppTheme.textDark)),
-              Text('Tout voir >',
-                  style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.primaryEmerald)),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const AllServicesScreen()));
+                },
+                child: const Text('Tout voir >',
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primaryEmerald)),
+              ),
             ],
           ),
           const SizedBox(height: 14),
@@ -621,8 +636,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                                color:
-                                    Colors.black.withOpacity(0.1)),
+                                color: Colors.black.withOpacity(0.1)),
                             boxShadow: [
                               BoxShadow(
                                   color: Colors.black.withOpacity(0.02),
@@ -730,17 +744,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           // 6. Recommended For You Horizontal Cards
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
-              Text('Recommandés pour vous',
+            children: [
+              const Text('Recommandés pour vous',
                   style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.bold,
                       color: AppTheme.textDark)),
-              Text('Voir tout >',
-                  style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.primaryEmerald)),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const AllServicesScreen()));
+                },
+                child: const Text('Voir tout >',
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primaryEmerald)),
+              ),
             ],
           ),
           const SizedBox(height: 14),
@@ -1509,27 +1531,75 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
             activeIcon: Icon(Icons.home, color: AppTheme.primaryEmerald),
-            label: 'Accueil',
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.list_alt_outlined),
+            activeIcon: Icon(Icons.list_alt, color: AppTheme.primaryEmerald),
+            label: 'Bookings',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.calendar_today_outlined),
             activeIcon:
                 Icon(Icons.calendar_today, color: AppTheme.primaryEmerald),
-            label: 'Commandes',
+            label: 'Calendar',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.support_agent_outlined),
-            activeIcon:
-                Icon(Icons.support_agent, color: AppTheme.primaryEmerald),
-            label: 'Support',
+            icon: Icon(Icons.chat_bubble_outline),
+            activeIcon: Icon(Icons.chat_bubble, color: AppTheme.primaryEmerald),
+            label: 'Inbox',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
             activeIcon: Icon(Icons.person, color: AppTheme.primaryEmerald),
-            label: 'Compte',
+            label: 'Profile',
           ),
         ],
       ),
+    );
+  }
+
+  void _showQuickBookingCategories(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) {
+        return Container(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Choisissez un service rapide',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      color: AppTheme.primaryDark)),
+              const SizedBox(height: 16),
+              ..._popularServices
+                  .map((cat) => ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor:
+                              AppTheme.primaryEmerald.withValues(alpha: 0.1),
+                          child:
+                              Icon(cat['icon'], color: AppTheme.primaryEmerald),
+                        ),
+                        title: Text(cat['name'],
+                            style:
+                                const TextStyle(fontWeight: FontWeight.w600)),
+                        trailing:
+                            const Icon(Icons.chevron_right, color: Colors.grey),
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          _openBooking(context, cat['catId'], cat['name']);
+                        },
+                      ))
+                  .toList(),
+            ],
+          ),
+        );
+      },
     );
   }
 

@@ -213,3 +213,38 @@ async def decline_booking_offer(
     
     return {"message": "Offer declined successfully"}
 
+@router.post("/{booking_id}/retry", response_model=BookingResponse)
+async def retry_booking(
+    booking_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user_id: str = Depends(get_current_user),
+):
+    """Client retries a booking that reached no_technician_found."""
+    from sqlalchemy import delete
+    from app.infrastructure.database.models import MatchingLogModel
+    from app.application.use_cases import BookingUseCase
+    
+    booking_repo = SQLAlchemyBookingRepository(db)
+    existing = await booking_repo.get_by_id(booking_id)
+    if not existing:
+        raise HTTPException(status_code=404, detail="Booking not found")
+        
+    if existing.client_id != current_user_id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+        
+    if existing.status not in ["no_technician_found", "expired"]:
+        raise HTTPException(status_code=400, detail=f"Cannot retry booking in status {existing.status}")
+        
+    # Clear matching logs for this booking so we can contact the same techs again
+    stmt_delete = delete(MatchingLogModel).where(MatchingLogModel.booking_id == booking_id)
+    await db.execute(stmt_delete)
+    
+    # Update status to pending
+    updated = await booking_repo.update_status(booking_id, "pending")
+    await db.commit()
+    
+    # Relaunch matching loop in background
+    use_case = BookingUseCase(booking_repo)
+    asyncio.create_task(use_case.run_matching_cycle(updated))
+    
+    return updated

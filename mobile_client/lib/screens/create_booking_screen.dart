@@ -41,7 +41,7 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
   final _descriptionController = TextEditingController();
   late TextEditingController _addressController;
   final ImagePicker _picker = ImagePicker();
-  
+
   File? _selectedImageFile;
   String? _uploadedPhotoUrl;
   bool _isUploadingPhoto = false;
@@ -157,7 +157,10 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
               const SizedBox(height: 16),
               const Text(
                 'Photo de la panne / intervention',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textDark),
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textDark),
               ),
               const SizedBox(height: 8),
               const Text(
@@ -173,10 +176,13 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                     color: AppTheme.primaryEmerald.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.camera_alt_rounded, color: AppTheme.primaryEmerald),
+                  child: const Icon(Icons.camera_alt_rounded,
+                      color: AppTheme.primaryEmerald),
                 ),
-                title: const Text('Prendre une photo', style: TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: const Text('Ouvrir l\'appareil photo', style: TextStyle(fontSize: 12)),
+                title: const Text('Prendre une photo',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: const Text('Ouvrir l\'appareil photo',
+                    style: TextStyle(fontSize: 12)),
                 onTap: () {
                   Navigator.pop(ctx);
                   _pickImage(ImageSource.camera);
@@ -190,10 +196,13 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                     color: Colors.blue.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.photo_library_rounded, color: Colors.blue),
+                  child: const Icon(Icons.photo_library_rounded,
+                      color: Colors.blue),
                 ),
-                title: const Text('Choisir dans la galerie', style: TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: const Text('Sélectionner une photo existante', style: TextStyle(fontSize: 12)),
+                title: const Text('Choisir dans la galerie',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: const Text('Sélectionner une photo existante',
+                    style: TextStyle(fontSize: 12)),
                 onTap: () {
                   Navigator.pop(ctx);
                   _pickImage(ImageSource.gallery);
@@ -222,7 +231,8 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text('Dépannage : $catName', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        title: Text('Dépannage : $catName',
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
@@ -262,8 +272,10 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          CategoryHelper.getCategoryDescription(widget.categoryId),
-                          style: TextStyle(fontSize: 11, color: Colors.grey[700]),
+                          CategoryHelper.getCategoryDescription(
+                              widget.categoryId),
+                          style:
+                              TextStyle(fontSize: 11, color: Colors.grey[700]),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -277,14 +289,18 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
 
             const Text(
               'Description de la Panne',
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.textDark),
+              style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textDark),
             ),
             const SizedBox(height: 8),
             TextField(
               controller: _descriptionController,
               maxLines: 3,
               decoration: InputDecoration(
-                hintText: 'Ex: Fuite sous l\'évier, le disjoncteur saute, clim qui ne refroidit plus...',
+                hintText:
+                    'Ex: Fuite sous l\'évier, le disjoncteur saute, clim qui ne refroidit plus...',
                 hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
                 filled: true,
                 fillColor: Colors.grey[50],
@@ -299,7 +315,8 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: AppTheme.primaryEmerald, width: 1.5),
+                  borderSide: const BorderSide(
+                      color: AppTheme.primaryEmerald, width: 1.5),
                 ),
               ),
             ),
@@ -308,7 +325,10 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
             // Photo Attachment Section
             const Text(
               'Photo de l\'installation / panne (Recommandé)',
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.textDark),
+              style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textDark),
             ),
             const SizedBox(height: 8),
 
@@ -318,11 +338,13 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                 borderRadius: BorderRadius.circular(16),
                 child: Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
                   decoration: BoxDecoration(
                     color: Colors.grey[50],
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.grey[300]!, style: BorderStyle.solid),
+                    border: Border.all(
+                        color: Colors.grey[300]!, style: BorderStyle.solid),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -333,14 +355,21 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                           color: AppTheme.primaryEmerald.withOpacity(0.12),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.add_a_photo_rounded, color: AppTheme.primaryEmerald, size: 22),
+                        child: const Icon(Icons.add_a_photo_rounded,
+                            color: AppTheme.primaryEmerald, size: 22),
                       ),
                       const SizedBox(width: 12),
                       const Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Ajouter une photo', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.textDark)),
-                          Text('Appareil photo ou Galerie', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                          Text('Ajouter une photo',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                  color: AppTheme.textDark)),
+                          Text('Appareil photo ou Galerie',
+                              style:
+                                  TextStyle(fontSize: 11, color: Colors.grey)),
                         ],
                       ),
                     ],
@@ -353,7 +382,8 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                 decoration: BoxDecoration(
                   color: Colors.grey[50],
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppTheme.primaryEmerald.withOpacity(0.4)),
+                  border: Border.all(
+                      color: AppTheme.primaryEmerald.withOpacity(0.4)),
                 ),
                 child: Row(
                   children: [
@@ -377,7 +407,8 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                                 child: SizedBox(
                                   width: 24,
                                   height: 24,
-                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                  child: CircularProgressIndicator(
+                                      color: Colors.white, strokeWidth: 2),
                                 ),
                               ),
                             ),
@@ -389,12 +420,20 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Photo attachée', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.textDark)),
+                          const Text('Photo attachée',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                  color: AppTheme.textDark)),
                           Text(
-                            _isUploadingPhoto ? 'Téléchargement en cours...' : 'Prête pour le technicien ✅',
+                            _isUploadingPhoto
+                                ? 'Téléchargement en cours...'
+                                : 'Prête pour le technicien ✅',
                             style: TextStyle(
                               fontSize: 11,
-                              color: _isUploadingPhoto ? Colors.amber[800] : Colors.green[700],
+                              color: _isUploadingPhoto
+                                  ? Colors.amber[800]
+                                  : Colors.green[700],
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -402,7 +441,8 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
+                      icon: const Icon(Icons.delete_outline_rounded,
+                          color: Colors.redAccent),
                       onPressed: _removePhoto,
                       tooltip: 'Supprimer la photo',
                     ),
@@ -414,16 +454,21 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
 
             const Text(
               'Adresse d\'intervention à Dakar',
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.textDark),
+              style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textDark),
             ),
             const SizedBox(height: 8),
             TextField(
               controller: _addressController,
               decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.location_on, color: AppTheme.primaryEmerald),
+                prefixIcon: const Icon(Icons.location_on,
+                    color: AppTheme.primaryEmerald),
                 filled: true,
                 fillColor: Colors.grey[50],
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
                   borderSide: BorderSide(color: Colors.grey[200]!),
@@ -446,12 +491,14 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
               ),
               child: const Row(
                 children: [
-                  Icon(Icons.payments_outlined, color: Color(0xFFD97706), size: 22),
+                  Icon(Icons.payments_outlined,
+                      color: Color(0xFFD97706), size: 22),
                   SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       'Paiement direct : Le diagnostic et le devis sont convenus sur place. Réglez directement l\'artisan en Espèces ou Wave/Orange Money.',
-                      style: TextStyle(fontSize: 11, color: Color(0xFF92400E), height: 1.4),
+                      style: TextStyle(
+                          fontSize: 11, color: Color(0xFF92400E), height: 1.4),
                     ),
                   ),
                 ],
@@ -469,13 +516,15 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                   backgroundColor: AppTheme.primaryEmerald,
                   foregroundColor: Colors.white,
                   elevation: 2,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16)),
                 ),
                 child: _isLoading
                     ? const SizedBox(
                         width: 24,
                         height: 24,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                        child: CircularProgressIndicator(
+                            color: Colors.white, strokeWidth: 2.5),
                       )
                     : Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -488,7 +537,10 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                               widget.preferredTechnicianId != null
                                   ? 'Demande directe : ${widget.preferredTechnicianName ?? 'l\'artisan'}'
                                   : 'TROUVER UN DÉPANNEUR EN DIRECT',
-                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 0.3),
+                              style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.3),
                               overflow: TextOverflow.ellipsis,
                               maxLines: 1,
                             ),
@@ -553,7 +605,8 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
         AppToast.show(
           context,
           title: 'Échec de réservation',
-          message: 'Impossible d\'envoyer la demande. Vérifiez votre connexion.',
+          message:
+              'Impossible d\'envoyer la demande. Vérifiez votre connexion.',
           type: AppToastType.error,
         );
       }

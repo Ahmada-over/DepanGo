@@ -14,9 +14,8 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  final _emailController =
-      TextEditingController(text: 'client@techconnect.com');
-  final _passwordController = TextEditingController(text: 'password123');
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -46,7 +45,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _errorMessage = null;
     });
 
-    final success = await ref.read(authProvider.notifier).login(email, password);
+    final success =
+        await ref.read(authProvider.notifier).login(email, password);
 
     if (!mounted) return;
 

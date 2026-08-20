@@ -142,7 +142,8 @@ class _MapMarkerPainter extends CustomPainter {
 
     final pinPath = Path()
       ..moveTo(w / 2, h * 0.92)
-      ..cubicTo(w * 0.18, h * 0.58, w * 0.18, h * 0.22, w / 2, pinTop + w * 0.18)
+      ..cubicTo(
+          w * 0.18, h * 0.58, w * 0.18, h * 0.22, w / 2, pinTop + w * 0.18)
       ..cubicTo(w * 0.82, h * 0.22, w * 0.82, h * 0.58, w / 2, h * 0.92)
       ..close();
 
@@ -235,14 +236,20 @@ class _MapMarkerPainter extends CustomPainter {
 
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromCenter(center: Offset(center.dx, center.dy + s * 0.15), width: s * 1.5, height: s * 1.1),
+        Rect.fromCenter(
+            center: Offset(center.dx, center.dy + s * 0.15),
+            width: s * 1.5,
+            height: s * 1.1),
         const Radius.circular(2),
       ),
       paint,
     );
 
     canvas.drawRect(
-      Rect.fromCenter(center: Offset(center.dx, center.dy + s * 0.35), width: s * 0.45, height: s * 0.45),
+      Rect.fromCenter(
+          center: Offset(center.dx, center.dy + s * 0.35),
+          width: s * 0.45,
+          height: s * 0.45),
       Paint()..color = Colors.white,
     );
   }
@@ -254,12 +261,15 @@ class _MapMarkerPainter extends CustomPainter {
       ..strokeWidth = s * 0.14
       ..strokeCap = StrokeCap.round;
 
-    canvas.drawCircle(Offset(center.dx - s * 0.55, center.dy + s * 0.35), s * 0.32, paint);
-    canvas.drawCircle(Offset(center.dx + s * 0.55, center.dy + s * 0.35), s * 0.32, paint);
+    canvas.drawCircle(
+        Offset(center.dx - s * 0.55, center.dy + s * 0.35), s * 0.32, paint);
+    canvas.drawCircle(
+        Offset(center.dx + s * 0.55, center.dy + s * 0.35), s * 0.32, paint);
 
     final body = Path()
       ..moveTo(center.dx - s * 0.55, center.dy + s * 0.35)
-      ..quadraticBezierTo(center.dx - s * 0.1, center.dy - s * 0.55, center.dx + s * 0.35, center.dy - s * 0.15)
+      ..quadraticBezierTo(center.dx - s * 0.1, center.dy - s * 0.55,
+          center.dx + s * 0.35, center.dy - s * 0.15)
       ..lineTo(center.dx + s * 0.55, center.dy + s * 0.1);
     canvas.drawPath(body, paint);
 
@@ -277,7 +287,10 @@ class _MapMarkerPainter extends CustomPainter {
 
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromCenter(center: Offset(center.dx, center.dy + s * 0.1), width: s * 1.6, height: s * 0.55),
+        Rect.fromCenter(
+            center: Offset(center.dx, center.dy + s * 0.1),
+            width: s * 1.6,
+            height: s * 0.55),
         Radius.circular(s * 0.12),
       ),
       paint,
@@ -285,26 +298,37 @@ class _MapMarkerPainter extends CustomPainter {
 
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromCenter(center: Offset(center.dx, center.dy - s * 0.15), width: s * 0.95, height: s * 0.42),
+        Rect.fromCenter(
+            center: Offset(center.dx, center.dy - s * 0.15),
+            width: s * 0.95,
+            height: s * 0.42),
         Radius.circular(s * 0.1),
       ),
       Paint()..color = color.withValues(alpha: 0.85),
     );
 
     final wheelPaint = Paint()..color = const Color(0xFF1E293B);
-    canvas.drawCircle(Offset(center.dx - s * 0.48, center.dy + s * 0.38), s * 0.14, wheelPaint);
-    canvas.drawCircle(Offset(center.dx + s * 0.48, center.dy + s * 0.38), s * 0.14, wheelPaint);
+    canvas.drawCircle(Offset(center.dx - s * 0.48, center.dy + s * 0.38),
+        s * 0.14, wheelPaint);
+    canvas.drawCircle(Offset(center.dx + s * 0.48, center.dy + s * 0.38),
+        s * 0.14, wheelPaint);
 
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromCenter(center: Offset(center.dx - s * 0.18, center.dy - s * 0.15), width: s * 0.22, height: s * 0.18),
+        Rect.fromCenter(
+            center: Offset(center.dx - s * 0.18, center.dy - s * 0.15),
+            width: s * 0.22,
+            height: s * 0.18),
         const Radius.circular(2),
       ),
       Paint()..color = Colors.white.withValues(alpha: 0.9),
     );
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromCenter(center: Offset(center.dx + s * 0.18, center.dy - s * 0.15), width: s * 0.22, height: s * 0.18),
+        Rect.fromCenter(
+            center: Offset(center.dx + s * 0.18, center.dy - s * 0.15),
+            width: s * 0.22,
+            height: s * 0.18),
         const Radius.circular(2),
       ),
       Paint()..color = Colors.white.withValues(alpha: 0.9),

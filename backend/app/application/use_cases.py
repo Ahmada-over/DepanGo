@@ -219,6 +219,9 @@ class BookingUseCases:
                 }
                 await ws_manager.broadcast_to_booking(booking.id, no_tech_payload)
                 await ws_manager.send_personal_message(booking.client_id, no_tech_payload)
+
+                # Schedule expiration (15 minutes)
+                asyncio.create_task(self._schedule_expiration(booking.id, 15 * 60))
         except Exception as e:
             logger.error(f"[MATCHING] ERROR booking={booking.id}: {e}", exc_info=True)
 
@@ -358,3 +361,21 @@ class BookingUseCases:
             await asyncio.sleep(0.1 * (attempt + 1))
         
         raise ValueError("Concurrency conflict: booking was modified by another transaction.")
+
+    async def _schedule_expiration(self, booking_id: str, delay_seconds: int):
+        import asyncio
+        from app.infrastructure.database.session import AsyncSessionLocal
+        from app.infrastructure.repositories.sqlalchemy_repositories import SQLAlchemyBookingRepository
+        
+        await asyncio.sleep(delay_seconds)
+        
+        try:
+            async with AsyncSessionLocal() as session:
+                booking_repo = SQLAlchemyBookingRepository(session)
+                booking = await booking_repo.get_by_id(booking_id)
+                if booking and booking.status == "no_technician_found":
+                    await booking_repo.update_status(booking_id, "expired")
+                    await session.commit()
+                    logger.info(f"[MATCHING] Booking {booking_id} expired after waiting for user action.")
+        except Exception as e:
+            logger.error(f"[MATCHING] Error expiring booking {booking_id}: {e}", exc_info=True)

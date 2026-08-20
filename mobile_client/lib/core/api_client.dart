@@ -32,7 +32,8 @@ final apiClientProvider = Provider<Dio>((ref) {
         return handler.next(response);
       },
       onError: (DioException e, handler) {
-        if (e.type == DioExceptionType.connectionError || e.type == DioExceptionType.connectionTimeout) {
+        if (e.type == DioExceptionType.connectionError ||
+            e.type == DioExceptionType.connectionTimeout) {
           ref.read(serverConnectivityProvider.notifier).setOffline();
         } else {
           ref.read(serverConnectivityProvider.notifier).setOnline();

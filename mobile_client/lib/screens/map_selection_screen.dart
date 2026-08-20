@@ -55,12 +55,14 @@ class _MapSelectionScreenState extends ConsumerState<MapSelectionScreen> {
   Future<void> _loadMarkerIcons() async {
     if (!mounted) return;
     setState(() {
-      _techMotoIcon = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange);
-      _techCarIcon = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue);
+      _techMotoIcon =
+          BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange);
+      _techCarIcon =
+          BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue);
       _markersReady = true;
     });
   }
-  
+
   BitmapDescriptor? _techMotoIcon;
   BitmapDescriptor? _techCarIcon;
 
@@ -163,9 +165,11 @@ class _MapSelectionScreenState extends ConsumerState<MapSelectionScreen> {
               latitude: data['latitude'],
               longitude: data['longitude'],
               name: data['name'],
-              averageRating: (data['average_rating'] as num?)?.toDouble() ?? 5.0,
+              averageRating:
+                  (data['average_rating'] as num?)?.toDouble() ?? 5.0,
               transportMode: data['transport_mode'] ?? 'moto',
-              categoryIds: _techLocations[techId]?.categoryIds ?? [data['category_id'] as String],
+              categoryIds: _techLocations[techId]?.categoryIds ??
+                  [data['category_id'] as String],
             );
           });
         }
@@ -344,7 +348,8 @@ class _MapSelectionScreenState extends ConsumerState<MapSelectionScreen> {
                   child: MapInfoChip(
                     icon: Icons.place_outlined,
                     title: _isDragging ? 'Déplacez la carte…' : _addressText,
-                    subtitle: '${_techLocations.length} technicien(s) à proximité',
+                    subtitle:
+                        '${_techLocations.length} technicien(s) à proximité',
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -365,7 +370,8 @@ class _MapSelectionScreenState extends ConsumerState<MapSelectionScreen> {
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(24)),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.08),
@@ -413,7 +419,8 @@ class _MapSelectionScreenState extends ConsumerState<MapSelectionScreen> {
                       children: [
                         const CircleAvatar(
                           backgroundColor: AppTheme.primaryLight,
-                          child: Icon(Icons.person, color: AppTheme.primaryEmerald),
+                          child: Icon(Icons.person,
+                              color: AppTheme.primaryEmerald),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -430,7 +437,8 @@ class _MapSelectionScreenState extends ConsumerState<MapSelectionScreen> {
                               ),
                               Row(
                                 children: [
-                                  const Icon(Icons.star, color: Colors.amber, size: 14),
+                                  const Icon(Icons.star,
+                                      color: Colors.amber, size: 14),
                                   const SizedBox(width: 4),
                                   Text(
                                     '${_selectedTech!.averageRating.toStringAsFixed(1)}  •  ${_selectedTech!.transportMode.toUpperCase()}',
@@ -444,7 +452,9 @@ class _MapSelectionScreenState extends ConsumerState<MapSelectionScreen> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                _selectedTech!.categoryIds.map((c) => _formatCategory(c)).join(' • '),
+                                _selectedTech!.categoryIds
+                                    .map((c) => _formatCategory(c))
+                                    .join(' • '),
                                 style: const TextStyle(
                                   fontSize: 11,
                                   color: AppTheme.primaryEmerald,
@@ -465,7 +475,8 @@ class _MapSelectionScreenState extends ConsumerState<MapSelectionScreen> {
                     height: 52,
                     child: ElevatedButton(
                       onPressed: () {
-                        ref.read(selectedLocationProvider.notifier).state = _addressText;
+                        ref.read(selectedLocationProvider.notifier).state =
+                            _addressText;
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -490,8 +501,11 @@ class _MapSelectionScreenState extends ConsumerState<MapSelectionScreen> {
                         ),
                       ),
                       child: Text(
-                        _selectedTech == null ? 'Trouver le plus proche' : 'Demander ce technicien',
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                        _selectedTech == null
+                            ? 'Trouver le plus proche'
+                            : 'Demander ce technicien',
+                        style: const TextStyle(
+                            fontSize: 15, fontWeight: FontWeight.w700),
                       ),
                     ),
                   ),

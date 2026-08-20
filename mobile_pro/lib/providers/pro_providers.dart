@@ -420,17 +420,20 @@ final proWebSocketProvider = Provider<ProWebSocketService>((ref) {
 class ProWebSocketService {
   final Ref _ref;
   WebSocketChannel? _channel;
+  Timer? _reconnectTimer;
 
   ProWebSocketService(this._ref);
 
   void connect() {
+    _reconnectTimer?.cancel();
+    
     final user = _ref.read(authProvider);
     final token = _ref.read(authProvider.notifier).token;
     if (user == null) return;
 
     final isOnline = _ref.read(serverConnectivityProvider);
     if (!isOnline) {
-      Future.delayed(const Duration(seconds: 5), connect);
+      _scheduleReconnect();
       return;
     }
 
@@ -438,10 +441,13 @@ class ProWebSocketService {
       final tokenQuery =
           (token != null && token.isNotEmpty) ? '?token=$token' : '';
       final url = '${AppConfig.wsBaseUrl}/users/${user.id}$tokenQuery';
+      
       _channel = WebSocketChannel.connect(Uri.parse(url));
 
       _channel!.ready.catchError((e) {
         debugPrint('[WS] Ready catchError: $e');
+        _ref.read(serverConnectivityProvider.notifier).setOffline();
+        _scheduleReconnect();
       });
 
       _channel!.stream.listen(
@@ -467,19 +473,27 @@ class ProWebSocketService {
         },
         onError: (err) {
           debugPrint('[WS] Error: $err');
-          Future.delayed(const Duration(seconds: 5), connect);
+          _ref.read(serverConnectivityProvider.notifier).setOffline();
+          _scheduleReconnect();
         },
         onDone: () {
           debugPrint('[WS] Connection closed');
-          Future.delayed(const Duration(seconds: 5), connect);
+          _scheduleReconnect();
         },
       );
     } catch (e) {
       debugPrint('[WS] Connect exception: $e');
+      _scheduleReconnect();
     }
   }
 
+  void _scheduleReconnect() {
+    _reconnectTimer?.cancel();
+    _reconnectTimer = Timer(const Duration(seconds: 5), connect);
+  }
+
   void disconnect() {
+    _reconnectTimer?.cancel();
     _channel?.sink.close();
     _channel = null;
   }

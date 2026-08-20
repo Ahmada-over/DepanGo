@@ -61,7 +61,7 @@ class MapTechniciansNotifier extends StateNotifier<List<MapTechnician>> {
 
   Future<void> initMap(String categoryId, double lat, double lng) async {
     _currentCategoryId = categoryId;
-    
+
     // 1. Fetch initial nearby technicians
     try {
       final dio = ref.read(apiClientProvider);
@@ -74,7 +74,7 @@ class MapTechniciansNotifier extends StateNotifier<List<MapTechnician>> {
           'radius_km': 50,
         },
       );
-      
+
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;
         state = data.map((json) => MapTechnician.fromJson(json)).toList();
@@ -89,10 +89,10 @@ class MapTechniciansNotifier extends StateNotifier<List<MapTechnician>> {
 
   void _connectWebSocket(String categoryId) {
     _channel?.sink.close();
-    
+
     final wsUrl = Uri.parse('${AppConfig.wsBaseUrl}/area/$categoryId');
     _channel = WebSocketChannel.connect(wsUrl);
-    
+
     _channel?.stream.listen((message) {
       final data = jsonDecode(message);
       if (data['type'] == 'LOCATION_UPDATE') {
@@ -102,24 +102,28 @@ class MapTechniciansNotifier extends StateNotifier<List<MapTechnician>> {
         final name = data['name'] ?? 'Technicien';
         final rating = (data['average_rating'] ?? 5.0).toDouble();
         final transportMode = data['transport_mode'] ?? 'moto';
-        
+
         // Update existing or add new (without full details, but enough for marker)
         final existingIndex = state.indexWhere((t) => t.id == techId);
         if (existingIndex >= 0) {
           final updatedList = List<MapTechnician>.from(state);
-          updatedList[existingIndex] = updatedList[existingIndex].copyWith(latitude: lat, longitude: lng);
+          updatedList[existingIndex] = updatedList[existingIndex]
+              .copyWith(latitude: lat, longitude: lng);
           state = updatedList;
         } else {
           // Si nouveau technicien, on l'ajoute avec des infos basiques
-          state = [...state, MapTechnician(
-            id: techId,
-            name: name,
-            latitude: lat,
-            longitude: lng,
-            rating: rating,
-            categoryIds: [categoryId],
-            transportMode: transportMode,
-          )];
+          state = [
+            ...state,
+            MapTechnician(
+              id: techId,
+              name: name,
+              latitude: lat,
+              longitude: lng,
+              rating: rating,
+              categoryIds: [categoryId],
+              transportMode: transportMode,
+            )
+          ];
         }
       }
     }, onError: (error) {
@@ -136,7 +140,8 @@ class MapTechniciansNotifier extends StateNotifier<List<MapTechnician>> {
   }
 }
 
-final mapTechniciansProvider = StateNotifierProvider.autoDispose<MapTechniciansNotifier, List<MapTechnician>>((ref) {
+final mapTechniciansProvider = StateNotifierProvider.autoDispose<
+    MapTechniciansNotifier, List<MapTechnician>>((ref) {
   final notifier = MapTechniciansNotifier(ref);
   ref.onDispose(() {
     notifier.closeMap();

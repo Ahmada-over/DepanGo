@@ -128,6 +128,21 @@ class BookingModel {
       createdAt: DateTime.tryParse(json['created_at'] ?? '') ?? DateTime.now(),
     );
   }
+
+  String get categoryName {
+    switch (categoryId) {
+      case 'cat_plumbing':
+        return 'Plomberie & Sanitaire';
+      case 'cat_electrical':
+        return 'Électricité & Tableau';
+      case 'cat_hvac':
+        return 'Climatisation & Froid';
+      case 'cat_appliances':
+        return 'Électroménager';
+      default:
+        return 'Dépannage';
+    }
+  }
 }
 
 class ChatMessageModel {

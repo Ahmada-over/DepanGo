@@ -3,16 +3,24 @@
  * Dakar Fleet Tracking & System Telemetry
  */
 
+// =========================================================================
+// 🔘 BASCULE ENVIRONNEMENT DASHBOARD (PROD vs LOCAL)
+//
+// true  -> Mode PRODUCTION (Cloud Run)
+// false -> Mode LOCAL      (http://127.0.0.1:8001)
+// =========================================================================
+const IS_PRODUCTION = false;
+
 const CONFIG = {
   CLOUD_RUN_URL: 'https://backend-depango-346078879462.europe-west1.run.app',
   LOCAL_URL: 'http://127.0.0.1:8001',
-  DEFAULT_ENV: 'cloud', // 'cloud' | 'local'
+  DEFAULT_ENV: IS_PRODUCTION ? 'cloud' : 'local',
   DAKAR_CENTER: [14.6937, -17.4441],
 };
 
 // --- Application State ---
 const state = {
-  currentEnv: localStorage.getItem('depango_admin_env') || CONFIG.DEFAULT_ENV,
+  currentEnv: localStorage.getItem('depango_admin_env') || (IS_PRODUCTION ? 'cloud' : 'local'),
   token: localStorage.getItem('depango_admin_token') || '',
   adminUser: JSON.parse(localStorage.getItem('depango_admin_user') || 'null'),
   currentTab: 'overview',
@@ -544,7 +552,7 @@ function renderMissions(missions) {
 
       return `
         <tr>
-          <td style="font-family: var(--font-mono); font-weight: 700; color: var(--text-secondary);">#${shortId}</td>
+          <td style=" font-weight: 700; color: var(--text-secondary);">#${shortId}</td>
           <td>
             <div style="font-weight: 700;">${m.client_name}</div>
             <div style="font-size: 11px; color: var(--text-muted);">${m.client_phone}</div>
@@ -631,7 +639,7 @@ function renderTechnicians(techs) {
             <div style="font-weight: 700; color: #fff;">${t.name}</div>
             <div style="font-size: 11px; color: var(--text-muted);">${t.email || 'Sans email'}</div>
           </td>
-          <td style="font-family: var(--font-mono); font-weight: 600;">
+          <td style=" font-weight: 600;">
             <a href="tel:${t.phone}" style="color: var(--primary-light); text-decoration: none;">${t.phone}</a>
           </td>
           <td>${vehicleIcon}</td>

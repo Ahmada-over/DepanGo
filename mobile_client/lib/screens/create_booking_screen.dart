@@ -479,14 +479,19 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                       )
                     : Row(
                         mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           const Icon(Icons.radar_rounded, size: 20),
                           const SizedBox(width: 8),
-                          Text(
-                            widget.preferredTechnicianId != null
-                                ? 'Envoyer la demande à ${widget.preferredTechnicianName ?? 'l\'artisan'}'
-                                : 'TROUVER UN DÉPANNEUR EN DIRECT',
-                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 0.3),
+                          Flexible(
+                            child: Text(
+                              widget.preferredTechnicianId != null
+                                  ? 'Demande directe : ${widget.preferredTechnicianName ?? 'l\'artisan'}'
+                                  : 'TROUVER UN DÉPANNEUR EN DIRECT',
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 0.3),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
                           ),
                         ],
                       ),

@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'config.dart';
+import '../providers/connectivity_provider.dart';
 
 final apiClientProvider = Provider<Dio>((ref) {
   final dio = Dio(
@@ -26,7 +27,16 @@ final apiClientProvider = Provider<Dio>((ref) {
         }
         return handler.next(options);
       },
+      onResponse: (response, handler) {
+        ref.read(serverConnectivityProvider.notifier).setOnline();
+        return handler.next(response);
+      },
       onError: (DioException e, handler) {
+        if (e.type == DioExceptionType.connectionError || e.type == DioExceptionType.connectionTimeout) {
+          ref.read(serverConnectivityProvider.notifier).setOffline();
+        } else {
+          ref.read(serverConnectivityProvider.notifier).setOnline();
+        }
         return handler.next(e);
       },
     ),

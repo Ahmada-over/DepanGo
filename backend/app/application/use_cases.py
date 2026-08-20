@@ -211,12 +211,14 @@ class BookingUseCases:
                 logger.warning(f"[MATCHING] EXHAUSTED booking={booking.id} — max radius {settings.MATCHING_MAX_RADIUS_KM}km reached, no technician accepted")
                 # Mark booking as no_technician_found
                 await booking_repo.update_status(booking.id, "no_technician_found")
-                # Notify client
-                await ws_manager.send_personal_message(booking.client_id, {
+                # Notify client both on booking channel and user channel
+                no_tech_payload = {
                     "type": "NO_TECHNICIAN",
                     "booking_id": booking.id,
                     "message": "Aucun technicien n'a accepté votre demande ou n'est disponible dans votre zone. Veuillez réessayer plus tard."
-                })
+                }
+                await ws_manager.broadcast_to_booking(booking.id, no_tech_payload)
+                await ws_manager.send_personal_message(booking.client_id, no_tech_payload)
         except Exception as e:
             logger.error(f"[MATCHING] ERROR booking={booking.id}: {e}", exc_info=True)
 

@@ -53,7 +53,7 @@ class BookingsHistoryScreen extends ConsumerWidget {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.flash_on, color: AppTheme.primaryEmerald, size: 28),
+                      const Icon(Icons.handyman_rounded, color: AppTheme.primaryEmerald, size: 28),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
@@ -95,14 +95,25 @@ class BookingsHistoryScreen extends ConsumerWidget {
                 }
                 return Column(
                   children: bookings.map((b) {
+                    final isActive = !['completed', 'cancelled', 'no_technician_found'].contains(b.status);
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 10),
-                      child: _buildHistoryItem(
-                        category: _formatCategory(b.categoryId),
-                        description: b.description,
-                        date: '${b.createdAt.day}/${b.createdAt.month}/${b.createdAt.year} à ${b.createdAt.hour}:${b.createdAt.minute.toString().padLeft(2, '0')}',
-                        status: _formatStatus(b.status),
-                        priceNote: 'Payé direct (Sur devis)',
+                      child: InkWell(
+                        onTap: () {
+                          ref.read(activeBookingProvider.notifier).loadActiveBooking(b);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const TrackingChatScreen()),
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(16),
+                        child: _buildHistoryItem(
+                          category: _formatCategory(b.categoryId),
+                          description: b.description,
+                          date: '${b.createdAt.day}/${b.createdAt.month}/${b.createdAt.year} à ${b.createdAt.hour}:${b.createdAt.minute.toString().padLeft(2, '0')}',
+                          status: _formatStatus(b.status),
+                          priceNote: isActive ? 'Intervention Active 🟢' : 'Dossier Clôturé',
+                        ),
                       ),
                     );
                   }).toList(),

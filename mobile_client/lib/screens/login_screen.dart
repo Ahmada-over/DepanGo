@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/theme.dart';
+import '../core/app_toast.dart';
 import '../providers/app_providers.dart';
 import 'home_screen.dart';
 import 'register_screen.dart';
@@ -26,16 +27,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
-  Future<void> _handleLogin() async {
+  void _handleLogin() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      AppToast.show(
+        context,
+        title: 'Champs obligatoires',
+        message: 'Veuillez renseigner votre email et mot de passe.',
+        type: AppToastType.warning,
+      );
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
-    final success = await ref.read(authProvider.notifier).login(
-          _emailController.text.trim(),
-          _passwordController.text.trim(),
-        );
+    final success = await ref.read(authProvider.notifier).login(email, password);
 
     if (!mounted) return;
 
@@ -44,14 +55,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     });
 
     if (success && mounted) {
+      AppToast.show(
+        context,
+        title: 'Connexion réussie !',
+        message: 'Bienvenue sur depanGo.',
+        type: AppToastType.success,
+      );
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const HomeScreen()),
       );
     } else {
+      final msg = ref.read(authProvider.notifier).errorMessage ??
+          'Identifiants invalides ou problème de connexion';
       setState(() {
-        _errorMessage = ref.read(authProvider.notifier).errorMessage ??
-            'Échec de la connexion';
+        _errorMessage = msg;
       });
+      AppToast.show(
+        context,
+        title: 'Échec de connexion',
+        message: msg,
+        type: AppToastType.error,
+      );
     }
   }
 

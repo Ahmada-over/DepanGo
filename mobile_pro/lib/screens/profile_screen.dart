@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:dio/dio.dart';
 import '../core/api_client.dart';
-import '../core/config.dart';
 import '../core/theme.dart';
 import '../core/app_toast.dart';
 import '../core/category_helper.dart';
@@ -328,7 +327,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           children: [
                             Icon(Icons.two_wheeler_rounded, color: ProTheme.primaryLight, size: 22),
                             SizedBox(width: 8),
-                            Text('Moto Express', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                            Flexible(child: Text('Moto Express', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13), overflow: TextOverflow.ellipsis)),
                           ],
                         ),
                       ),
@@ -354,7 +353,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           children: [
                             Icon(Icons.directions_car_rounded, color: Colors.blue, size: 22),
                             SizedBox(width: 8),
-                            Text('Voiture / Fourgon', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                            Flexible(child: Text('Voiture / Fourgon', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13), overflow: TextOverflow.ellipsis)),
                           ],
                         ),
                       ),
@@ -368,7 +367,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               const Text('VOS MÉTIERS & COMPÉTENCES', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: ProTheme.textMuted, letterSpacing: 0.5)),
               const SizedBox(height: 10),
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
                   color: ProTheme.darkCard,
                   borderRadius: BorderRadius.circular(18),
@@ -377,33 +376,54 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 child: Column(
                   children: CategoryHelper.getAllCategories().map((cat) {
                     final isSelected = _selectedCategories.contains(cat['id']);
-                    return CheckboxListTile(
-                      value: isSelected,
-                      contentPadding: EdgeInsets.zero,
-                      activeColor: ProTheme.primaryEmerald,
-                      title: Row(
-                        children: [
-                          Text(cat['emoji'], style: const TextStyle(fontSize: 18)),
-                          const SizedBox(width: 10),
-                          Text(
-                            cat['name'],
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                              color: isSelected ? Colors.white : ProTheme.textMuted,
-                            ),
+                    return Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          setState(() {
+                            if (isSelected) {
+                              _selectedCategories.remove(cat['id']);
+                            } else {
+                              _selectedCategories.add(cat['id']);
+                            }
+                          });
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+                          child: Row(
+                            children: [
+                              Text(cat['emoji'], style: const TextStyle(fontSize: 20)),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  cat['name'],
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                    color: isSelected ? Colors.white : ProTheme.textMuted,
+                                  ),
+                                ),
+                              ),
+                              Checkbox(
+                                value: isSelected,
+                                activeColor: ProTheme.primaryEmerald,
+                                checkColor: Colors.white,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                                onChanged: (checked) {
+                                  setState(() {
+                                    if (checked == true) {
+                                      _selectedCategories.add(cat['id']);
+                                    } else {
+                                      _selectedCategories.remove(cat['id']);
+                                    }
+                                  });
+                                },
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
-                      onChanged: (checked) {
-                        setState(() {
-                          if (checked == true) {
-                            _selectedCategories.add(cat['id']);
-                          } else {
-                            _selectedCategories.remove(cat['id']);
-                          }
-                        });
-                      },
                     );
                   }).toList(),
                 ),

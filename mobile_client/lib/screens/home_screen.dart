@@ -39,7 +39,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        debugPrint('[Location] Location services disabled, checking last known or requesting...');
+        debugPrint(
+            '[Location] Location services disabled, checking last known or requesting...');
       }
 
       LocationPermission permission = await Geolocator.checkPermission();
@@ -62,7 +63,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         timeLimit: const Duration(seconds: 8),
       );
 
-      debugPrint('[Location] GPS coordinates: ${position.latitude}, ${position.longitude}');
+      debugPrint(
+          '[Location] GPS coordinates: ${position.latitude}, ${position.longitude}');
 
       // 3. Reverse geocode coordinates to human-readable address
       String address = '';
@@ -112,7 +114,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       }
 
       if (address.isEmpty) {
-        address = 'Dakar (${position.latitude.toStringAsFixed(3)}, ${position.longitude.toStringAsFixed(3)})';
+        address =
+            'Dakar (${position.latitude.toStringAsFixed(3)}, ${position.longitude.toStringAsFixed(3)})';
       }
 
       if (mounted) {
@@ -229,7 +232,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         children: [
           // Active Booking Banner
           if (ref.watch(activeBookingProvider) != null &&
-              !['completed', 'cancelled', 'no_technician_found'].contains(ref.watch(activeBookingProvider)!.status)) ...[
+              !['completed', 'cancelled', 'no_technician_found']
+                  .contains(ref.watch(activeBookingProvider)!.status)) ...[
             _buildActiveBookingBanner(ref.watch(activeBookingProvider)!),
             const SizedBox(height: 16),
           ],
@@ -421,8 +425,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                    color: AppTheme.primaryEmerald.withOpacity(0.3),
-                    blurRadius: 14,
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 6,
                     offset: const Offset(0, 6)),
               ],
             ),
@@ -618,7 +622,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
                                 color:
-                                    AppTheme.primaryEmerald.withOpacity(0.3)),
+                                    Colors.black.withOpacity(0.1)),
                             boxShadow: [
                               BoxShadow(
                                   color: Colors.black.withOpacity(0.02),
@@ -1661,7 +1665,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Intervention en cours',
+                    booking.status == 'pending'
+                        ? 'Recherche en cours...'
+                        : 'Intervention en cours',
                     style: TextStyle(
                       color: bannerColor,
                       fontWeight: FontWeight.bold,

@@ -17,8 +17,11 @@ async def expire_stale_bookings_loop():
                 from app.core.config import settings
                 timeout_threshold = datetime.utcnow() - timedelta(seconds=settings.MATCHING_RESPONSE_WINDOW_SECONDS)
                 
-                # We need to find MATCHED bookings whose latest MatchingLogModel (offered) is older than the timeout
-                stmt = select(BookingModel).where(BookingModel.status == "matched")
+                # Only timeout unassigned bookings that are still pending/searching
+                stmt = select(BookingModel).where(
+                    BookingModel.status == "pending",
+                    BookingModel.technician_id == None
+                )
                 result = await db.execute(stmt)
                 bookings = result.scalars().all()
                 
@@ -30,16 +33,11 @@ async def expire_stale_bookings_loop():
                     log_result = await db.execute(log_stmt)
                     latest_log = log_result.scalars().first()
                     
-                    # Only timeout if the latest state is still 'offered' (not accepted or rejected)
+                    # Only timeout if the latest state is still 'offered' and exceeded timeout window
                     if latest_log and latest_log.status == "offered" and latest_log.created_at < timeout_threshold:
                         latest_log.status = "timeout"
-                        booking.status = "pending"
                         booking.version += 1
-                        
-                        logger.info(f"[TIMEOUT] Booking {booking.id} offered to {latest_log.technician_id} timed out.")
-                        
-                        # Notify client that status is pending again (optional)
-                        # Or let the matching engine pick it up again.
+                        logger.info(f"[TIMEOUT] Booking {booking.id} offer to {latest_log.technician_id} expired.")
                         
                 await db.commit()
                 

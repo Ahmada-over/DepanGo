@@ -49,7 +49,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final shadowPaint = Paint()
       ..color = Colors.black.withValues(alpha: 0.35)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
-    canvas.drawCircle(Offset(width / 2, width * 0.45), width * 0.38, shadowPaint);
+    canvas.drawCircle(
+        Offset(width / 2, width * 0.45), width * 0.38, shadowPaint);
 
     // Pin pointer triangle
     final path = Path();
@@ -72,8 +73,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ..color = primaryColor
       ..style = PaintingStyle.fill;
 
-    canvas.drawCircle(Offset(width / 2, width * 0.45), width * 0.38, circlePaint);
-    canvas.drawCircle(Offset(width / 2, width * 0.45), width * 0.38, borderPaint);
+    canvas.drawCircle(
+        Offset(width / 2, width * 0.45), width * 0.38, circlePaint);
+    canvas.drawCircle(
+        Offset(width / 2, width * 0.45), width * 0.38, borderPaint);
 
     // Center icon
     final textPainter = TextPainter(textDirection: TextDirection.ltr);
@@ -136,17 +139,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       }
 
       Position? pos = await Geolocator.getLastKnownPosition();
-      final Position position = pos ?? await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-        timeLimit: const Duration(seconds: 8),
-      );
+      final Position position = pos ??
+          await Geolocator.getCurrentPosition(
+            desiredAccuracy: LocationAccuracy.high,
+            timeLimit: const Duration(seconds: 8),
+          );
 
       if (mounted) {
         ref.read(liveLocationProvider.notifier).state = position;
         if (!_hasInitialCameraMove && _mapController != null) {
           _hasInitialCameraMove = true;
           _mapController!.animateCamera(
-            CameraUpdate.newLatLngZoom(LatLng(position.latitude, position.longitude), 15.0),
+            CameraUpdate.newLatLngZoom(
+                LatLng(position.latitude, position.longitude), 15.0),
           );
         }
       }
@@ -177,8 +182,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     final bool isCar = profile?.transportMode == 'voiture';
     final BitmapDescriptor techMarkerIcon = isCar
-        ? (_techCarIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue))
-        : (_techMotoIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange));
+        ? (_techCarIcon ??
+            BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue))
+        : (_techMotoIcon ??
+            BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange));
 
     return Scaffold(
       backgroundColor: ProTheme.darkBg,
@@ -213,8 +220,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 icon: techMarkerIcon,
                 anchor: const Offset(0.5, 0.95),
                 infoWindow: InfoWindow(
-                  title: 'Vous êtes ${isOnline ? 'En Ligne (Disponible)' : 'En Pause'}',
-                  snippet: '${user?.name ?? 'Technicien'} • ${isCar ? 'Voiture' : 'Moto Express'}',
+                  title:
+                      'Vous êtes ${isOnline ? 'En Ligne (Disponible)' : 'En Pause'}',
+                  snippet:
+                      '${user?.name ?? 'Technicien'} • ${isCar ? 'Voiture' : 'Moto Express'}',
                 ),
               ),
             },
@@ -247,8 +256,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       radius: 20,
                       backgroundColor: ProTheme.primaryEmerald,
                       child: Text(
-                        (user?.name.isNotEmpty == true ? user!.name[0] : 'T').toUpperCase(),
-                        style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                        (user?.name.isNotEmpty == true ? user!.name[0] : 'T')
+                            .toUpperCase(),
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, color: Colors.white),
                       ),
                     ),
                   ),
@@ -263,16 +274,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     },
                     borderRadius: BorderRadius.circular(24),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 10),
                       decoration: BoxDecoration(
                         color: ProTheme.darkCard,
                         borderRadius: BorderRadius.circular(24),
                         border: Border.all(
-                          color: isOnline ? ProTheme.primaryLight : Colors.redAccent.withValues(alpha: 0.5),
+                          color: isOnline
+                              ? ProTheme.primaryLight
+                              : Colors.redAccent.withValues(alpha: 0.5),
                           width: 1.5,
                         ),
                         boxShadow: const [
-                          BoxShadow(color: Colors.black45, blurRadius: 10, offset: Offset(0, 4))
+                          BoxShadow(
+                              color: Colors.black45,
+                              blurRadius: 10,
+                              offset: Offset(0, 4))
                         ],
                       ),
                       child: Row(
@@ -281,13 +298,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             width: 12,
                             height: 12,
                             decoration: BoxDecoration(
-                              color: isOnline ? ProTheme.success : Colors.redAccent,
+                              color: isOnline
+                                  ? ProTheme.success
+                                  : Colors.redAccent,
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: isOnline ? ProTheme.success.withValues(alpha: 0.6) : Colors.redAccent.withValues(alpha: 0.6),
+                                  color: isOnline
+                                      ? Colors.black.withValues(alpha: 0.2)
+                                      : Colors.black.withValues(alpha: 0.2),
                                   blurRadius: 6,
-                                  spreadRadius: 2,
+                                  spreadRadius: 0,
                                 )
                               ],
                             ),
@@ -299,24 +320,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
-                                  isOnline ? 'DISPONIBLE EN LIGNE' : 'EN PAUSE (HORS LIGNE)',
+                                  isOnline
+                                      ? 'Disponible en ligne'
+                                      : 'En pause (hors ligne)',
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
-                                    color: isOnline ? Colors.white : ProTheme.textMuted,
+                                    color: isOnline
+                                        ? Colors.white
+                                        : ProTheme.textMuted,
                                     letterSpacing: 0.4,
                                   ),
                                 ),
                                 Text(
-                                  isOnline ? 'Prêt à recevoir des dépannages' : 'Touchez pour passer en ligne',
-                                  style: const TextStyle(fontSize: 10, color: ProTheme.textMuted),
+                                  isOnline
+                                      ? 'Prêt à recevoir des dépannages'
+                                      : 'Touchez pour passer en ligne',
+                                  style: const TextStyle(
+                                      fontSize: 10, color: ProTheme.textMuted),
                                 ),
                               ],
                             ),
                           ),
                           Icon(
-                            isOnline ? Icons.power_settings_new_rounded : Icons.play_arrow_rounded,
-                            color: isOnline ? ProTheme.success : Colors.redAccent,
+                            isOnline
+                                ? Icons.power_settings_new_rounded
+                                : Icons.play_arrow_rounded,
+                            color:
+                                isOnline ? ProTheme.success : Colors.redAccent,
                             size: 20,
                           ),
                         ],
@@ -354,7 +385,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const ActiveMissionScreen()),
+                    MaterialPageRoute(
+                        builder: (_) => const ActiveMissionScreen()),
                   );
                 },
                 borderRadius: BorderRadius.circular(18),
@@ -363,9 +395,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   decoration: BoxDecoration(
                     color: ProTheme.darkCard,
                     borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: ProTheme.amber, width: 2),
+                    border: Border.all(color: ProTheme.darkBorder, width: 1.0),
                     boxShadow: const [
-                      BoxShadow(color: Colors.black54, blurRadius: 14, offset: Offset(0, 6))
+                      BoxShadow(
+                          color: Colors.black54,
+                          blurRadius: 14,
+                          offset: Offset(0, 6))
                     ],
                   ),
                   child: Row(
@@ -376,7 +411,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           color: ProTheme.amber.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(Icons.navigation_rounded, color: ProTheme.amber, size: 24),
+                        child: const Icon(Icons.navigation_rounded,
+                            color: ProTheme.amber, size: 24),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
@@ -386,31 +422,42 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             Row(
                               children: [
                                 const Text(
-                                  'MISSION EN COURS',
-                                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: ProTheme.amber),
+                                  'Mission en cours',
+                                  style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: ProTheme.amber),
                                 ),
                                 const Spacer(),
                                 Text(
-                                  activeMission.status.toUpperCase(),
-                                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: ProTheme.primaryLight),
+                                  activeMission.status,
+                                  style: const TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: ProTheme.primaryLight),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 2),
                             Text(
                               activeMission.clientName,
-                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                              style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white),
                             ),
                             Text(
                               activeMission.addressText,
-                              style: const TextStyle(fontSize: 12, color: ProTheme.textMuted),
+                              style: const TextStyle(
+                                  fontSize: 12, color: ProTheme.textMuted),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
                       ),
-                      const Icon(Icons.chevron_right_rounded, color: Colors.white),
+                      const Icon(Icons.chevron_right_rounded,
+                          color: Colors.white),
                     ],
                   ),
                 ),
@@ -430,17 +477,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: ProTheme.darkBorder),
                   boxShadow: const [
-                    BoxShadow(color: Colors.black54, blurRadius: 12, offset: Offset(0, 4))
+                    BoxShadow(
+                        color: Colors.black54,
+                        blurRadius: 12,
+                        offset: Offset(0, 4))
                   ],
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    _buildKpiItem('Note Pro', '${profile?.averageRating.toStringAsFixed(1) ?? '5.0'} ★', Icons.star_rounded, Colors.amber),
+                    _buildKpiItem(
+                        'Note Pro',
+                        '${profile?.averageRating.toStringAsFixed(1) ?? '5.0'} ★',
+                        Icons.star_rounded,
+                        Colors.amber),
                     Container(width: 1, height: 36, color: ProTheme.darkBorder),
-                    _buildKpiItem('Véhicule', isCar ? 'Voiture' : 'Moto', Icons.two_wheeler_rounded, ProTheme.primaryLight),
+                    _buildKpiItem('Véhicule', isCar ? 'Voiture' : 'Moto',
+                        Icons.two_wheeler_rounded, ProTheme.primaryLight),
                     Container(width: 1, height: 36, color: ProTheme.darkBorder),
-                    _buildKpiItem('Statut', isOnline ? 'En Ligne' : 'Pause', Icons.wifi_tethering_rounded, isOnline ? ProTheme.success : Colors.grey),
+                    _buildKpiItem(
+                        'Statut',
+                        isOnline ? 'En Ligne' : 'Pause',
+                        Icons.wifi_tethering_rounded,
+                        isOnline ? ProTheme.success : Colors.grey),
                   ],
                 ),
               ),
@@ -461,21 +520,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           setState(() => _currentBottomNav = idx);
           if (idx == 1) {
             if (activeMission != null) {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const ActiveMissionScreen()));
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const ActiveMissionScreen()));
             } else {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryScreen()));
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const HistoryScreen()));
             }
           } else if (idx == 2) {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryScreen()));
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const HistoryScreen()));
           } else if (idx == 3) {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const ProfileScreen()));
           }
         },
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.map_rounded), label: 'Carte Live'),
-          BottomNavigationBarItem(icon: Icon(Icons.work_history_rounded), label: 'Mission'),
-          BottomNavigationBarItem(icon: Icon(Icons.receipt_long_rounded), label: 'Historique'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_rounded), label: 'Profil Pro'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.map_rounded), label: 'Carte Live'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.work_history_rounded), label: 'Mission'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.receipt_long_rounded), label: 'Historique'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.person_rounded), label: 'Profil Pro'),
         ],
       ),
     );
@@ -490,16 +559,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           children: [
             Icon(icon, size: 16, color: color),
             const SizedBox(width: 4),
-            Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)),
+            Text(value,
+                style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white)),
           ],
         ),
         const SizedBox(height: 2),
-        Text(label, style: const TextStyle(fontSize: 11, color: ProTheme.textMuted)),
+        Text(label,
+            style: const TextStyle(fontSize: 11, color: ProTheme.textMuted)),
       ],
     );
   }
 
-  Widget _buildIncomingOfferOverlay(BuildContext context, MatchOfferModel offer) {
+  Widget _buildIncomingOfferOverlay(
+      BuildContext context, MatchOfferModel offer) {
     final notifier = ref.watch(incomingOfferProvider.notifier);
 
     return Positioned.fill(
@@ -515,9 +590,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 decoration: BoxDecoration(
                   color: ProTheme.darkCard,
                   borderRadius: BorderRadius.circular(28),
-                  border: Border.all(color: ProTheme.amber, width: 2.5),
+                  border: Border.all(color: ProTheme.darkBorder, width: 1.0),
                   boxShadow: [
-                    BoxShadow(color: ProTheme.amber.withValues(alpha: 0.3), blurRadius: 24, spreadRadius: 4),
+                    BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        blurRadius: 8,
+                        spreadRadius: 0),
                   ],
                 ),
                 child: Column(
@@ -528,22 +606,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 6),
                           decoration: BoxDecoration(
                             color: ProTheme.amber.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: const Row(
                             children: [
-                              Icon(Icons.bolt_rounded, color: ProTheme.amber, size: 18),
+                              Icon(Icons.bolt_rounded,
+                                  color: ProTheme.amber, size: 18),
                               SizedBox(width: 4),
-                              Text('NOUVELLE DEMANDE', style: TextStyle(color: ProTheme.amber, fontWeight: FontWeight.bold, fontSize: 12)),
+                              Text('Nouvelle demande',
+                                  style: TextStyle(
+                                      color: ProTheme.amber,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12)),
                             ],
                           ),
                         ),
                         // Countdown Timer Pill
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
                             color: Colors.redAccent.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(20),
@@ -551,7 +636,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           ),
                           child: Text(
                             '${notifier.remainingSeconds}s',
-                            style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w900, fontSize: 14),
+                            style: const TextStyle(
+                                color: Colors.redAccent,
+                                fontWeight: FontWeight.w900,
+                                fontSize: 14),
                           ),
                         ),
                       ],
@@ -561,15 +649,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     // Client & Panne Info
                     Text(
                       offer.clientName,
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                      style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white),
                     ),
                     const SizedBox(height: 4),
 
                     // French Category Pill
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: CategoryHelper.getCategoryColor(offer.categoryId).withValues(alpha: 0.2),
+                        color: CategoryHelper.getCategoryColor(offer.categoryId)
+                            .withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
@@ -577,7 +670,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
-                          color: CategoryHelper.getCategoryColor(offer.categoryId),
+                          color:
+                              CategoryHelper.getCategoryColor(offer.categoryId),
                         ),
                       ),
                     ),
@@ -591,26 +685,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.location_on_rounded, color: ProTheme.primaryLight, size: 20),
+                          const Icon(Icons.location_on_rounded,
+                              color: ProTheme.primaryLight, size: 20),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               offer.addressText,
-                              style: const TextStyle(fontSize: 13, color: Colors.white),
+                              style: const TextStyle(
+                                  fontSize: 13, color: Colors.white),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           const SizedBox(width: 8),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: ProTheme.primaryEmerald.withValues(alpha: 0.2),
+                              color: ProTheme.primaryEmerald
+                                  .withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
                               '${offer.distanceKm.toStringAsFixed(1)} km',
-                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: ProTheme.primaryLight),
+                              style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: ProTheme.primaryLight),
                             ),
                           ),
                         ],
@@ -629,7 +730,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (offer.photoUrl != null && offer.photoUrl!.isNotEmpty) ...[
+                          if (offer.photoUrl != null &&
+                              offer.photoUrl!.isNotEmpty) ...[
                             ClipRRect(
                               borderRadius: BorderRadius.circular(8),
                               child: Image.network(
@@ -639,15 +741,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 width: 52,
                                 height: 52,
                                 fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => const Icon(Icons.broken_image_rounded, size: 40, color: Colors.grey),
+                                errorBuilder: (_, __, ___) => const Icon(
+                                    Icons.broken_image_rounded,
+                                    size: 40,
+                                    color: Colors.grey),
                               ),
                             ),
                             const SizedBox(width: 10),
                           ],
                           Expanded(
                             child: Text(
-                              offer.description.isNotEmpty ? '"${offer.description}"' : '"Diagnostic et devis sur place"',
-                              style: const TextStyle(fontSize: 13, color: ProTheme.textMuted, fontStyle: FontStyle.italic),
+                              offer.description.isNotEmpty
+                                  ? '"${offer.description}"'
+                                  : '"Diagnostic et devis sur place"',
+                              style: const TextStyle(
+                                  fontSize: 13,
+                                  color: ProTheme.textMuted,
+                                  fontStyle: FontStyle.italic),
                             ),
                           ),
                         ],
@@ -662,12 +772,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           child: SizedBox(
                             height: 52,
                             child: OutlinedButton(
-                              onPressed: () => notifier.dismissOffer(),
+                              onPressed: () => notifier.declineOffer(),
                               style: OutlinedButton.styleFrom(
-                                side: const BorderSide(color: ProTheme.darkBorder),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                side: const BorderSide(
+                                    color: ProTheme.darkBorder),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14)),
                               ),
-                              child: const Text('Ignorer', style: TextStyle(color: ProTheme.textMuted, fontWeight: FontWeight.bold)),
+                              child: const Text('Refuser',
+                                  style: TextStyle(
+                                      color: ProTheme.textMuted,
+                                      fontWeight: FontWeight.bold)),
                             ),
                           ),
                         ),
@@ -682,15 +797,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 if (accepted && context.mounted) {
                                   Navigator.push(
                                     context,
-                                    MaterialPageRoute(builder: (_) => const ActiveMissionScreen()),
+                                    MaterialPageRoute(
+                                        builder: (_) =>
+                                            const ActiveMissionScreen()),
                                   );
                                 }
                               },
-                              icon: const Icon(Icons.check_circle_rounded, color: Colors.white),
-                              label: const Text('ACCEPTER LA MISSION', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                              icon: const Icon(Icons.check_circle_rounded,
+                                  color: Colors.white),
+                              label: const Text('Accepter la mission',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14)),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: ProTheme.primaryEmerald,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14)),
                               ),
                             ),
                           ),

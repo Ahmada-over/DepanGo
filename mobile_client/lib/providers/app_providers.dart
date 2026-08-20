@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
@@ -6,7 +7,9 @@ import 'package:dio/dio.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import '../models/models.dart';
 import '../core/config.dart';
+import 'connectivity_provider.dart';
 import '../core/api_client.dart';
+import '../core/app_toast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
@@ -191,6 +194,22 @@ class NotificationNotifier extends StateNotifier<List<AppNotificationModel>> {
       debugPrint('Erreur lors de la lecture du son : $e');
     }
 
+    AppToastType toastType = AppToastType.info;
+    if (type == 'status' || type == 'success') {
+      toastType = AppToastType.success;
+    } else if (type == 'warning') {
+      toastType = AppToastType.warning;
+    } else if (type == 'error') {
+      toastType = AppToastType.error;
+    }
+
+    AppToast.show(
+      null,
+      title: title,
+      message: message,
+      type: toastType,
+    );
+
     state = [
       AppNotificationModel(
         id: 'notif_${DateTime.now().millisecondsSinceEpoch}',
@@ -356,18 +375,14 @@ class BookingNotifier extends StateNotifier<BookingModel?> {
 
   int _reconnectDelay = 1; // seconds, doubles on each retry
   bool _intentionalClose = false;
-  bool _pollingActive = false;
 
   void loadActiveBooking(BookingModel booking) {
     state = booking;
     _startStatusSync(booking.id);
   }
 
-  /// Fetch user's bookings and auto-load the first active one
+  /// Fetch user's bookings and auto-load the most relevant active one
   Future<void> fetchActiveBooking() async {
-    if (state != null && !['completed', 'cancelled', 'no_technician_found'].contains(state!.status)) {
-      return; // Already have an active booking
-    }
     try {
       final currentUser = _ref.read(authProvider);
       if (currentUser == null) return;
@@ -376,18 +391,52 @@ class BookingNotifier extends StateNotifier<BookingModel?> {
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;
         final bookings = data.map((e) => BookingModel.fromJson(e)).toList();
-        final active = bookings.where((b) =>
+        final activeList = bookings.where((b) =>
           !['completed', 'cancelled', 'no_technician_found'].contains(b.status)
         ).toList();
-        if (active.isNotEmpty) {
-          state = active.first;
-          _startStatusSync(active.first.id);
+
+        if (activeList.isEmpty) {
+          if (state != null && !['completed', 'cancelled', 'no_technician_found'].contains(state!.status)) {
+            state = null;
+            _stopPolling();
+          }
+          return;
         }
+
+        // If we already have an active booking selected and it's still active, keep it!
+        if (state != null) {
+          final existing = activeList.firstWhere(
+            (b) => b.id == state!.id,
+            orElse: () => activeList.first,
+          );
+          if (existing.id == state!.id) {
+            state = existing;
+            return;
+          }
+        }
+
+        // Sort by priority: active interventions (on_site > in_progress > matched) first, then pending
+        activeList.sort((a, b) {
+          int priority(String s) {
+            if (s == 'on_site') return 4;
+            if (s == 'in_progress') return 3;
+            if (s == 'matched') return 2;
+            if (s == 'pending') return 1;
+            return 0;
+          }
+          return priority(b.status).compareTo(priority(a.status));
+        });
+
+        final target = activeList.first;
+        state = target;
+        _startStatusSync(target.id);
       }
     } catch (e) {
       debugPrint('Fetch Active Booking Error: $e');
     }
   }
+
+  Timer? _pollTimer;
 
   /// Start both WebSocket and polling for a booking
   void _startStatusSync(String bookingId) {
@@ -397,25 +446,24 @@ class BookingNotifier extends StateNotifier<BookingModel?> {
 
   /// Poll the booking status every 5 seconds as a reliable fallback
   void _startPolling(String bookingId) {
-    _pollingActive = true;
-    _pollLoop(bookingId);
-  }
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
+      if (state == null || state!.id != bookingId) {
+        _stopPolling();
+        return;
+      }
+      
+      // Skip polling if we know server is offline
+      final isOnline = _ref.read(serverConnectivityProvider);
+      if (!isOnline) return;
 
-  void _stopPolling() {
-    _pollingActive = false;
-  }
-
-  Future<void> _pollLoop(String bookingId) async {
-    while (_pollingActive && state != null) {
-      await Future.delayed(const Duration(seconds: 5));
-      if (!_pollingActive || state == null) break;
       try {
         final dio = _ref.read(apiClientProvider);
         final response = await dio.get('/bookings/$bookingId');
-        if (response.statusCode == 200 && state != null) {
+        if (response.statusCode == 200 && state != null && state!.id == bookingId) {
           final fresh = BookingModel.fromJson(response.data);
           if (fresh.status != state!.status) {
-            debugPrint('[POLL] Status changed: ${state!.status} → ${fresh.status}');
+            debugPrint('[POLL] Status changed for ${bookingId.substring(0, 8)}: ${state!.status} → ${fresh.status}');
             state = fresh;
             _ref.refresh(userBookingsProvider);
             _ref.read(appNotificationsProvider.notifier).addNotification(
@@ -426,13 +474,18 @@ class BookingNotifier extends StateNotifier<BookingModel?> {
           }
           // Stop polling if booking is terminal
           if (['completed', 'cancelled', 'no_technician_found'].contains(fresh.status)) {
-            _pollingActive = false;
+            _stopPolling();
           }
         }
       } catch (e) {
         debugPrint('[POLL] Error: $e');
       }
-    }
+    });
+  }
+
+  void _stopPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = null;
   }
 
   void _connectWebSocket(String bookingId) {
@@ -446,6 +499,11 @@ class BookingNotifier extends StateNotifier<BookingModel?> {
           Uri.parse('$wsBaseUrl/bookings/$bookingId?token=$token'));
       _channel = wsChannel;
       _reconnectDelay = 1;
+
+      _channel!.ready.catchError((e) {
+        debugPrint('[WS] Ready catchError: $e');
+      });
+
       _channel!.stream.listen(
         (event) {
           final data = jsonDecode(event);
@@ -453,7 +511,6 @@ class BookingNotifier extends StateNotifier<BookingModel?> {
         },
         onDone: () {
           debugPrint('[WS] Connection closed for booking $bookingId');
-          // Don't aggressively reconnect — polling handles status sync
         },
         onError: (e) {
           debugPrint('[WS] Error: $e');
@@ -466,56 +523,41 @@ class BookingNotifier extends StateNotifier<BookingModel?> {
 
   void _handleWsEvent(Map<String, dynamic> data) {
     final type = data['type'] as String? ?? '';
+    final eventBookingId = data['booking_id'] as String?;
 
     if (type == 'STATUS_UPDATE') {
       final newStatus = data['status'] as String? ?? 'matched';
-      if (state != null) {
-        state = BookingModel(
-          id: state!.id,
-          clientId: state!.clientId,
-          categoryId: state!.categoryId,
-          description: state!.description,
-          photoUrl: state!.photoUrl,
+      // Only mutate state if this event is specifically for the currently active booking
+      if (state != null && (eventBookingId == null || eventBookingId == state!.id)) {
+        state = state!.copyWith(
           status: newStatus,
-          latitude: state!.latitude,
-          longitude: state!.longitude,
-          addressText: state!.addressText,
           technicianId: data['technician_id'] ?? state!.technicianId,
           scheduledEta: data['scheduled_eta'] ?? state!.scheduledEta,
-          createdAt: state!.createdAt,
         );
-      } else if (data['booking_id'] != null) {
-        fetchActiveBooking();
-      }
-      
-      if (['completed', 'cancelled', 'no_technician_found'].contains(newStatus)) {
-        _stopPolling();
-      }
 
-      _ref.refresh(userBookingsProvider);
-      _ref.read(appNotificationsProvider.notifier).addNotification(
-            title: 'Changement de Statut !',
-            message: 'Statut actuel du dossier : $newStatus',
-            type: 'status',
-          );
+        if (['completed', 'cancelled', 'no_technician_found'].contains(newStatus)) {
+          _stopPolling();
+        }
+
+        _ref.refresh(userBookingsProvider);
+        _ref.read(appNotificationsProvider.notifier).addNotification(
+              title: 'Changement de Statut !',
+              message: 'Statut actuel du dossier : $newStatus',
+              type: 'status',
+            );
+      } else {
+        _ref.refresh(userBookingsProvider);
+      }
     } else if (type == 'NO_TECHNICIAN') {
-      // No qualified technician found — update state so matching screen can react
-      if (state != null) {
-        state = BookingModel(
-          id: state!.id,
-          clientId: state!.clientId,
-          categoryId: state!.categoryId,
-          description: state!.description,
-          photoUrl: state!.photoUrl,
+      if (state != null && (eventBookingId == null || eventBookingId == state!.id)) {
+        state = state!.copyWith(
           status: 'no_technician_found',
-          latitude: state!.latitude,
-          longitude: state!.longitude,
-          addressText: state!.addressText,
           technicianId: null,
           scheduledEta: null,
-          createdAt: state!.createdAt,
         );
+        _stopPolling();
       }
+      _ref.refresh(userBookingsProvider);
       _ref.read(appNotificationsProvider.notifier).addNotification(
             title: 'Aucun technicien disponible',
             message: data['message'] ??
@@ -523,20 +565,24 @@ class BookingNotifier extends StateNotifier<BookingModel?> {
             type: 'warning',
           );
     } else if (type == 'LOCATION_UPDATE') {
-      final lat = (data['latitude'] as num?)?.toDouble();
-      final lng = (data['longitude'] as num?)?.toDouble();
-      if (lat != null && lng != null) {
-        _ref.read(techLiveLocationProvider.notifier).state = {
-          'latitude': lat,
-          'longitude': lng,
-        };
-      }
-      if (state != null && data['eta'] != null) {
-        state = state!.copyWith(scheduledEta: data['eta']);
+      if (state != null && (eventBookingId == null || eventBookingId == state!.id)) {
+        final lat = (data['latitude'] as num?)?.toDouble();
+        final lng = (data['longitude'] as num?)?.toDouble();
+        if (lat != null && lng != null) {
+          _ref.read(techLiveLocationProvider.notifier).state = {
+            'latitude': lat,
+            'longitude': lng,
+          };
+        }
+        if (data['eta'] != null) {
+          state = state!.copyWith(scheduledEta: data['eta']);
+        }
       }
     } else if (type == 'NEW_MESSAGE') {
       final msg = ChatMessageModel.fromJson(data);
-      messages.add(msg);
+      if (state != null && (msg.bookingId == state!.id)) {
+        messages.add(msg);
+      }
 
       final currentUser = _ref.read(authProvider);
       final currentUserId = currentUser?.id ?? 'user_client_demo';

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/theme.dart';
+import '../core/app_toast.dart';
 import '../providers/app_providers.dart';
 import 'home_screen.dart';
 
@@ -33,6 +34,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         _emailController.text.trim().isEmpty ||
         _phoneController.text.trim().isEmpty ||
         _passwordController.text.trim().isEmpty) {
+      AppToast.show(
+        context,
+        title: 'Champs requis',
+        message: 'Veuillez remplir tous les champs du formulaire.',
+        type: AppToastType.warning,
+      );
       setState(() {
         _errorMessage = 'Veuillez remplir tous les champs';
       });
@@ -56,15 +63,28 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     });
 
     if (success && mounted) {
+      AppToast.show(
+        context,
+        title: 'Bienvenue sur depanGo !',
+        message: 'Votre compte a été créé avec succès.',
+        type: AppToastType.success,
+      );
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const HomeScreen()),
         (route) => false,
       );
     } else {
+      final msg = ref.read(authProvider.notifier).errorMessage ??
+          'Échec de l\'inscription';
       setState(() {
-        _errorMessage = ref.read(authProvider.notifier).errorMessage ??
-            'Échec de l\'inscription';
+        _errorMessage = msg;
       });
+      AppToast.show(
+        context,
+        title: 'Erreur d\'inscription',
+        message: msg,
+        type: AppToastType.error,
+      );
     }
   }
 

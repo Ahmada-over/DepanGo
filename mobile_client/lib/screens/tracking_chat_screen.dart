@@ -62,7 +62,8 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
     final shadowPaint = Paint()
       ..color = Colors.black.withValues(alpha: 0.35)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
-    canvas.drawCircle(Offset(width / 2, width * 0.45), width * 0.38, shadowPaint);
+    canvas.drawCircle(
+        Offset(width / 2, width * 0.45), width * 0.38, shadowPaint);
 
     // 2. Pin pointer triangle
     final path = Path();
@@ -85,8 +86,10 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
       ..color = primaryColor
       ..style = PaintingStyle.fill;
 
-    canvas.drawCircle(Offset(width / 2, width * 0.45), width * 0.38, circlePaint);
-    canvas.drawCircle(Offset(width / 2, width * 0.45), width * 0.38, borderPaint);
+    canvas.drawCircle(
+        Offset(width / 2, width * 0.45), width * 0.38, circlePaint);
+    canvas.drawCircle(
+        Offset(width / 2, width * 0.45), width * 0.38, borderPaint);
 
     // 4. Center icon
     final textPainter = TextPainter(textDirection: TextDirection.ltr);
@@ -143,9 +146,12 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
       debugPrint('[MapIcons] Error generating custom markers: $e');
       if (mounted) {
         setState(() {
-          _destinationIcon = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed);
-          _techMotoIcon = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange);
-          _techCarIcon = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue);
+          _destinationIcon =
+              BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed);
+          _techMotoIcon =
+              BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange);
+          _techCarIcon =
+              BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue);
         });
       }
     }
@@ -153,7 +159,8 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
 
   Future<void> _makePhoneCall(String phoneNumber) async {
     final clean = phoneNumber.replaceAll(RegExp(r'[^\d+]'), '');
-    final uri = Uri(scheme: 'tel', path: clean.isNotEmpty ? clean : '+221770000000');
+    final uri =
+        Uri(scheme: 'tel', path: clean.isNotEmpty ? clean : '+221770000000');
     try {
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -173,14 +180,16 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
     }
   }
 
-  Future<void> _fetchRoute(double startLat, double startLng, double endLat, double endLng) async {
+  Future<void> _fetchRoute(
+      double startLat, double startLng, double endLat, double endLng) async {
     if (_isFetchingRoute) return;
     _isFetchingRoute = true;
     _lastRouteFetchTime = DateTime.now();
     _lastCalculatedDestination = LatLng(endLat, endLng);
 
     try {
-      PolylinePoints polylinePoints = PolylinePoints(apiKey: AppConfig.googleMapsApiKey);
+      PolylinePoints polylinePoints =
+          PolylinePoints(apiKey: AppConfig.googleMapsApiKey);
       PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
         request: PolylineRequest(
           origin: PointLatLng(startLat, startLng),
@@ -189,7 +198,9 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
         ),
       );
       if (result.points.isNotEmpty) {
-        final pts = result.points.map((point) => LatLng(point.latitude, point.longitude)).toList();
+        final pts = result.points
+            .map((point) => LatLng(point.latitude, point.longitude))
+            .toList();
         if (mounted) {
           setState(() {
             _fullRouteCoordinates = pts;
@@ -198,7 +209,10 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
         }
       } else {
         if (_fullRouteCoordinates.isEmpty && mounted) {
-          final directLine = [LatLng(startLat, startLng), LatLng(endLat, endLng)];
+          final directLine = [
+            LatLng(startLat, startLng),
+            LatLng(endLat, endLng)
+          ];
           setState(() {
             _fullRouteCoordinates = directLine;
             _activePolylineCoordinates = directLine;
@@ -219,11 +233,12 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
     }
   }
 
-  void _updateOrRecalculateRoute(double techLat, double techLng, double destLat, double destLng) {
+  void _updateOrRecalculateRoute(
+      double techLat, double techLng, double destLat, double destLng) {
     final dest = LatLng(destLat, destLng);
     final isNewDestination = _lastCalculatedDestination == null ||
         (_lastCalculatedDestination!.latitude != dest.latitude ||
-         _lastCalculatedDestination!.longitude != dest.longitude);
+            _lastCalculatedDestination!.longitude != dest.longitude);
 
     if (_fullRouteCoordinates.isEmpty || isNewDestination) {
       _fetchRoute(techLat, techLng, destLat, destLng);
@@ -234,7 +249,8 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
     int closestIndex = 0;
     for (int i = 0; i < _fullRouteCoordinates.length; i++) {
       final pt = _fullRouteCoordinates[i];
-      final dist = Geolocator.distanceBetween(techLat, techLng, pt.latitude, pt.longitude);
+      final dist = Geolocator.distanceBetween(
+          techLat, techLng, pt.latitude, pt.longitude);
       if (dist < minDistance) {
         minDistance = dist;
         closestIndex = i;
@@ -243,17 +259,20 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
 
     if (minDistance > 100.0) {
       final now = DateTime.now();
-      if (_lastRouteFetchTime == null || now.difference(_lastRouteFetchTime!).inSeconds >= 10) {
+      if (_lastRouteFetchTime == null ||
+          now.difference(_lastRouteFetchTime!).inSeconds >= 10) {
         _fetchRoute(techLat, techLng, destLat, destLng);
       }
       return;
     }
 
-    final snapped = _snapToPolyline(LatLng(techLat, techLng), _fullRouteCoordinates);
+    final snapped =
+        _snapToPolyline(LatLng(techLat, techLng), _fullRouteCoordinates);
     final remaining = _fullRouteCoordinates.sublist(closestIndex);
     final updatedList = [snapped, ...remaining];
     if (_activePolylineCoordinates.length != updatedList.length ||
-        (_activePolylineCoordinates.isNotEmpty && _activePolylineCoordinates.first != snapped)) {
+        (_activePolylineCoordinates.isNotEmpty &&
+            _activePolylineCoordinates.first != snapped)) {
       if (mounted) {
         setState(() {
           _activePolylineCoordinates = updatedList;
@@ -296,8 +315,9 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
 
     if (dx == 0 && dy == 0) return a;
 
-    final double t = ((p.longitude - a.longitude) * dx + (p.latitude - a.latitude) * dy) /
-        (dx * dx + dy * dy);
+    final double t =
+        ((p.longitude - a.longitude) * dx + (p.latitude - a.latitude) * dy) /
+            (dx * dx + dy * dy);
 
     final double clampedT = t.clamp(0.0, 1.0);
     return LatLng(
@@ -314,7 +334,8 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
   }
 
   void _resolveBookingAddress(BookingModel booking) async {
-    if (_lastGeocodedBookingId == booking.id && _resolvedAddress != null) return;
+    if (_lastGeocodedBookingId == booking.id && _resolvedAddress != null)
+      return;
     _lastGeocodedBookingId = booking.id;
 
     if (booking.addressText.isNotEmpty &&
@@ -331,9 +352,14 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
       if (placemarks.isNotEmpty && mounted) {
         final p = placemarks.first;
         final parts = <String>[];
-        if (p.subLocality != null && p.subLocality!.isNotEmpty) parts.add(p.subLocality!);
-        if (p.street != null && p.street!.isNotEmpty && p.street != p.subLocality) parts.add(p.street!);
-        if (p.locality != null && p.locality!.isNotEmpty && !parts.contains(p.locality)) parts.add(p.locality!);
+        if (p.subLocality != null && p.subLocality!.isNotEmpty)
+          parts.add(p.subLocality!);
+        if (p.street != null &&
+            p.street!.isNotEmpty &&
+            p.street != p.subLocality) parts.add(p.street!);
+        if (p.locality != null &&
+            p.locality!.isNotEmpty &&
+            !parts.contains(p.locality)) parts.add(p.locality!);
 
         final dynamicAddress = parts.isNotEmpty
             ? parts.join(', ')
@@ -346,7 +372,8 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _resolvedAddress = '${booking.latitude.toStringAsFixed(4)}, ${booking.longitude.toStringAsFixed(4)} (Dakar)';
+          _resolvedAddress =
+              '${booking.latitude.toStringAsFixed(4)}, ${booking.longitude.toStringAsFixed(4)} (Dakar)';
         });
       }
     }
@@ -363,8 +390,10 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
   String _getStatusTitle(String status) {
     if (status == 'matched') return 'Technicien Assigné';
     if (status == 'in_progress') return 'Technicien En Route';
-    if (status == 'on_site' || status == 'arrived') return 'Technicien Sur Place';
+    if (status == 'on_site' || status == 'arrived')
+      return 'Technicien Sur Place';
     if (status == 'completed') return 'Intervention Clôturée';
+    if (status == 'no_technician_found') return 'Aucun technicien';
     return 'Demande Reçue';
   }
 
@@ -373,7 +402,8 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
       return 'Technicien assigné • Préparation en cours';
     }
     if (status == 'in_progress') {
-      final distInfo = distance != null && distance.isNotEmpty ? ' ($distance)' : '';
+      final distInfo =
+          distance != null && distance.isNotEmpty ? ' ($distance)' : '';
       return 'En route • ETA ${eta ?? '15 min'}$distInfo';
     }
     if (status == 'on_site' || status == 'arrived') {
@@ -381,6 +411,9 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
     }
     if (status == 'completed') {
       return 'Intervention terminée';
+    }
+    if (status == 'no_technician_found') {
+      return 'Aucun technicien disponible dans votre zone. Veuillez réessayer.';
     }
     return 'Recherche de technicien…';
   }
@@ -397,7 +430,9 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
   Widget build(BuildContext context) {
     ref.listen<BookingModel?>(activeBookingProvider, (previous, next) {
       if (previous != null && next != null) {
-        if (previous.status != 'completed' && next.status == 'completed' && !_reviewShown) {
+        if (previous.status != 'completed' &&
+            next.status == 'completed' &&
+            !_reviewShown) {
           _reviewShown = true;
           final notifier = ref.read(activeBookingProvider.notifier);
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -443,17 +478,20 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
       }
       techLat = found['latitude'] as double?;
       techLng = found['longitude'] as double?;
-      
-      techName = (found['name'] ?? found['user_name'] ?? 'Technicien Pro').toString();
-      techPhone = (found['phone'] ?? found['user_phone'] ?? '+221 77 000 00 00').toString();
+
+      techName =
+          (found['name'] ?? found['user_name'] ?? 'Technicien Pro').toString();
+      techPhone = (found['phone'] ?? found['user_phone'] ?? '+221 77 000 00 00')
+          .toString();
       techRating = (found['average_rating'] as num?)?.toDouble() ?? 4.9;
       techTransport = (found['transport_mode'] ?? 'moto').toString();
-      
+
       final parts = techName.split(' ');
       if (parts.length >= 2) {
         techInitials = '${parts[0][0]}${parts[1][0]}'.toUpperCase();
       } else if (techName.isNotEmpty) {
-        techInitials = techName.substring(0, techName.length.clamp(0, 2)).toUpperCase();
+        techInitials =
+            techName.substring(0, techName.length.clamp(0, 2)).toUpperCase();
       }
     });
 
@@ -498,13 +536,16 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
 
     String dynamicDistanceText = '';
     if (remainingDistanceMeters >= 1000) {
-      dynamicDistanceText = '${(remainingDistanceMeters / 1000).toStringAsFixed(1)} km';
+      dynamicDistanceText =
+          '${(remainingDistanceMeters / 1000).toStringAsFixed(1)} km';
     } else if (remainingDistanceMeters > 0) {
       dynamicDistanceText = '${remainingDistanceMeters.round()} m';
     }
 
     String dynamicEtaText;
-    if (status == 'on_site' || status == 'arrived' || (status == 'in_progress' && remainingDistanceMeters < 50)) {
+    if (status == 'on_site' ||
+        status == 'arrived' ||
+        (status == 'in_progress' && remainingDistanceMeters < 50)) {
       dynamicEtaText = 'Sur place';
     } else if (status == 'completed') {
       dynamicEtaText = 'Terminé';
@@ -541,7 +582,10 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                 compassEnabled: false,
                 mapToolbarEnabled: false,
                 polylines: {
-                  if (techLat != null && techLng != null && !['completed', 'cancelled', 'no_technician_found'].contains(status))
+                  if (techLat != null &&
+                      techLng != null &&
+                      !['completed', 'cancelled', 'no_technician_found']
+                          .contains(status))
                     Polyline(
                       polylineId: const PolylineId('route'),
                       color: AppTheme.primaryEmerald.withValues(alpha: 0.85),
@@ -549,36 +593,45 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                       startCap: Cap.roundCap,
                       endCap: Cap.roundCap,
                       jointType: JointType.round,
-                      points: _activePolylineCoordinates.isNotEmpty 
-                        ? _activePolylineCoordinates 
-                        : [
-                            LatLng(techLat!, techLng!),
-                            LatLng(activeBooking.latitude, activeBooking.longitude),
-                          ],
+                      points: _activePolylineCoordinates.isNotEmpty
+                          ? _activePolylineCoordinates
+                          : [
+                              LatLng(techLat!, techLng!),
+                              LatLng(activeBooking.latitude,
+                                  activeBooking.longitude),
+                            ],
                     ),
                 },
                 markers: {
                   if (_destinationIcon != null)
                     Marker(
                       markerId: const MarkerId('client'),
-                      position: LatLng(activeBooking.latitude, activeBooking.longitude),
+                      position: LatLng(
+                          activeBooking.latitude, activeBooking.longitude),
                       icon: _destinationIcon!,
                       anchor: const Offset(0.5, 0.95),
-                      infoWindow: const InfoWindow(title: 'Votre Lieu d\'intervention'),
+                      infoWindow:
+                          const InfoWindow(title: 'Votre Lieu d\'intervention'),
                     ),
-                  if (techLat != null && techLng != null && !['completed', 'cancelled', 'no_technician_found'].contains(status))
+                  if (techLat != null &&
+                      techLng != null &&
+                      !['completed', 'cancelled', 'no_technician_found']
+                          .contains(status))
                     Marker(
                       markerId: const MarkerId('tech'),
                       position: _activePolylineCoordinates.isNotEmpty
-                          ? _snapToPolyline(LatLng(techLat!, techLng!), _activePolylineCoordinates)
+                          ? _snapToPolyline(LatLng(techLat!, techLng!),
+                              _activePolylineCoordinates)
                           : LatLng(techLat!, techLng!),
                       icon: techTransport == 'voiture'
                           ? (_techCarIcon ?? BitmapDescriptor.defaultMarker)
                           : (_techMotoIcon ?? BitmapDescriptor.defaultMarker),
                       anchor: const Offset(0.5, 0.95),
                       infoWindow: InfoWindow(
-                        title: '$techName (${techTransport == 'voiture' ? 'Voiture' : 'Moto'})',
-                        snippet: '${techRating.toStringAsFixed(1)} ★ • $techPhone',
+                        title:
+                            '$techName (${techTransport == 'voiture' ? 'Voiture' : 'Moto'})',
+                        snippet:
+                            '${techRating.toStringAsFixed(1)} ★ • $techPhone',
                       ),
                     ),
                 },
@@ -600,10 +653,13 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                 Expanded(
                   child: MapInfoChip(
                     icon: status == 'in_progress'
-                        ? (techTransport == 'voiture' ? Icons.directions_car_rounded : Icons.two_wheeler_rounded)
+                        ? (techTransport == 'voiture'
+                            ? Icons.directions_car_rounded
+                            : Icons.two_wheeler_rounded)
                         : Icons.info_outline_rounded,
                     title: _getStatusTitle(status),
-                    subtitle: _getStatusDescription(status, dynamicEtaText, dynamicDistanceText),
+                    subtitle: _getStatusDescription(
+                        status, dynamicEtaText, dynamicDistanceText),
                   ),
                 ),
               ],
@@ -625,12 +681,16 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                     topRight: Radius.circular(24),
                   ),
                   boxShadow: [
-                    BoxShadow(color: Colors.black12, blurRadius: 12, offset: Offset(0, -3))
+                    BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 12,
+                        offset: Offset(0, -3))
                   ],
                 ),
                 child: ListView(
                   controller: scrollController,
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 10.0),
                   children: [
                     // Drag Handle
                     Center(
@@ -647,7 +707,8 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
 
                     // Stepper Bar
                     Container(
-                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 10, horizontal: 12),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF8FAFC),
                         borderRadius: BorderRadius.circular(16),
@@ -656,13 +717,17 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          _buildStepItem(1, 'Assignée', stepIdx >= 1, Colors.blue),
+                          _buildStepItem(
+                              1, 'Assignée', stepIdx >= 1, Colors.blue),
                           _buildStepDivider(stepIdx >= 2),
-                          _buildStepItem(2, 'En Route', stepIdx >= 2, Colors.orange),
+                          _buildStepItem(
+                              2, 'En Route', stepIdx >= 2, Colors.orange),
                           _buildStepDivider(stepIdx >= 3),
-                          _buildStepItem(3, 'Sur Place', stepIdx >= 3, AppTheme.primaryEmerald),
+                          _buildStepItem(3, 'Sur Place', stepIdx >= 3,
+                              AppTheme.primaryEmerald),
                           _buildStepDivider(stepIdx >= 4),
-                          _buildStepItem(4, 'Clôturée', stepIdx >= 4, Colors.green),
+                          _buildStepItem(
+                              4, 'Clôturée', stepIdx >= 4, Colors.green),
                         ],
                       ),
                     ),
@@ -676,7 +741,10 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(color: const Color(0xFFF1F5F9)),
                         boxShadow: [
-                          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4)),
+                          BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.04),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4)),
                         ],
                       ),
                       child: Column(
@@ -685,8 +753,14 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                             children: [
                               CircleAvatar(
                                 radius: 26,
-                                backgroundColor: techTransport == 'voiture' ? const Color(0xFF1E40AF) : AppTheme.primaryEmerald,
-                                child: Text(techInitials, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                                backgroundColor: techTransport == 'voiture'
+                                    ? const Color(0xFF1E40AF)
+                                    : AppTheme.primaryEmerald,
+                                child: Text(techInitials,
+                                    style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16)),
                               ),
                               const SizedBox(width: 14),
                               Expanded(
@@ -696,58 +770,99 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                                     Row(
                                       children: [
                                         Expanded(
-                                          child: Text(techName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                          child: Text(techName,
+                                              style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 15),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis),
                                         ),
                                         const SizedBox(width: 4),
-                                        const Icon(Icons.verified, size: 16, color: AppTheme.primaryEmerald),
+                                        const Icon(Icons.verified,
+                                            size: 16,
+                                            color: AppTheme.primaryEmerald),
                                       ],
                                     ),
                                     const SizedBox(height: 2),
                                     Row(
                                       children: [
                                         Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 6, vertical: 2),
                                           decoration: BoxDecoration(
                                             color: const Color(0xFFF1F5F9),
-                                            borderRadius: BorderRadius.circular(6),
+                                            borderRadius:
+                                                BorderRadius.circular(6),
                                           ),
                                           child: Row(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
                                               Icon(
-                                                techTransport == 'voiture' ? Icons.directions_car_rounded : Icons.two_wheeler_rounded,
+                                                techTransport == 'voiture'
+                                                    ? Icons
+                                                        .directions_car_rounded
+                                                    : Icons.two_wheeler_rounded,
                                                 size: 13,
-                                                color: techTransport == 'voiture' ? Colors.blue[800] : const Color(0xFF0F766E),
+                                                color: techTransport ==
+                                                        'voiture'
+                                                    ? Colors.blue[800]
+                                                    : const Color(0xFF0F766E),
                                               ),
                                               const SizedBox(width: 4),
                                               Text(
-                                                techTransport == 'voiture' ? 'Voiture' : 'Moto Express',
+                                                techTransport == 'voiture'
+                                                    ? 'Voiture'
+                                                    : 'Moto Express',
                                                 style: TextStyle(
                                                   fontSize: 10,
                                                   fontWeight: FontWeight.bold,
-                                                  color: techTransport == 'voiture' ? Colors.blue[800] : const Color(0xFF0F766E),
+                                                  color: techTransport ==
+                                                          'voiture'
+                                                      ? Colors.blue[800]
+                                                      : const Color(0xFF0F766E),
                                                 ),
                                               ),
                                             ],
                                           ),
                                         ),
                                         const SizedBox(width: 8),
-                                        const Icon(Icons.star, size: 13, color: Colors.amber),
-                                        Text(' ${techRating.toStringAsFixed(1)}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                        const Icon(Icons.star,
+                                            size: 13, color: Colors.amber),
+                                        Text(
+                                            ' ${techRating.toStringAsFixed(1)}',
+                                            style: const TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.bold)),
                                       ],
                                     ),
                                   ],
                                 ),
                               ),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                                decoration: BoxDecoration(color: AppTheme.primaryLight, borderRadius: BorderRadius.circular(12)),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 8),
+                                decoration: BoxDecoration(
+                                    color: AppTheme.primaryLight,
+                                    borderRadius: BorderRadius.circular(12)),
                                 child: Column(
                                   children: [
-                                    const Text('ETA', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppTheme.primaryDark)),
-                                    Text(dynamicEtaText, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryDark)),
-                                    if (dynamicDistanceText.isNotEmpty && status == 'in_progress')
-                                      Text(dynamicDistanceText, style: const TextStyle(fontSize: 9, color: AppTheme.primaryDark, fontWeight: FontWeight.w600)),
+                                    const Text('ETA',
+                                        style: TextStyle(
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.bold,
+                                            color: AppTheme.primaryDark)),
+                                    Text(dynamicEtaText,
+                                        style: const TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                            color: AppTheme.primaryDark)),
+                                    if (dynamicDistanceText.isNotEmpty &&
+                                        status == 'in_progress')
+                                      Text(dynamicDistanceText,
+                                          style: const TextStyle(
+                                              fontSize: 9,
+                                              color: AppTheme.primaryDark,
+                                              fontWeight: FontWeight.w600)),
                                   ],
                                 ),
                               ),
@@ -761,15 +876,20 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                             height: 46,
                             child: ElevatedButton.icon(
                               onPressed: () => _makePhoneCall(techPhone),
-                              icon: const Icon(Icons.phone_in_talk_rounded, color: Colors.white, size: 20),
+                              icon: const Icon(Icons.phone_in_talk_rounded,
+                                  color: Colors.white, size: 20),
                               label: Text(
                                 'Appeler le Technicien ($techPhone)',
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                    color: Colors.white),
                               ),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF0F766E),
                                 elevation: 0,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
                               ),
                             ),
                           ),
@@ -785,19 +905,25 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                     ],
 
                     // Action Buttons (Clôturer / Annuler)
-                    if (!['completed', 'cancelled', 'no_technician_found'].contains(status))
+                    if (!['completed', 'cancelled', 'no_technician_found']
+                        .contains(status))
                       Row(
                         children: [
                           Expanded(
                             child: SizedBox(
                               height: 48,
                               child: ElevatedButton(
-                                onPressed: () => _showReviewDialog(context, notifier),
+                                onPressed: () =>
+                                    _showReviewDialog(context, notifier),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppTheme.primaryEmerald,
                                   shape: const StadiumBorder(),
                                 ),
-                                child: const Text('Clôturer', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white)),
+                                child: const Text('Clôturer',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                        color: Colors.white)),
                               ),
                             ),
                           ),
@@ -806,12 +932,17 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                             child: SizedBox(
                               height: 48,
                               child: ElevatedButton(
-                                onPressed: () => _showCancelDialog(context, notifier),
+                                onPressed: () =>
+                                    _showCancelDialog(context, notifier),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.redAccent,
                                   shape: const StadiumBorder(),
                                 ),
-                                child: const Text('Annuler', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white)),
+                                child: const Text('Annuler',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                        color: Colors.white)),
                               ),
                             ),
                           ),
@@ -1097,8 +1228,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                 ),
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF8FAFC),
                   borderRadius: BorderRadius.circular(8),
@@ -1139,7 +1269,8 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (booking.photoUrl != null && booking.photoUrl!.isNotEmpty) ...[
+                if (booking.photoUrl != null &&
+                    booking.photoUrl!.isNotEmpty) ...[
                   InkWell(
                     onTap: () {
                       final fullUrl = booking.photoUrl!.startsWith('http')
@@ -1166,7 +1297,10 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                         width: 54,
                         height: 54,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const Icon(Icons.broken_image_rounded, size: 40, color: Colors.grey),
+                        errorBuilder: (_, __, ___) => const Icon(
+                            Icons.broken_image_rounded,
+                            size: 40,
+                            color: Colors.grey),
                       ),
                     ),
                   ),
@@ -1319,8 +1453,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                     // Copy address button
                     InkWell(
                       onTap: () {
-                        Clipboard.setData(
-                            ClipboardData(text: displayAddress));
+                        Clipboard.setData(ClipboardData(text: displayAddress));
                         AppToast.show(
                           context,
                           title: 'Adresse copiée',

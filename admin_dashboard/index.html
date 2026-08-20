@@ -75,7 +75,7 @@
           <span>Backend Actif :</span>
           <span class="env-tag" id="currentEnvTag">CLOUD RUN</span>
         </div>
-        <button class="btn btn-outline btn-sm" id="btnToggleEnv" style="width: 100%;">
+        <button class="btn btn-outline btn-sm w-full" id="btnToggleEnv">
           <i class="fa-solid fa-arrows-rotate"></i> Basculer Local / Cloud
         </button>
       </div>
@@ -114,7 +114,7 @@
               <span class="admin-name" id="adminNameDisplay">Super Admin</span>
               <span class="admin-role">Contrôle Flotte Dakar</span>
             </div>
-            <button class="btn-icon" id="btnLogout" title="Déconnexion" style="width: 28px; height: 28px; border: none; background: transparent;">
+            <button class="btn-icon" id="btnLogout" title="Déconnexion">
               <i class="fa-solid fa-right-from-bracket text-muted"></i>
             </button>
           </div>
@@ -435,8 +435,8 @@
       </div>
 
       <div style="display: flex; gap: 12px; margin-top: 20px;">
-        <button class="btn btn-outline" style="flex: 1;" id="btnCancelAssign">Annuler</button>
-        <button class="btn btn-primary" style="flex: 1;" id="btnConfirmAssign">Confirmer l'Assignation</button>
+        <button class="btn btn-outline flex-1" id="btnCancelAssign">Annuler</button>
+        <button class="btn btn-primary flex-1" id="btnConfirmAssign">Confirmer l'Assignation</button>
       </div>
     </div>
   </div>
@@ -460,7 +460,7 @@
           <input type="password" class="form-input" id="loginPassword" value="admin123" required>
         </div>
 
-        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
+        <button type="submit" class="btn btn-primary w-full mt-10">
           Se Connecter à la Console
         </button>
       </form>

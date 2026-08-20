@@ -8,8 +8,10 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:audioplayers/audioplayers.dart';
 
 import '../core/api_client.dart';
+import '../core/app_toast.dart';
 import '../core/config.dart';
 import '../models/models.dart';
+import 'connectivity_provider.dart';
 
 // --- 1. Auth Provider ---
 final authProvider = StateNotifierProvider<AuthNotifier, UserModel?>((ref) {
@@ -100,7 +102,8 @@ class AuthNotifier extends StateNotifier<UserModel?> {
 
 // --- 2. Technician Profile Provider ---
 final technicianProfileProvider =
-    StateNotifierProvider<TechnicianProfileNotifier, TechnicianProfileModel?>((ref) {
+    StateNotifierProvider<TechnicianProfileNotifier, TechnicianProfileModel?>(
+        (ref) {
   return TechnicianProfileNotifier(ref);
 });
 
@@ -127,7 +130,8 @@ class TechnicianProfileNotifier extends StateNotifier<TechnicianProfileModel?> {
       final user = _ref.read(authProvider);
       if (user == null) return;
       final dio = _ref.read(apiClientProvider);
-      await dio.put('/technicians/me/categories', data: {'category_ids': categories});
+      await dio.put('/technicians/me/categories',
+          data: {'category_ids': categories});
       await fetchProfile();
     } catch (e) {
       debugPrint('[Profile] Update categories error: $e');
@@ -136,7 +140,8 @@ class TechnicianProfileNotifier extends StateNotifier<TechnicianProfileModel?> {
 }
 
 // --- 3. Availability Toggle Provider ---
-final isOnlineProvider = StateNotifierProvider<OnlineStatusNotifier, bool>((ref) {
+final isOnlineProvider =
+    StateNotifierProvider<OnlineStatusNotifier, bool>((ref) {
   return OnlineStatusNotifier(ref);
 });
 
@@ -161,9 +166,11 @@ class OnlineStatusNotifier extends StateNotifier<bool> {
     _gpsTimer?.cancel();
     _fetchAndBroadcastPosition();
     _gpsTimer = Timer.periodic(const Duration(seconds: 10), (_) {
-      if (state) {
-        _fetchAndBroadcastPosition();
-      }
+      if (!state) return;
+      final isOnline = _ref.read(serverConnectivityProvider);
+      if (!isOnline) return;
+      
+      _fetchAndBroadcastPosition();
     });
   }
 
@@ -179,10 +186,11 @@ class OnlineStatusNotifier extends StateNotifier<bool> {
       }
 
       Position? pos = await Geolocator.getLastKnownPosition();
-      final Position position = pos ?? await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-        timeLimit: const Duration(seconds: 8),
-      );
+      final Position position = pos ??
+          await Geolocator.getCurrentPosition(
+            desiredAccuracy: LocationAccuracy.high,
+            timeLimit: const Duration(seconds: 8),
+          );
 
       _ref.read(liveLocationProvider.notifier).state = position;
 
@@ -228,6 +236,15 @@ class IncomingOfferNotifier extends StateNotifier<MatchOfferModel?> {
     remainingSeconds = offer.timeoutSeconds;
     _playSound();
 
+    AppToast.show(
+      null,
+      title: '🚨 Demande d\'Intervention Reçue !',
+      message:
+          '${offer.categoryName} • ${offer.addressText} (~${offer.distanceKm.toStringAsFixed(1)} km)',
+      type: AppToastType.warning,
+      duration: const Duration(seconds: 6),
+    );
+
     _countdownTimer?.cancel();
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (remainingSeconds > 0) {
@@ -260,10 +277,31 @@ class IncomingOfferNotifier extends StateNotifier<MatchOfferModel?> {
       });
       if (res.statusCode == 200) {
         _ref.read(activeMissionProvider.notifier).fetchActiveMission();
+        AppToast.show(
+          null,
+          title: 'Mission Acceptée !',
+          message: 'Navigation et suivi client activés.',
+          type: AppToastType.success,
+        );
         return true;
       }
     } catch (e) {
       debugPrint('[Offer] Accept error: $e');
+    }
+    return false;
+  }
+
+  Future<bool> declineOffer() async {
+    if (state == null) return false;
+    final bookingId = state!.bookingId;
+    dismissOffer();
+
+    try {
+      final dio = _ref.read(apiClientProvider);
+      final res = await dio.post('/bookings/$bookingId/decline');
+      return res.statusCode == 200;
+    } catch (e) {
+      debugPrint('[Offer] Decline error: $e');
     }
     return false;
   }
@@ -291,7 +329,10 @@ class ActiveMissionNotifier extends StateNotifier<BookingModel?> {
 
   void _startPollLoop() {
     _pollTimer = Timer.periodic(const Duration(seconds: 6), (_) {
-      fetchActiveMission();
+      final isOnline = _ref.read(serverConnectivityProvider);
+      if (isOnline) {
+        fetchActiveMission();
+      }
     });
   }
 
@@ -387,10 +428,21 @@ class ProWebSocketService {
     final token = _ref.read(authProvider.notifier).token;
     if (user == null) return;
 
+    final isOnline = _ref.read(serverConnectivityProvider);
+    if (!isOnline) {
+      Future.delayed(const Duration(seconds: 5), connect);
+      return;
+    }
+
     try {
-      final tokenQuery = (token != null && token.isNotEmpty) ? '?token=$token' : '';
+      final tokenQuery =
+          (token != null && token.isNotEmpty) ? '?token=$token' : '';
       final url = '${AppConfig.wsBaseUrl}/users/${user.id}$tokenQuery';
       _channel = WebSocketChannel.connect(Uri.parse(url));
+
+      _channel!.ready.catchError((e) {
+        debugPrint('[WS] Ready catchError: $e');
+      });
 
       _channel!.stream.listen(
         (message) {
@@ -402,6 +454,12 @@ class ProWebSocketService {
               _ref.read(incomingOfferProvider.notifier).receiveOffer(offer);
             } else if (type == 'STATUS_CHANGE') {
               _ref.read(activeMissionProvider.notifier).fetchActiveMission();
+              AppToast.show(
+                null,
+                title: 'Mise à jour d\'intervention',
+                message: 'Le statut de la mission a changé.',
+                type: AppToastType.info,
+              );
             }
           } catch (e) {
             debugPrint('[WS] Message parse error: $e');

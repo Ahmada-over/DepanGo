@@ -7,10 +7,11 @@ const steps = [
   { img: '/part1_step2.png', title: '2. Localisez-vous', desc: 'Confirmez votre position exacte sur la carte.' },
   { img: '/part1_step3.png', title: '3. Recherche de pros', desc: 'Visualisez les techniciens qualifiés et disponibles autour de vous.' },
   { img: '/part1_step4.png', title: '4. Détaillez votre demande', desc: 'Expliquez votre panne et ajoutez une photo si besoin.' },
-  { img: '/part1_step5.png', title: '5. Le pro reçoit l\'offre', desc: 'Votre demande est directement envoyée au meilleur technicien !' },
+  { img: '/part1_step5.png', title: "5. Le pro reçoit l'offre", desc: 'Votre demande est directement envoyée au meilleur technicien !' },
 ];
 
 const currentStep2 = ref(0);
+const isMapZoomed = ref(true);
 const steps2 = [
   { img: '/part1_step4.png', title: '1. Validez la demande', desc: 'Une fois la description complétée, confirmez.' },
   { img: '/part2_step2.png', title: '2. Transmission', desc: "L'application contacte l'artisan en priorité." },
@@ -117,7 +118,7 @@ const setStep2 = (index) => {
                <img src="https://i.pravatar.cc/100?img=2" class="w-10 h-10 rounded-full border-2 border-white object-cover shadow-sm" />
                <img src="https://i.pravatar.cc/100?img=3" class="w-10 h-10 rounded-full border-2 border-white object-cover shadow-sm" />
             </div>
-            <span class="pl-2">+10 000 utilisateurs satisfaits à Dakar</span>
+            <span class="pl-2">+10 000 utilisateurs satisfaits</span>
           </div>
         </div>
         
@@ -301,6 +302,60 @@ const setStep2 = (index) => {
       </div>
     </section>
 
+
+    <!-- Active Zones / Global Map Section -->
+    <section class="py-24 bg-gray-50 border-t border-gray-100 relative overflow-hidden">
+      <!-- Background Orbs -->
+      <div class="absolute inset-0 z-0">
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-teal-200/30 rounded-full mix-blend-multiply filter blur-[150px]"></div>
+      </div>
+      
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
+        <div class="text-[#0D776C] font-bold tracking-wide uppercase text-sm mb-3">Couverture Mondiale</div>
+        <h2 class="text-3xl md:text-5xl font-extrabold text-gray-900 mb-6 leading-tight">
+          Nos zones les <br/>plus actives 🌍
+        </h2>
+        <p class="text-gray-600 text-lg max-w-2xl mx-auto mb-16">
+          Une communauté internationale grandissante. Découvrez en temps réel où nos professionnels interviennent le plus pour sauver la journée !
+        </p>
+        
+        <!-- Interactive Map Container -->
+        <div class="relative w-full max-w-5xl mx-auto h-[400px] md:h-[500px] bg-white/60 backdrop-blur-xl border border-white rounded-[3rem] shadow-2xl overflow-hidden flex items-center justify-center">
+          
+          <!-- Real World Map SVG -->
+          <img src="/world_map.svg" class="absolute inset-0 w-full h-full object-contain opacity-20 invert" alt="World Map" style="filter: invert(36%) sepia(93%) saturate(415%) hue-rotate(124deg) brightness(90%) contrast(85%);" />
+          
+          <!-- Subtle Grid Overlay for tech feel -->
+          <div class="absolute inset-0 opacity-[0.03]" style="background-image: radial-gradient(#000 2px, transparent 2px); background-size: 20px 20px;"></div>
+
+          <!-- Pulsing Dots (Active Zones) -->
+          
+          <!-- Senegal / Dakar -->
+          <div class="absolute top-[55%] left-[46%] z-20">
+            <div class="relative flex h-8 w-8">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-8 w-8 bg-[#0D776C] border-2 border-white shadow-lg"></span>
+            </div>
+            <div class="absolute top-10 -left-6 bg-white px-3 py-1 rounded-lg shadow-md border border-gray-100 text-xs font-bold text-gray-800 whitespace-nowrap">
+              Dakar, Sénégal (Zone Active)
+            </div>
+          </div>
+          
+          <!-- Central Badge -->
+          <div class="relative z-10 bg-white/90 backdrop-blur-md px-6 py-4 rounded-2xl shadow-xl border border-gray-100 flex items-center space-x-4 mt-auto mb-6">
+            <div class="w-12 h-12 bg-teal-50 rounded-full flex items-center justify-center text-[#0D776C]">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </div>
+            <div class="text-left">
+              <div class="font-black text-xl text-gray-900">Hub Principal</div>
+              <div class="text-sm text-gray-500 font-medium">Déploiement international à venir</div>
+            </div>
+          </div>
+          
+        </div>
+      </div>
+    </section>
+
     <!-- Features Section -->
     <section id="features" class="py-24 bg-gray-50 border-t border-gray-100 relative overflow-hidden">
       <!-- Background Orbs -->
@@ -455,7 +510,7 @@ const setStep2 = (index) => {
               <span class="text-2xl font-black text-gray-800 tracking-tight">depanGo</span>
             </div>
             <p class="text-gray-500 mb-6 max-w-sm leading-relaxed">
-              La plateforme numéro 1 de mise en relation entre particuliers et professionnels du dépannage à domicile à Dakar.
+              La plateforme numéro 1 de mise en relation entre particuliers et professionnels du dépannage à domicile.
             </p>
             <div class="flex space-x-4">
               <!-- Facebook -->
@@ -496,7 +551,7 @@ const setStep2 = (index) => {
               </li>
               <li class="flex items-start space-x-3 text-gray-500">
                 <svg class="w-5 h-5 text-[#0D776C] mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.243-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                <span>Dakar, Sénégal</span>
+                <span>Service International</span>
               </li>
             </ul>
           </div>
@@ -514,3 +569,5 @@ const setStep2 = (index) => {
     </footer>
   </div>
 </template>
+
+<!-- trigger hmr -->

@@ -322,36 +322,37 @@ const setStep2 = (index) => {
         <!-- Interactive Map Container -->
         <div class="relative w-full max-w-5xl mx-auto h-[400px] md:h-[500px] bg-white/60 backdrop-blur-xl border border-white rounded-[3rem] shadow-2xl overflow-hidden flex items-center justify-center">
           
-          <!-- Real World Map SVG -->
-          <img src="/world_map.svg" class="absolute inset-0 w-full h-full object-contain opacity-20 invert" alt="World Map" style="filter: invert(36%) sepia(93%) saturate(415%) hue-rotate(124deg) brightness(90%) contrast(85%);" />
-          
-          <!-- Subtle Grid Overlay for tech feel -->
-          <div class="absolute inset-0 opacity-[0.03]" style="background-image: radial-gradient(#000 2px, transparent 2px); background-size: 20px 20px;"></div>
-
-          <!-- Pulsing Dots (Active Zones) -->
-          
-          <!-- Senegal / Dakar -->
-          <div class="absolute top-[55%] left-[46%] z-20">
-            <div class="relative flex h-8 w-8">
-              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
-              <span class="relative inline-flex rounded-full h-8 w-8 bg-[#0D776C] border-2 border-white shadow-lg"></span>
-            </div>
-            <div class="absolute top-10 -left-6 bg-white px-3 py-1 rounded-lg shadow-md border border-gray-100 text-xs font-bold text-gray-800 whitespace-nowrap">
-              Dakar, Sénégal (Zone Active)
-            </div>
-          </div>
-          
-          <!-- Central Badge -->
-          <div class="relative z-10 bg-white/90 backdrop-blur-md px-6 py-4 rounded-2xl shadow-xl border border-gray-100 flex items-center space-x-4 mt-auto mb-6">
-            <div class="w-12 h-12 bg-teal-50 rounded-full flex items-center justify-center text-[#0D776C]">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            </div>
-            <div class="text-left">
-              <div class="font-black text-xl text-gray-900">Hub Principal</div>
-              <div class="text-sm text-gray-500 font-medium">Déploiement international à venir</div>
+          <!-- Zoomable Map Layer -->
+          <div class="absolute inset-0 transition-transform duration-1000 ease-in-out" 
+               :style="{ transform: isMapZoomed ? 'scale(6) translate(0.83%, 0.66%)' : 'scale(1)', transformOrigin: '45% 46%' }">
+               
+            <!-- Real World Map SVG -->
+            <img src="/world_map.svg" class="absolute inset-0 w-full h-full object-contain opacity-20 invert" alt="World Map" style="filter: invert(36%) sepia(93%) saturate(415%) hue-rotate(124deg) brightness(90%) contrast(85%);" />
+            
+            <!-- Subtle Grid Overlay for tech feel -->
+            <div class="absolute inset-0 opacity-[0.03]" style="background-image: radial-gradient(#000 2px, transparent 2px); background-size: 20px 20px;"></div>
+            
+            <!-- Senegal / Dakar -->
+            <div class="absolute z-20" :style="{ top: '46%', left: '45%', transform: isMapZoomed ? 'scale(0.16)' : 'scale(1)', transition: 'transform 1s ease-in-out' }">
+              <div class="relative flex h-8 w-8 -mt-4 -ml-4">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-8 w-8 bg-[#0D776C] border-2 border-white shadow-lg"></span>
+              </div>
+              <div class="absolute top-6 left-1/2 -translate-x-1/2 bg-white px-3 py-1 rounded-lg shadow-md border border-gray-100 text-xs font-bold text-gray-800 whitespace-nowrap">
+                Dakar, Sénégal (Zone Active)
+              </div>
             </div>
           </div>
           
+          <!-- Zoom Controls -->
+          <div class="absolute bottom-6 right-6 flex flex-col space-y-2 z-30">
+            <button @click="isMapZoomed = true" :class="isMapZoomed ? 'bg-teal-50 text-[#0D776C]' : 'bg-white text-gray-600'" class="w-10 h-10 rounded-xl shadow-lg border border-gray-100 flex items-center justify-center hover:bg-gray-50 transition-colors">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6v12m-6-6h12"></path></svg>
+            </button>
+            <button @click="isMapZoomed = false" :class="!isMapZoomed ? 'bg-teal-50 text-[#0D776C]' : 'bg-white text-gray-600'" class="w-10 h-10 rounded-xl shadow-lg border border-gray-100 flex items-center justify-center hover:bg-gray-50 transition-colors">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20 12H4"></path></svg>
+            </button>
+          </div>
         </div>
       </div>
     </section>

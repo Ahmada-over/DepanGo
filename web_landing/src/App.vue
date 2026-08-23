@@ -322,25 +322,29 @@ const setStep2 = (index) => {
         <!-- Interactive Map Container -->
         <div class="relative w-full max-w-5xl mx-auto h-[400px] md:h-[500px] bg-white/60 backdrop-blur-xl border border-white rounded-[3rem] shadow-2xl overflow-hidden flex items-center justify-center">
           
-          <!-- Zoomable Map Layer -->
-          <div class="absolute inset-0 transition-transform duration-1000 ease-in-out" 
-               :style="{ transform: isMapZoomed ? 'scale(6) translate(0.83%, 0.66%)' : 'scale(1)', transformOrigin: '45% 46%' }">
+          <!-- Zoomable Map Layer (Square aspect ratio to match SVG) -->
+          <div class="relative h-full aspect-square mx-auto transition-transform duration-1000 ease-in-out" 
+               :style="{ transform: isMapZoomed ? 'translate(47.5%, 3.5%) scale(5)' : 'translate(0, 0) scale(1)', transformOrigin: '2.5% 46.5%' }">
                
-            <!-- Real World Map SVG -->
-            <img src="/world_map.svg" class="absolute inset-0 w-full h-full object-contain opacity-20 invert" alt="World Map" style="filter: invert(36%) sepia(93%) saturate(415%) hue-rotate(124deg) brightness(90%) contrast(85%);" />
+            <!-- Senegal Map SVG -->
+            <img src="/senegal_map.svg" class="absolute inset-0 w-full h-full object-contain opacity-20 invert" alt="Senegal Map" style="filter: invert(36%) sepia(93%) saturate(415%) hue-rotate(124deg) brightness(90%) contrast(85%);" />
             
             <!-- Subtle Grid Overlay for tech feel -->
             <div class="absolute inset-0 opacity-[0.03]" style="background-image: radial-gradient(#000 2px, transparent 2px); background-size: 20px 20px;"></div>
             
-            <!-- Senegal / Dakar -->
-            <div class="absolute z-20" :style="{ top: '46%', left: '45%', transform: isMapZoomed ? 'scale(0.16)' : 'scale(1)', transition: 'transform 1s ease-in-out' }">
+            <!-- Senegal / Dakar (Main Hub) -->
+            <div class="absolute z-20" :style="{ top: '46.5%', left: '2.5%', transform: isMapZoomed ? 'scale(0.2)' : 'scale(1)', transition: 'transform 1s ease-in-out' }">
+              
+              <!-- Main Dakar Dot -->
               <div class="relative flex h-8 w-8 -mt-4 -ml-4">
                 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
                 <span class="relative inline-flex rounded-full h-8 w-8 bg-[#0D776C] border-2 border-white shadow-lg"></span>
               </div>
-              <div class="absolute top-6 left-1/2 -translate-x-1/2 bg-white px-3 py-1 rounded-lg shadow-md border border-gray-100 text-xs font-bold text-gray-800 whitespace-nowrap">
-                Dakar, Sénégal (Zone Active)
+              <div class="absolute top-6 left-1/2 -translate-x-1/2 bg-white px-3 py-1 rounded-lg shadow-md border border-gray-100 text-xs font-bold text-gray-800 whitespace-nowrap z-30">
+                Dakar, Sénégal
               </div>
+
+
             </div>
           </div>
           

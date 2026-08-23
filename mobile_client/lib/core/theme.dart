@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  static const Color primaryEmerald = Color(0xFF10B981);
-  static const Color primaryDark = Color(0xFF059669);
-  static const Color primaryLight = Color(0xFFD1FAE5);
+  static const Color primaryEmerald = Color(0xFF0F766E);
+  static const Color primaryDark = Color(0xFF0D645D);
+  static const Color primaryLight = Color(0xFFE2F3F2);
   static const Color bgLight = Color(0xFFF8FAFC);
   static const Color cardBg = Colors.white;
   static const Color textDark = Color(0xFF0F172A);

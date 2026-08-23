@@ -273,16 +273,16 @@ function setupCharts() {
           {
             label: 'Demandes totales',
             data: [0, 0, 0, 0, 0, 0, 0],
-            backgroundColor: 'rgba(59, 130, 246, 0.4)',
-            borderColor: '#3B82F6',
+            backgroundColor: '#0EA5E9',
+            borderColor: 'transparent',
             borderWidth: 1.5,
             borderRadius: 6,
           },
           {
             label: 'Dépannages réussis',
             data: [0, 0, 0, 0, 0, 0, 0],
-            backgroundColor: 'rgba(16, 185, 129, 0.7)',
-            borderColor: '#10B981',
+            backgroundColor: '#E2E8F0',
+            borderColor: 'transparent',
             borderWidth: 1.5,
             borderRadius: 6,
           },
@@ -292,11 +292,11 @@ function setupCharts() {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { labels: { color: '#9CA3AF', font: { family: 'Plus Jakarta Sans', size: 11 } } },
+          legend: { labels: { color: '#94A3B8', font: { family: 'Plus Jakarta Sans', size: 11 } } },
         },
         scales: {
-          x: { grid: { color: '#1F2937' }, ticks: { color: '#9CA3AF' } },
-          y: { grid: { color: '#1F2937' }, ticks: { color: '#9CA3AF', stepSize: 5 } },
+          x: { grid: { color: '#F1F5F9' }, ticks: { color: '#94A3B8' } },
+          y: { grid: { color: '#F1F5F9' }, ticks: { color: '#94A3B8', stepSize: 5 } },
         },
       },
     });
@@ -320,7 +320,7 @@ function setupCharts() {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { position: 'bottom', labels: { color: '#9CA3AF', font: { family: 'Plus Jakarta Sans', size: 11 } } },
+          legend: { position: 'bottom', labels: { color: '#94A3B8', font: { family: 'Plus Jakarta Sans', size: 11 } } },
         },
         cutout: '68%',
       },

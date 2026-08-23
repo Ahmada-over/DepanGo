@@ -239,7 +239,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         border: Border.all(color: isVerified ? ProTheme.primaryEmerald : Colors.amber),
                       ),
                       child: Text(
-                        isVerified ? 'STATUT KYC : ARTISAN CERTIFIÉ ✅' : 'STATUT KYC : EN ATTENTE DE VALIDATION ⏳',
+                        isVerified ? 'STATUT KYC : ARTISAN CERTIFIÉ ' : 'STATUT KYC : EN ATTENTE DE VALIDATION',
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
@@ -481,7 +481,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: ProTheme.primaryLight,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                 ),
               ),

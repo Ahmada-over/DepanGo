@@ -299,7 +299,10 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen> {
         AppToast.show(context, title: 'Intervention Annulée', message: 'Le dossier a été annulé.', type: AppToastType.warning);
         Navigator.pop(context);
       } else {
-        AppToast.show(context, title: 'Statut Mis à Jour', message: 'Étape active : $newStatus', type: AppToastType.info);
+        String friendlyMessage = 'Statut mis à jour.';
+        if (newStatus == 'in_progress') friendlyMessage = 'Vous êtes maintenant en route vers le client.';
+        if (newStatus == 'on_site') friendlyMessage = 'Vous avez indiqué être sur place.';
+        AppToast.show(context, title: 'Statut Mis à Jour', message: friendlyMessage, type: AppToastType.info);
       }
     }
   }
@@ -807,7 +810,7 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: ProTheme.amber,
                             foregroundColor: Colors.black,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           ),
                         ),
                       ),
@@ -822,7 +825,7 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: ProTheme.primaryLight,
                             foregroundColor: Colors.black,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           ),
                         ),
                       ),
@@ -837,7 +840,7 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: ProTheme.success,
                             foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           ),
                         ),
                       ),
@@ -900,7 +903,7 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           backgroundColor: ProTheme.darkCard,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           title: const Text('Annuler l\'intervention', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
           content: Column(
             mainAxisSize: MainAxisSize.min,

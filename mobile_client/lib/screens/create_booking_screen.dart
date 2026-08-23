@@ -193,11 +193,11 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                 leading: Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.12),
+                    color: AppTheme.primaryEmerald.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(Icons.photo_library_rounded,
-                      color: Colors.blue),
+                      color: AppTheme.primaryEmerald),
                 ),
                 title: const Text('Choisir dans la galerie',
                     style: TextStyle(fontWeight: FontWeight.bold)),
@@ -428,12 +428,12 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                           Text(
                             _isUploadingPhoto
                                 ? 'Téléchargement en cours...'
-                                : 'Prête pour le technicien ✅',
+                                : 'Prête pour le technicien ',
                             style: TextStyle(
                               fontSize: 11,
                               color: _isUploadingPhoto
                                   ? Colors.amber[800]
-                                  : Colors.green[700],
+                                  : AppTheme.primaryDark,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -598,6 +598,7 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
               bookingId: booking.id,
               categoryId: widget.categoryId,
               categoryName: CategoryHelper.getCategoryName(widget.categoryId),
+              preferredTechnicianName: widget.preferredTechnicianName,
             ),
           ),
         );

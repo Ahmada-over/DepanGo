@@ -173,7 +173,7 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen>
             onPressed: () => Navigator.pop(context),
             style: OutlinedButton.styleFrom(
               side: const BorderSide(color: Colors.white38),
-              shape: const StadiumBorder(),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
             child: const Text('Annuler la recherche',
@@ -223,7 +223,7 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen>
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.primaryEmerald,
               foregroundColor: Colors.white,
-              shape: const StadiumBorder(),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
             ),
           ),

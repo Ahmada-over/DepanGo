@@ -144,6 +144,9 @@ class BookingUseCases:
                 
                 contacted_tech_ids = set()
                 accepted = False
+                
+                client_user = await user_repo.get_by_id(booking.client_id)
+                client_name = client_user.name if (client_user and client_user.name) else "Client"
 
                 if preferred_technician_id:
                     # Target specific requested technician first
@@ -152,15 +155,13 @@ class BookingUseCases:
                         targets = [preferred_tech]
                         # Just run the logic for this single target
                         accepted = await self._send_offers_and_wait(
-                            booking, targets, ws_manager, booking_repo, session, timeout=settings.MATCHING_RESPONSE_WINDOW_SECONDS
+                            booking, targets, ws_manager, booking_repo, session, timeout=settings.MATCHING_RESPONSE_WINDOW_SECONDS, client_name=client_name
                         )
                         if accepted:
                             return
 
                 # If no preferred tech or preferred tech rejected/timeout, run concentric matching
                 timeout = settings.MATCHING_RESPONSE_WINDOW_SECONDS
-                client_user = await user_repo.get_by_id(booking.client_id)
-                client_name = client_user.name if client_user else "Client App"
                 
                 from app.infrastructure.external_apis.maps import GoogleMapsEtaService
                 eta_service = GoogleMapsEtaService()
@@ -225,7 +226,7 @@ class BookingUseCases:
         except Exception as e:
             logger.error(f"[MATCHING] ERROR booking={booking.id}: {e}", exc_info=True)
 
-    async def _send_offers_and_wait(self, booking: BookingDomain, targets: list, ws_manager, booking_repo, session, timeout: int, client_name: str = "Client App") -> bool:
+    async def _send_offers_and_wait(self, booking: BookingDomain, targets: list, ws_manager, booking_repo, session, timeout: int, client_name: str = "Client") -> bool:
         from sqlalchemy import select
         from app.infrastructure.database.models import MatchingLogModel
         

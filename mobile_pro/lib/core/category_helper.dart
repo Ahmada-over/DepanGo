@@ -6,7 +6,7 @@ class CategoryHelper {
       'name': 'Plomberie & Sanitaire',
       'shortName': 'Plomberie',
       'icon': Icons.water_drop_rounded,
-      'emoji': '🚰',
+      'emoji': '',
       'color': Color(0xFF0F766E),
       'description': 'Fuites d\'eau, robinetterie, tuyauterie, débouchage WC et canalisations.',
     },
@@ -14,7 +14,7 @@ class CategoryHelper {
       'name': 'Climatisation & Froid',
       'shortName': 'Froid & Clim',
       'icon': Icons.ac_unit_rounded,
-      'emoji': '❄️',
+      'emoji': '️',
       'color': Color(0xFF0284C7),
       'description': 'Entretien split, recharge de gaz, panne compresseur, frigos et chambres froides.',
     },
@@ -22,7 +22,7 @@ class CategoryHelper {
       'name': 'Électricité Générale',
       'shortName': 'Électricité',
       'icon': Icons.bolt_rounded,
-      'emoji': '⚡',
+      'emoji': '',
       'color': Color(0xFFD97706),
       'description': 'Court-circuit, disjoncteur qui saute, tableau électrique, câblage et prises.',
     },
@@ -30,7 +30,7 @@ class CategoryHelper {
       'name': 'Électroménager',
       'shortName': 'Électroménager',
       'icon': Icons.kitchen_rounded,
-      'emoji': '🔌',
+      'emoji': '',
       'color': Color(0xFF7C3AED),
       'description': 'Lave-linge, lave-vaisselle, micro-ondes, cuisinière et petits appareils.',
     },
@@ -38,7 +38,7 @@ class CategoryHelper {
       'name': 'Dépannage d\'Urgence',
       'shortName': 'Urgence Express',
       'icon': Icons.flash_on_rounded,
-      'emoji': '🚨',
+      'emoji': '',
       'color': Color(0xFFDC2626),
       'description': 'Intervention prioritaire immédiate pour dépannage express à Dakar.',
     },
@@ -60,8 +60,8 @@ class CategoryHelper {
   }
 
   static String getCategoryEmoji(String? categoryId) {
-    if (categoryId == null || categoryId.isEmpty) return '🛠️';
-    return _categories[categoryId]?['emoji'] ?? '🛠️';
+    if (categoryId == null || categoryId.isEmpty) return '️';
+    return _categories[categoryId]?['emoji'] ?? '️';
   }
 
   static Color getCategoryColor(String? categoryId) {

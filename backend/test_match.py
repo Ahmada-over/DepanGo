@@ -1,25 +1,12 @@
 import asyncio
-import logging
 from app.infrastructure.database.session import AsyncSessionLocal
-from app.infrastructure.repositories.sqlalchemy_repositories import SQLAlchemyTechnicianRepository
-from app.domain.models import AvailabilityStatus
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from sqlalchemy import text
 
 async def test():
     async with AsyncSessionLocal() as session:
-        tech_repo = SQLAlchemyTechnicianRepository(session)
-        # Assuming the preferred_technician_id is the user_tech_demo
-        preferred_technician_id = "user_tech_demo"
-        preferred_tech = await tech_repo.get_by_user_id(preferred_technician_id)
-        if preferred_tech:
-            logger.info(f"Tech found: {preferred_tech.user_id}, Status: {preferred_tech.availability_status}, Verified: {preferred_tech.verified}")
-            if (preferred_tech.availability_status == AvailabilityStatus.ONLINE or preferred_tech.user_id == "user_tech_demo") and preferred_tech.verified:
-                logger.info("Tech is a valid target!")
-            else:
-                logger.error("Tech is NOT a valid target because of status or verification.")
-        else:
-            logger.error("Tech not found!")
+        res = await session.execute(text("SELECT id, user_name, availability_status, latitude, longitude, category_ids FROM technician_profiles"))
+        for row in res:
+            print(f"Tech: {row.user_name} | Status: {row.availability_status} | Loc: {row.latitude},{row.longitude} | Cats: {row.category_ids}")
 
-asyncio.run(test())
+if __name__ == "__main__":
+    asyncio.run(test())

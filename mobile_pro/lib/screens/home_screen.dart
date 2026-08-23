@@ -1,5 +1,6 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
@@ -9,6 +10,7 @@ import '../core/map_style.dart';
 import '../core/category_helper.dart';
 import '../models/models.dart';
 import '../providers/pro_providers.dart';
+import '../providers/connectivity_provider.dart';
 import 'active_mission_screen.dart';
 import 'history_screen.dart';
 import 'profile_screen.dart';
@@ -171,6 +173,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final user = ref.watch(authProvider);
     final profile = ref.watch(technicianProfileProvider);
     final isOnline = ref.watch(isOnlineProvider);
+    final isServerOnline = ref.watch(serverConnectivityProvider);
     final activeMission = ref.watch(activeMissionProvider);
     final incomingOffer = ref.watch(incomingOfferProvider);
     final livePos = ref.watch(liveLocationProvider);
@@ -191,6 +194,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       backgroundColor: ProTheme.darkBg,
       body: Stack(
         children: [
+          if (!isServerOnline)
+            Positioned(
+              top: MediaQuery.of(context).padding.top,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                color: Colors.amber.shade900,
+                child: Shimmer.fromColors(
+                  baseColor: Colors.amber.shade100,
+                  highlightColor: Colors.white,
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.wifi_off_rounded, size: 16, color: Colors.white),
+                      SizedBox(width: 8),
+                      Text(
+                        'Reconnexion au réseau...',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           // 1. Google Map Background
           GoogleMap(
             onMapCreated: (ctrl) {

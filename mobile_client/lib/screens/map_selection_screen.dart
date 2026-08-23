@@ -284,6 +284,98 @@ class _MapSelectionScreenState extends ConsumerState<MapSelectionScreen> {
     return markers;
   }
 
+  void _showTechniciansListBottomSheet(BuildContext context) {
+    final techs = _techLocations.values.toList();
+    if (techs.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Aucun technicien en ligne pour le moment.')),
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              const Text(
+                'Techniciens disponibles',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textDark,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Flexible(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: techs.length,
+                  itemBuilder: (context, index) {
+                    final tech = techs[index];
+                    return ListTile(
+                      leading: const CircleAvatar(
+                        backgroundColor: AppTheme.primaryEmerald,
+                        child: Icon(Icons.person_rounded, color: Colors.white),
+                      ),
+                      title: Text(tech.name,
+                          style: const TextStyle(fontWeight: FontWeight.w600)),
+                      subtitle: Row(
+                        children: [
+                          const Icon(Icons.star_rounded,
+                              color: Colors.amber, size: 16),
+                          const SizedBox(width: 4),
+                          Text(tech.averageRating.toStringAsFixed(1)),
+                        ],
+                      ),
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                      onTap: () {
+                        Navigator.pop(context);
+                        ref.read(selectedLocationProvider.notifier).state =
+                            _addressText;
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => CreateBookingScreen(
+                              categoryId: widget.categoryId,
+                              categoryName: widget.categoryName,
+                              basePrice: widget.basePrice,
+                              latitude: _currentPosition?.latitude,
+                              longitude: _currentPosition?.longitude,
+                              preferredTechnicianId: tech.id,
+                              preferredTechnicianName: tech.name,
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading || _currentPosition == null) {
@@ -475,6 +567,11 @@ class _MapSelectionScreenState extends ConsumerState<MapSelectionScreen> {
                     height: 52,
                     child: ElevatedButton(
                       onPressed: () {
+                        if (_selectedTech == null) {
+                          _showTechniciansListBottomSheet(context);
+                          return;
+                        }
+
                         ref.read(selectedLocationProvider.notifier).state =
                             _addressText;
                         Navigator.push(

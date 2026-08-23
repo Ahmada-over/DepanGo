@@ -5,6 +5,7 @@ import 'core/app_toast.dart';
 import 'providers/app_providers.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/onboarding_screen.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -34,7 +35,9 @@ class TechConnectApp extends ConsumerWidget {
       title: 'depanGo Client',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: user == null ? const LoginScreen() : const HomeScreen(),
+      home: ref.watch(sharedPreferencesProvider).getBool('has_seen_onboarding') == true
+          ? (user == null ? const LoginScreen() : const HomeScreen())
+          : const OnboardingScreen(),
     );
   }
 }

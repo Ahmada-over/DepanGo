@@ -18,7 +18,9 @@ import '../models/models.dart';
 import '../providers/app_providers.dart';
 
 class TrackingChatScreen extends ConsumerStatefulWidget {
-  const TrackingChatScreen({super.key});
+  final String? preferredTechnicianName;
+
+  const TrackingChatScreen({super.key, this.preferredTechnicianName});
 
   @override
   ConsumerState<TrackingChatScreen> createState() => _TrackingChatScreenState();
@@ -122,17 +124,17 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
     try {
       final moto = await _createCustomMarkerBitmap(
         icon: Icons.two_wheeler_rounded,
-        primaryColor: const Color(0xFF0F766E), // Emerald
+        primaryColor: AppTheme.primaryEmerald, // Emerald
         iconColor: Colors.white,
       );
       final car = await _createCustomMarkerBitmap(
         icon: Icons.directions_car_rounded,
-        primaryColor: const Color(0xFF1E40AF), // Deep Blue
+        primaryColor: AppTheme.primaryDark, // Deep Blue
         iconColor: Colors.white,
       );
       final dest = await _createCustomMarkerBitmap(
         icon: Icons.person_pin_circle_rounded,
-        primaryColor: const Color(0xFFDC2626), // Red
+        primaryColor: Colors.redAccent, // Red
         iconColor: Colors.white,
       );
       if (mounted) {
@@ -417,7 +419,10 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
       return 'Aucun technicien disponible pour le moment.';
     }
     if (status == 'expired') {
-      return 'Votre demande a expiré car aucun technicien n\'a été trouvé.';
+      return 'Votre demande a expiré.';
+    }
+    if (widget.preferredTechnicianName != null && status == 'pending') {
+      return 'En attente de ${widget.preferredTechnicianName}…';
     }
     return 'Recherche de technicien…';
   }
@@ -498,6 +503,12 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
             techName.substring(0, techName.length.clamp(0, 2)).toUpperCase();
       }
     });
+
+    if (status == 'pending' && activeBooking?.technicianId == null) {
+      techName = widget.preferredTechnicianName ?? 'Recherche en cours...';
+      techPhone = 'En attente';
+      techInitials = '...';
+    }
 
     // Override with live location from WebSocket / GPS stream
     if (liveTechLocation != null) {
@@ -730,7 +741,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
                           _buildStepItem(
-                              1, 'Assignée', stepIdx >= 1, Colors.blue),
+                              1, 'Assignée', stepIdx >= 1, AppTheme.primaryEmerald),
                           _buildStepDivider(stepIdx >= 2),
                           _buildStepItem(
                               2, 'En Route', stepIdx >= 2, Colors.orange),
@@ -739,7 +750,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                               AppTheme.primaryEmerald),
                           _buildStepDivider(stepIdx >= 4),
                           _buildStepItem(
-                              4, 'Clôturée', stepIdx >= 4, Colors.green),
+                              4, 'Clôturée', stepIdx >= 4, AppTheme.primaryEmerald),
                         ],
                       ),
                     ),
@@ -766,7 +777,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                               CircleAvatar(
                                 radius: 26,
                                 backgroundColor: techTransport == 'voiture'
-                                    ? const Color(0xFF1E40AF)
+                                    ? AppTheme.primaryDark
                                     : AppTheme.primaryEmerald,
                                 child: Text(techInitials,
                                     style: const TextStyle(
@@ -817,8 +828,8 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                                                 size: 13,
                                                 color: techTransport ==
                                                         'voiture'
-                                                    ? Colors.blue[800]
-                                                    : const Color(0xFF0F766E),
+                                                    ? AppTheme.primaryDark
+                                                    : AppTheme.primaryEmerald,
                                               ),
                                               const SizedBox(width: 4),
                                               Text(
@@ -830,8 +841,8 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                                                   fontWeight: FontWeight.bold,
                                                   color: techTransport ==
                                                           'voiture'
-                                                      ? Colors.blue[800]
-                                                      : const Color(0xFF0F766E),
+                                                      ? AppTheme.primaryDark
+                                                      : AppTheme.primaryEmerald,
                                                 ),
                                               ),
                                             ],
@@ -898,7 +909,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                                     color: Colors.white),
                               ),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF0F766E),
+                                backgroundColor: AppTheme.primaryEmerald,
                                 elevation: 0,
                                 shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12)),
@@ -933,7 +944,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                                     _showReviewDialog(context, notifier),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppTheme.primaryEmerald,
-                                  shape: const StadiumBorder(),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                 ),
                                 child: const Text('Clôturer',
                                     style: TextStyle(
@@ -947,18 +958,18 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                           Expanded(
                             child: SizedBox(
                               height: 48,
-                              child: ElevatedButton(
+                              child: OutlinedButton(
                                 onPressed: () =>
                                     _showCancelDialog(context, notifier),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.redAccent,
-                                  shape: const StadiumBorder(),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.redAccent,
+                                  side: const BorderSide(color: Colors.redAccent, width: 1.5),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                 ),
                                 child: const Text('Annuler',
                                     style: TextStyle(
                                         fontWeight: FontWeight.bold,
-                                        fontSize: 14,
-                                        color: Colors.white)),
+                                        fontSize: 14)),
                               ),
                             ),
                           ),
@@ -982,7 +993,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppTheme.primaryEmerald,
-                                  shape: const StadiumBorder(),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                 ),
                                 child: const Text('Réessayer maintenant',
                                     style: TextStyle(
@@ -996,18 +1007,18 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                           Expanded(
                             child: SizedBox(
                               height: 48,
-                              child: ElevatedButton(
+                              child: OutlinedButton(
                                 onPressed: () =>
                                     _showCancelDialog(context, notifier),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.redAccent,
-                                  shape: const StadiumBorder(),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.redAccent,
+                                  side: const BorderSide(color: Colors.redAccent, width: 1.5),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                 ),
                                 child: const Text('Annuler',
                                     style: TextStyle(
                                         fontWeight: FontWeight.bold,
-                                        fontSize: 14,
-                                        color: Colors.white)),
+                                        fontSize: 14)),
                               ),
                             ),
                           ),

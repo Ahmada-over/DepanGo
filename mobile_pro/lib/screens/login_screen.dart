@@ -22,10 +22,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _loading = false;
 
   final List<Map<String, String>> _availableCategories = [
-    {'id': 'cat_plumbing', 'name': 'Plomberie Express', 'icon': '🚰'},
-    {'id': 'cat_hvac', 'name': 'Climatisation & Froid', 'icon': '❄️'},
-    {'id': 'cat_electrical', 'name': 'Électricité Générale', 'icon': '⚡'},
-    {'id': 'cat_appliances', 'name': 'Électroménager', 'icon': '🔌'},
+    {'id': 'cat_plumbing', 'name': 'Plomberie Express', 'icon': ''},
+    {'id': 'cat_hvac', 'name': 'Climatisation & Froid', 'icon': '️'},
+    {'id': 'cat_electrical', 'name': 'Électricité Générale', 'icon': ''},
+    {'id': 'cat_appliances', 'name': 'Électroménager', 'icon': ''},
   ];
 
   Future<void> _handleSubmit() async {
@@ -85,13 +85,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 // Pro Badge & App Brand
                 Center(
                   child: Container(
-                    padding: const EdgeInsets.all(18),
+                    width: 100,
+                    height: 100,
                     decoration: BoxDecoration(
-                      color: ProTheme.primaryEmerald.withValues(alpha: 0.15),
+                      color: Colors.white,
                       shape: BoxShape.circle,
                       border: Border.all(color: ProTheme.primaryEmerald.withValues(alpha: 0.4), width: 2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: ProTheme.primaryEmerald.withValues(alpha: 0.2),
+                          blurRadius: 15,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
                     ),
-                    child: const Icon(Icons.handyman_rounded, color: ProTheme.primaryLight, size: 44),
+                    child: ClipOval(
+                      child: Image.asset(
+                        'assets/images/logo.jpg',
+                        fit: BoxFit.contain,
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -292,7 +305,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           onPressed: _loading ? null : _handleSubmit,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: ProTheme.primaryEmerald,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           ),
                           child: _loading
                               ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))

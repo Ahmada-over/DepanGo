@@ -100,14 +100,14 @@ class BookingsHistoryScreen extends ConsumerWidget {
     // Status color
     Color statusColor = Colors.grey;
     if (['matched', 'in_progress', 'on_site', 'arrived']
-        .contains(booking.status)) statusColor = Colors.blue;
+        .contains(booking.status)) statusColor = AppTheme.primaryEmerald;
     if (booking.status == 'completed') statusColor = AppTheme.primaryEmerald;
     if (['cancelled', 'expired', 'no_technician_found']
         .contains(booking.status)) statusColor = Colors.redAccent;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       elevation: 0,
       child: InkWell(
         onTap: () {

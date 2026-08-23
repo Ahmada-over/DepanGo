@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 
 class AppConfig {
   // =========================================================================
-  // 🔘 BASCULE ENVIRONNEMENT (PROD vs LOCAL)
+  //  BASCULE ENVIRONNEMENT (PROD vs LOCAL)
   //
   // true  -> Mode PRODUCTION (Cloud Run: backend-depango-...run.app)
   // false -> Mode LOCAL      (http://localhost:8001 ou 10.0.2.2:8001 sur Android)

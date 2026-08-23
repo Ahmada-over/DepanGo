@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/app_providers.dart';
+import '../core/category_helper.dart';
+
 import '../core/theme.dart';
 import 'technicians_search_screen.dart';
 
@@ -56,7 +58,7 @@ class AllServicesScreen extends ConsumerWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.handyman,
+                      Icon(CategoryHelper.getCategoryIcon(cat.id),
                           color: AppTheme.primaryEmerald, size: 32),
                       const SizedBox(height: 12),
                       Text(

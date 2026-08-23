@@ -3,9 +3,13 @@ import 'package:shimmer/shimmer.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:techconnect_mobile/screens/tracking_chat_screen.dart';
 import '../core/theme.dart';
+import 'location_picker_screen.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import '../core/map_style.dart';
 import '../core/app_toast.dart';
 import 'package:techconnect_mobile/models/models.dart';
 import '../providers/app_providers.dart';
+import '../providers/connectivity_provider.dart';
 import 'bookings_history_screen.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
@@ -205,17 +209,45 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isOnline = ref.watch(serverConnectivityProvider);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
-        child: IndexedStack(
-          index: _currentIndex,
+        child: Column(
           children: [
-            _buildHomeContent(context),
-            const BookingsHistoryScreen(),
-            _buildPlaceholderTab('Calendrier', Icons.calendar_month),
-            _buildPlaceholderTab('Boîte de réception', Icons.inbox),
-            const ProfileTab(),
+            if (!isOnline)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                color: Colors.amber.shade50,
+                child: Shimmer.fromColors(
+                  baseColor: Colors.amber.shade800,
+                  highlightColor: Colors.amber.shade400,
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.wifi_off_rounded, size: 16),
+                      SizedBox(width: 8),
+                      Text(
+                        'Reconnexion au réseau en cours...',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            Expanded(
+              child: IndexedStack(
+                index: _currentIndex > 3 ? 3 : _currentIndex,
+                children: [
+                  _buildHomeContent(context),
+                  const BookingsHistoryScreen(),
+                  _buildPlaceholderTab('Favoris', Icons.favorite),
+                  const ProfileTab(),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -353,7 +385,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         backgroundColor: AppTheme.primaryEmerald,
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 6),
-                        shape: const StadiumBorder(),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
                       child: const Text('Se Connecter',
                           style: TextStyle(
@@ -476,7 +508,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         foregroundColor: AppTheme.primaryDark,
-                        shape: const StadiumBorder(),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         padding: const EdgeInsets.symmetric(
                             horizontal: 18, vertical: 10),
                       ),
@@ -679,7 +711,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   Icon(Icons.circle,
                                       size: 8,
                                       color: status == 'online'
-                                          ? Colors.green
+                                          ? AppTheme.primaryEmerald
                                           : Colors.grey),
                                   const SizedBox(width: 4),
                                   Text(
@@ -689,7 +721,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                       style: TextStyle(
                                           fontSize: 10,
                                           color: status == 'online'
-                                              ? Colors.green
+                                              ? AppTheme.primaryEmerald
                                               : Colors.grey,
                                           fontWeight: FontWeight.bold)),
                                   const Spacer(),
@@ -940,17 +972,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         return Consumer(
           builder: (context, ref, child) {
             final currentLocation = ref.watch(selectedLocationProvider);
-            final customController = TextEditingController();
-
-            final popularLocations = [
-              'Point E, Dakar, Sénégal',
-              'Mermoz Pyrotechnie, Dakar',
-              'Sacré Cœur 3, Dakar',
-              'Les Almadies, Dakar',
-              'Plateau, Ave Léopold S. Senghor',
-              'Yoff Océan, Dakar',
-              'Ouakam, Cité Comico',
-            ];
 
             return Padding(
               padding: EdgeInsets.only(
@@ -974,149 +995,113 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Row(
-                    children: [
-                      Icon(Icons.my_location,
-                          color: AppTheme.primaryEmerald, size: 22),
-                      SizedBox(width: 8),
-                      Text(
-                        'Définir votre position d\'intervention',
-                        style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.textDark),
-                      ),
-                    ],
+                  const Text(
+                    'Votre position actuelle',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.textDark,
+                    ),
                   ),
                   const SizedBox(height: 16),
-                  InkWell(
-                    onTap: () async {
+                  
+                  // Map Card Preview (Uber style)
+                  GestureDetector(
+                    onTap: () {
                       Navigator.pop(context);
-                      await _fetchCurrentLocation();
-                      if (mounted) {
-                        AppToast.show(
-                          context,
-                          title: 'Position GPS Détectée !',
-                          message: 'Votre adresse a été mise à jour.',
-                          type: AppToastType.success,
-                        );
-                      }
-                    },
-                    borderRadius: BorderRadius.circular(16),
-                    child: Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryLight.withOpacity(0.5),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                            color: AppTheme.primaryEmerald.withOpacity(0.4)),
-                      ),
-                      child: const Row(
-                        children: [
-                          Icon(Icons.gps_fixed,
-                              color: AppTheme.primaryEmerald, size: 20),
-                          SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Utiliser ma position GPS actuelle',
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 13,
-                                        color: AppTheme.primaryDark)),
-                                Text('Détection automatique PostGIS Dakar',
-                                    style: TextStyle(
-                                        fontSize: 11,
-                                        color: AppTheme.textMuted)),
-                              ],
-                            ),
-                          ),
-                          Icon(Icons.chevron_right,
-                              color: AppTheme.primaryEmerald),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: customController,
-                    decoration: InputDecoration(
-                      hintText: 'Entrer un quartier ou une rue (ex: Fann Hock)',
-                      hintStyle: const TextStyle(
-                          fontSize: 12, color: AppTheme.textMuted),
-                      prefixIcon: const Icon(Icons.search,
-                          size: 20, color: AppTheme.textMuted),
-                      suffixIcon: IconButton(
-                        icon: const Icon(Icons.check_circle,
-                            color: AppTheme.primaryEmerald),
-                        onPressed: () {
-                          if (customController.text.trim().isNotEmpty) {
-                            ref.read(selectedLocationProvider.notifier).state =
-                                customController.text.trim();
-                            Navigator.pop(context);
-                          }
-                        },
-                      ),
-                      filled: true,
-                      fillColor: const Color(0xFFF1F5F9),
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide.none),
-                    ),
-                    onSubmitted: (val) {
-                      if (val.trim().isNotEmpty) {
-                        ref.read(selectedLocationProvider.notifier).state =
-                            val.trim();
-                        Navigator.pop(context);
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 18),
-                  const Text('Quartiers & Locations Populaires',
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                          color: AppTheme.textDark)),
-                  const SizedBox(height: 10),
-                  Column(
-                    children: popularLocations.map((loc) {
-                      final isSelected = loc == currentLocation;
-                      return ListTile(
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        leading: Icon(
-                          Icons.location_on_outlined,
-                          color: isSelected
-                              ? AppTheme.primaryEmerald
-                              : AppTheme.textMuted,
-                          size: 20,
-                        ),
-                        title: Text(
-                          loc,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: isSelected
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                            color: isSelected
-                                ? AppTheme.primaryEmerald
-                                : AppTheme.textDark,
-                          ),
-                        ),
-                        trailing: isSelected
-                            ? const Icon(Icons.check,
-                                size: 18, color: AppTheme.primaryEmerald)
-                            : null,
-                        onTap: () {
-                          ref.read(selectedLocationProvider.notifier).state =
-                              loc;
-                          Navigator.pop(context);
-                        },
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const LocationPickerScreen()),
                       );
-                    }).toList(),
+                    },
+                    child: Container(
+                      height: 160,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.grey[300]!),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Stack(
+                          children: [
+                            // Static map preview (disabled interaction)
+                            AbsorbPointer(
+                              child: GoogleMap(
+                                initialCameraPosition: const CameraPosition(
+                                  target: LatLng(14.6928, -17.4467), // Default Dakar
+                                  zoom: 14.0,
+                                ),
+                                style: kMinimalMapStyle,
+                                liteModeEnabled: true, // Optimisé pour Android
+                                zoomControlsEnabled: false,
+                                myLocationButtonEnabled: false,
+                                mapToolbarEnabled: false,
+                              ),
+                            ),
+                            
+                            // Center Marker
+                            Center(
+                              child: Padding(
+                                padding: const EdgeInsets.only(bottom: 24.0),
+                                child: Icon(
+                                  Icons.location_on,
+                                  size: 32,
+                                  color: AppTheme.primaryEmerald,
+                                  shadows: [
+                                    Shadow(color: Colors.black45, blurRadius: 4, offset: Offset(0, 2))
+                                  ],
+                                ),
+                              ),
+                            ),
+                            
+                            // Bottom Label Overlay
+                            Positioned(
+                              bottom: 0, left: 0, right: 0,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.bottomCenter,
+                                    end: Alignment.topCenter,
+                                    colors: [Colors.black.withOpacity(0.7), Colors.transparent],
+                                  )
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.my_location, color: Colors.white, size: 16),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        currentLocation,
+                                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  // Text instructions
+                  Center(
+                    child: Text(
+                      'Appuyez sur la carte pour ajuster votre position exacte',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -1216,7 +1201,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 CircleAvatar(
                                   radius: 16,
                                   backgroundColor: notif.type == 'chat'
-                                      ? Colors.blue.withOpacity(0.2)
+                                      ? AppTheme.primaryEmerald.withValues(alpha: 0.15)
                                       : AppTheme.primaryEmerald
                                           .withOpacity(0.2),
                                   child: Icon(
@@ -1225,7 +1210,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                         : Icons.notifications_active_outlined,
                                     size: 16,
                                     color: notif.type == 'chat'
-                                        ? Colors.blue
+                                        ? AppTheme.primaryEmerald
                                         : AppTheme.primaryEmerald,
                                   ),
                                 ),
@@ -1519,7 +1504,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         border: Border(top: BorderSide(color: Colors.black.withOpacity(0.05))),
       ),
       child: BottomNavigationBar(
-        currentIndex: _currentIndex,
+        currentIndex: _currentIndex > 3 ? 3 : _currentIndex,
         onTap: (idx) => setState(() => _currentIndex = idx),
         type: BottomNavigationBarType.fixed,
         selectedItemColor: AppTheme.primaryEmerald,
@@ -1531,28 +1516,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
             activeIcon: Icon(Icons.home, color: AppTheme.primaryEmerald),
-            label: 'Home',
+            label: 'Accueil',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.list_alt_outlined),
             activeIcon: Icon(Icons.list_alt, color: AppTheme.primaryEmerald),
-            label: 'Bookings',
+            label: 'Demandes',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today_outlined),
-            activeIcon:
-                Icon(Icons.calendar_today, color: AppTheme.primaryEmerald),
-            label: 'Calendar',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat_bubble_outline),
-            activeIcon: Icon(Icons.chat_bubble, color: AppTheme.primaryEmerald),
-            label: 'Inbox',
+            icon: Icon(Icons.favorite_outline),
+            activeIcon: Icon(Icons.favorite, color: AppTheme.primaryEmerald),
+            label: 'Favoris',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
             activeIcon: Icon(Icons.person, color: AppTheme.primaryEmerald),
-            label: 'Profile',
+            label: 'Profil',
           ),
         ],
       ),
@@ -1688,15 +1667,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     if (booking.status == 'matched') {
       statusText = 'Un technicien a été trouvé ! En route.';
-      bannerColor = Colors.blue;
+      bannerColor = AppTheme.primaryDark;
       statusIcon = Icons.directions_car;
     } else if (booking.status == 'in_progress') {
       statusText = 'Le technicien est en route vers vous.';
-      bannerColor = Colors.orange;
+      bannerColor = AppTheme.primaryEmerald;
       statusIcon = Icons.motorcycle;
     } else if (booking.status == 'on_site') {
       statusText = 'Le technicien est sur place !';
-      bannerColor = Colors.purple;
+      bannerColor = AppTheme.primaryEmerald;
       statusIcon = Icons.handyman;
     }
 

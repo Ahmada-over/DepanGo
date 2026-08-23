@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'theme.dart';
+import 'theme.dart';
 
 class CategoryHelper {
   static const Map<String, Map<String, dynamic>> _categories = {
@@ -6,8 +8,7 @@ class CategoryHelper {
       'name': 'Plomberie & Sanitaire',
       'shortName': 'Plomberie',
       'icon': Icons.water_drop_rounded,
-      'emoji': '🚰',
-      'color': Color(0xFF0F766E),
+      'color': AppTheme.primaryEmerald,
       'description':
           'Fuites d\'eau, robinetterie, tuyauterie, débouchage WC et canalisations.',
     },
@@ -15,8 +16,7 @@ class CategoryHelper {
       'name': 'Climatisation & Froid',
       'shortName': 'Froid & Clim',
       'icon': Icons.ac_unit_rounded,
-      'emoji': '❄️',
-      'color': Color(0xFF0284C7),
+      'color': AppTheme.primaryEmerald,
       'description':
           'Entretien split, recharge de gaz, panne compresseur, frigos et chambres froides.',
     },
@@ -24,8 +24,7 @@ class CategoryHelper {
       'name': 'Électricité Générale',
       'shortName': 'Électricité',
       'icon': Icons.bolt_rounded,
-      'emoji': '⚡',
-      'color': Color(0xFFD97706),
+      'color': AppTheme.primaryEmerald,
       'description':
           'Court-circuit, disjoncteur qui saute, tableau électrique, câblage et prises.',
     },
@@ -33,8 +32,7 @@ class CategoryHelper {
       'name': 'Électroménager',
       'shortName': 'Électroménager',
       'icon': Icons.kitchen_rounded,
-      'emoji': '🔌',
-      'color': Color(0xFF7C3AED),
+      'color': AppTheme.primaryEmerald,
       'description':
           'Lave-linge, lave-vaisselle, micro-ondes, cuisinière et petits appareils.',
     },
@@ -42,8 +40,7 @@ class CategoryHelper {
       'name': 'Dépannage d\'Urgence',
       'shortName': 'Urgence Express',
       'icon': Icons.flash_on_rounded,
-      'emoji': '🚨',
-      'color': Color(0xFFDC2626),
+      'color': AppTheme.primaryEmerald,
       'description':
           'Intervention prioritaire immédiate pour dépannage express à Dakar.',
     },
@@ -66,15 +63,10 @@ class CategoryHelper {
     return _categories[categoryId]?['icon'] ?? Icons.build_rounded;
   }
 
-  static String getCategoryEmoji(String? categoryId) {
-    if (categoryId == null || categoryId.isEmpty) return '🛠️';
-    return _categories[categoryId]?['emoji'] ?? '🛠️';
-  }
-
   static Color getCategoryColor(String? categoryId) {
     if (categoryId == null || categoryId.isEmpty)
-      return const Color(0xFF0F766E);
-    return _categories[categoryId]?['color'] ?? const Color(0xFF0F766E);
+      return AppTheme.primaryEmerald;
+    return _categories[categoryId]?['color'] ?? AppTheme.primaryEmerald;
   }
 
   static String getCategoryDescription(String? categoryId) {

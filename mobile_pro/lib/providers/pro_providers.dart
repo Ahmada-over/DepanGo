@@ -238,7 +238,7 @@ class IncomingOfferNotifier extends StateNotifier<MatchOfferModel?> {
 
     AppToast.show(
       null,
-      title: '🚨 Demande d\'Intervention Reçue !',
+      title: ' Demande d\'Intervention Reçue !',
       message:
           '${offer.categoryName} • ${offer.addressText} (~${offer.distanceKm.toStringAsFixed(1)} km)',
       type: AppToastType.warning,

@@ -4,6 +4,7 @@ import '../providers/app_providers.dart';
 import '../models/models.dart';
 import '../core/theme.dart';
 import 'tracking_chat_screen.dart';
+import 'booking_details_screen.dart';
 import 'package:intl/intl.dart';
 
 class BookingsHistoryScreen extends ConsumerWidget {
@@ -93,6 +94,18 @@ class BookingsHistoryScreen extends ConsumerWidget {
 
   Widget _buildBookingCard(
       BuildContext context, WidgetRef ref, BookingModel booking) {
+    // Dynamic technician name lookup
+    String dynamicTechName = booking.technicianName ?? 'Technicien assigné';
+    if (booking.technicianId != null && booking.technicianName == null) {
+      final techsAsync = ref.watch(registeredTechniciansProvider);
+      techsAsync.whenData((techs) {
+        try {
+          final tech = techs.firstWhere((t) => t['user_id'] == booking.technicianId);
+          dynamicTechName = tech['name'] ?? 'Technicien assigné';
+        } catch (_) {}
+      });
+    }
+
     // Format date
     final formattedDate =
         DateFormat('dd MMM yyyy, HH:mm').format(booking.createdAt);
@@ -111,9 +124,13 @@ class BookingsHistoryScreen extends ConsumerWidget {
       elevation: 0,
       child: InkWell(
         onTap: () {
-          ref.read(activeBookingProvider.notifier).loadActiveBooking(booking);
-          Navigator.push(context,
-              MaterialPageRoute(builder: (_) => const TrackingChatScreen()));
+          if (['completed', 'cancelled', 'expired'].contains(booking.status)) {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => BookingDetailsScreen(booking: booking)));
+          } else {
+            ref.read(activeBookingProvider.notifier).loadActiveBooking(booking);
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const TrackingChatScreen()));
+          }
         },
         borderRadius: BorderRadius.circular(16),
         child: Padding(
@@ -186,11 +203,11 @@ class BookingsHistoryScreen extends ConsumerWidget {
                           size: 16, color: Colors.white),
                     ),
                     const SizedBox(width: 12),
-                    const Expanded(
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Technicien assigné',
+                          Text(dynamicTechName,
                               style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,

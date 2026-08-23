@@ -374,7 +374,7 @@ class SQLAlchemyBookingRepository(BookingRepositoryPort):
             version=model.version
         )
 
-    async def update_status(self, booking_id: str, status: str, technician_id: Optional[str] = None, cancellation_reason: Optional[str] = None, expected_version: Optional[int] = None) -> Optional[BookingDomain]:
+    async def update_status(self, booking_id: str, status: str, technician_id: Optional[str] = None, cancellation_reason: Optional[str] = None, expected_version: Optional[int] = None, technician_name: Optional[str] = None) -> Optional[BookingDomain]:
         parsed_status = _parse_booking_status(status)
         values = {"status": parsed_status.value}
         if technician_id:

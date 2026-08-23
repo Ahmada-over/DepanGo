@@ -64,6 +64,7 @@ class BookingModel {
   final double longitude;
   final String addressText;
   final String? technicianId;
+  final String? technicianName;
   final String? scheduledEta;
   final DateTime createdAt;
 
@@ -78,6 +79,7 @@ class BookingModel {
     required this.longitude,
     required this.addressText,
     this.technicianId,
+    this.technicianName,
     this.scheduledEta,
     required this.createdAt,
   });
@@ -93,6 +95,7 @@ class BookingModel {
     double? longitude,
     String? addressText,
     String? technicianId,
+    String? technicianName,
     String? scheduledEta,
     DateTime? createdAt,
   }) {
@@ -107,6 +110,7 @@ class BookingModel {
       longitude: longitude ?? this.longitude,
       addressText: addressText ?? this.addressText,
       technicianId: technicianId ?? this.technicianId,
+    technicianName: technicianName ?? this.technicianName,
       scheduledEta: scheduledEta ?? this.scheduledEta,
       createdAt: createdAt ?? this.createdAt,
     );
@@ -124,6 +128,7 @@ class BookingModel {
       longitude: (json['longitude'] as num?)?.toDouble() ?? -17.4441,
       addressText: json['address_text'] ?? 'Dakar',
       technicianId: json['technician_id'],
+      technicianName: json['technician_name'],
       scheduledEta: json['scheduled_eta'],
       createdAt: DateTime.tryParse(json['created_at'] ?? '') ?? DateTime.now(),
     );

@@ -57,6 +57,7 @@ class BookingResponse(BaseModel):
     longitude: float
     address_text: str
     technician_id: Optional[str] = None
+    technician_name: Optional[str] = None
     scheduled_eta: Optional[str] = None
     cancellation_reason: Optional[str] = None
     created_at: datetime

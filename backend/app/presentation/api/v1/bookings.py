@@ -26,6 +26,7 @@ def _booking_to_response(booking) -> BookingResponse:
         longitude=booking.longitude,
         address_text=booking.address_text,
         technician_id=booking.technician_id,
+        technician_name=getattr(booking, 'technician_name', None),
         scheduled_eta=booking.scheduled_eta,
         cancellation_reason=booking.cancellation_reason,
         created_at=booking.created_at,

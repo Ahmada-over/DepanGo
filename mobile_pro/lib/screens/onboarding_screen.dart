@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/theme.dart';
 import 'login_screen.dart';
@@ -87,7 +88,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           )
                         else
                           Icon(
-                            index == 1 ? Icons.notifications_active_rounded : Icons.account_balance_wallet_rounded,
+                            index == 1 ? Icons.notifications_active_rounded : LucideIcons.wallet,
                             size: 150,
                             color: ProTheme.primaryLight,
                           ),

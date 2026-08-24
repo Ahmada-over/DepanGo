@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/app_providers.dart';
 import '../core/theme.dart';
@@ -35,7 +36,7 @@ class NotificationsScreen extends ConsumerWidget {
                   leading: CircleAvatar(
                     backgroundColor:
                         AppTheme.primaryEmerald.withValues(alpha: 0.1),
-                    child: const Icon(Icons.notifications_active,
+                    child: const Icon(LucideIcons.bell_ring,
                         color: AppTheme.primaryEmerald),
                   ),
                   title: Text(notif.title,

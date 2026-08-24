@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/app_providers.dart';
 import '../models/models.dart';
@@ -36,7 +37,7 @@ class BookingsHistoryScreen extends ConsumerWidget {
           ),
           actions: [
             IconButton(
-              icon: const Icon(Icons.refresh, color: AppTheme.primaryDark),
+              icon: const Icon(LucideIcons.refresh_ccw, color: AppTheme.primaryDark),
               onPressed: () => ref.refresh(userBookingsProvider),
             ),
           ],
@@ -170,7 +171,7 @@ class BookingsHistoryScreen extends ConsumerWidget {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  const Icon(Icons.location_on, size: 14, color: Colors.grey),
+                  const Icon(LucideIcons.map_pin, size: 14, color: Colors.grey),
                   const SizedBox(width: 4),
                   Expanded(
                       child: Text(booking.addressText,
@@ -183,7 +184,7 @@ class BookingsHistoryScreen extends ConsumerWidget {
               const SizedBox(height: 4),
               Row(
                 children: [
-                  const Icon(Icons.access_time, size: 14, color: Colors.grey),
+                  const Icon(LucideIcons.clock, size: 14, color: Colors.grey),
                   const SizedBox(width: 4),
                   Text(formattedDate,
                       style: const TextStyle(fontSize: 12, color: Colors.grey)),
@@ -199,7 +200,7 @@ class BookingsHistoryScreen extends ConsumerWidget {
                     CircleAvatar(
                       radius: 16,
                       backgroundColor: AppTheme.primaryEmerald,
-                      child: const Icon(Icons.person,
+                      child: const Icon(LucideIcons.user,
                           size: 16, color: Colors.white),
                     ),
                     const SizedBox(width: 12),

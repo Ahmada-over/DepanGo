@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/theme.dart';
 import '../core/app_toast.dart';
@@ -197,7 +198,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             hintStyle: const TextStyle(color: ProTheme.textMuted, fontSize: 13),
                             filled: true,
                             fillColor: ProTheme.darkSurface,
-                            prefixIcon: const Icon(Icons.person_outline, color: ProTheme.primaryLight, size: 20),
+                            prefixIcon: const Icon(LucideIcons.user, color: ProTheme.primaryLight, size: 20),
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: ProTheme.darkBorder)),
                             enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: ProTheme.darkBorder)),
                           ),
@@ -217,7 +218,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           hintStyle: const TextStyle(color: ProTheme.textMuted, fontSize: 13),
                           filled: true,
                           fillColor: ProTheme.darkSurface,
-                          prefixIcon: const Icon(Icons.phone_iphone_rounded, color: ProTheme.primaryLight, size: 20),
+                          prefixIcon: const Icon(LucideIcons.smartphone, color: ProTheme.primaryLight, size: 20),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: ProTheme.darkBorder)),
                           enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: ProTheme.darkBorder)),
                         ),
@@ -236,7 +237,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           hintStyle: const TextStyle(color: ProTheme.textMuted, fontSize: 13),
                           filled: true,
                           fillColor: ProTheme.darkSurface,
-                          prefixIcon: const Icon(Icons.lock_outline_rounded, color: ProTheme.primaryLight, size: 20),
+                          prefixIcon: const Icon(LucideIcons.lock, color: ProTheme.primaryLight, size: 20),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: ProTheme.darkBorder)),
                           enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: ProTheme.darkBorder)),
                         ),
@@ -276,7 +277,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           children: [
                             Expanded(
                               child: ChoiceChip(
-                                label: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.two_wheeler_rounded, size: 16), SizedBox(width: 6), Text('Moto')]),
+                                label: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(LucideIcons.bike, size: 16), SizedBox(width: 6), Text('Moto')]),
                                 selected: _selectedTransport == 'moto',
                                 selectedColor: ProTheme.primaryEmerald,
                                 backgroundColor: ProTheme.darkSurface,
@@ -286,7 +287,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             const SizedBox(width: 8),
                             Expanded(
                               child: ChoiceChip(
-                                label: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.directions_car_rounded, size: 16), SizedBox(width: 6), Text('Voiture')]),
+                                label: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(LucideIcons.car, size: 16), SizedBox(width: 6), Text('Voiture')]),
                                 selected: _selectedTransport == 'voiture',
                                 selectedColor: const Color(0xFF1E40AF),
                                 backgroundColor: ProTheme.darkSurface,

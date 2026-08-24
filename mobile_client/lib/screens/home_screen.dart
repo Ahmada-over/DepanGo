@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:techconnect_mobile/screens/tracking_chat_screen.dart';
@@ -139,37 +140,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   final List<Map<String, dynamic>> _popularServices = [
     {
       'name': 'Froid & Clim',
-      'icon': Icons.ac_unit_outlined,
+      'icon': LucideIcons.snowflake,
       'catId': 'cat_hvac'
     },
     {
       'name': 'Plomberie',
-      'icon': Icons.water_drop_outlined,
+      'icon': LucideIcons.droplet,
       'catId': 'cat_plumbing'
     },
     {
       'name': 'Électricité',
-      'icon': Icons.bolt_outlined,
+      'icon': LucideIcons.zap,
       'catId': 'cat_electrical'
     },
     {
       'name': 'Lave-Linge & Frigo',
-      'icon': Icons.kitchen_outlined,
+      'icon': LucideIcons.refrigerator,
       'catId': 'cat_appliances'
     },
     {
       'name': 'Électroménager',
-      'icon': Icons.microwave_outlined,
+      'icon': LucideIcons.microwave,
       'catId': 'cat_appliances'
     },
     {
       'name': 'Urgence Express',
-      'icon': Icons.flash_on_outlined,
+      'icon': LucideIcons.zap,
       'catId': 'cat_express'
     },
     {
       'name': 'Tous les Métiers',
-      'icon': Icons.grid_view_outlined,
+      'icon': LucideIcons.layout_grid,
       'catId': 'cat_plumbing'
     },
   ];
@@ -227,7 +228,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.wifi_off_rounded, size: 16),
+                      Icon(LucideIcons.wifi_off, size: 16),
                       SizedBox(width: 8),
                       Text(
                         'Reconnexion au réseau en cours...',
@@ -243,7 +244,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 children: [
                   _buildHomeContent(context),
                   const BookingsHistoryScreen(),
-                  _buildPlaceholderTab('Favoris', Icons.favorite),
+                  _buildPlaceholderTab('Favoris', LucideIcons.heart),
                   const ProfileTab(),
                 ],
               ),
@@ -284,7 +285,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 4.0),
                     child: Row(
                       children: [
-                        const Icon(Icons.location_on,
+                        const Icon(LucideIcons.map_pin,
                             color: AppTheme.primaryEmerald, size: 24),
                         const SizedBox(width: 8),
                         Expanded(
@@ -318,7 +319,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                                 color: AppTheme.textDark),
                                           ),
                                   ),
-                                  const Icon(Icons.keyboard_arrow_down,
+                                  const Icon(LucideIcons.chevron_down,
                                       size: 18, color: AppTheme.textDark),
                                 ],
                               ),
@@ -349,7 +350,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       return Stack(
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.notifications_none_outlined,
+                            icon: const Icon(LucideIcons.bell,
                                 color: AppTheme.textDark),
                             onPressed: () {
                               Navigator.push(
@@ -395,7 +396,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     )
                   else
                     IconButton(
-                      icon: const Icon(Icons.person_outline,
+                      icon: const Icon(LucideIcons.user,
                           color: AppTheme.primaryEmerald),
                       onPressed: () {
                         setState(() => _currentIndex = 3);
@@ -422,7 +423,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
             child: Row(
               children: [
-                const Icon(Icons.search, color: AppTheme.textMuted),
+                const Icon(LucideIcons.search, color: AppTheme.textMuted),
                 const SizedBox(width: 10),
                 const Expanded(
                   child: TextField(
@@ -440,7 +441,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     color: const Color(0xFFF1F5F9),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.tune,
+                  child: const Icon(LucideIcons.sliders_horizontal,
                       size: 18, color: AppTheme.textDark),
                 ),
               ],
@@ -486,7 +487,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 const SizedBox(height: 8),
                 const Row(
                   children: [
-                    Icon(Icons.bolt, color: Colors.amber, size: 16),
+                    Icon(LucideIcons.zap, color: Colors.amber, size: 16),
                     SizedBox(width: 4),
                     Expanded(
                       child: Text(
@@ -503,7 +504,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   children: [
                     ElevatedButton.icon(
                       onPressed: () => _showQuickBookingCategories(context),
-                      icon: const Icon(Icons.flash_on, size: 16),
+                      icon: const Icon(LucideIcons.zap, size: 16),
                       label: const Text('Commander en 1-Clic'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
@@ -626,7 +627,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.refresh,
+                icon: const Icon(LucideIcons.refresh_ccw,
                     size: 18, color: AppTheme.primaryEmerald),
                 onPressed: () => ref.refresh(registeredTechniciansProvider),
               ),
@@ -708,7 +709,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               const SizedBox(height: 6),
                               Row(
                                 children: [
-                                  Icon(Icons.circle,
+                                  Icon(LucideIcons.circle,
                                       size: 8,
                                       color: status == 'online'
                                           ? AppTheme.primaryEmerald
@@ -725,7 +726,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                               : Colors.grey,
                                           fontWeight: FontWeight.bold)),
                                   const Spacer(),
-                                  const Icon(Icons.star,
+                                  const Icon(LucideIcons.star,
                                       size: 12, color: Colors.amber),
                                   Text(' $rating',
                                       style: const TextStyle(
@@ -835,7 +836,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               borderRadius: BorderRadius.circular(14),
                             ),
                             child: const Center(
-                              child: Icon(Icons.build_circle_outlined,
+                              child: Icon(LucideIcons.wrench,
                                   size: 40, color: AppTheme.primaryEmerald),
                             ),
                           ),
@@ -873,7 +874,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          const Icon(Icons.star, size: 13, color: Colors.amber),
+                          const Icon(LucideIcons.star, size: 13, color: Colors.amber),
                           Text(' ${rec['rating']} (${rec['reviews']})  •  ',
                               style: const TextStyle(
                                   fontSize: 10, color: AppTheme.textMuted)),
@@ -885,7 +886,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       const SizedBox(height: 6),
                       Row(
                         children: const [
-                          Icon(Icons.verified,
+                          Icon(LucideIcons.badge_check,
                               size: 12, color: AppTheme.primaryEmerald),
                           SizedBox(width: 4),
                           Text('Technicien Certifié',
@@ -947,10 +948,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _buildFeatureBadge(
-                    Icons.verified_user_outlined, 'Techniciens\nCertifiés'),
-                _buildFeatureBadge(Icons.payments_outlined, 'Paiement\nDirect'),
-                _buildFeatureBadge(Icons.shield_outlined, 'Garantie\nQualité'),
-                _buildFeatureBadge(Icons.my_location, 'Suivi GPS\nTemps Réel'),
+                    LucideIcons.shield_check, 'Techniciens\nCertifiés'),
+                _buildFeatureBadge(LucideIcons.banknote, 'Paiement\nDirect'),
+                _buildFeatureBadge(LucideIcons.shield, 'Garantie\nQualité'),
+                _buildFeatureBadge(LucideIcons.locate, 'Suivi GPS\nTemps Réel'),
               ],
             ),
           ),
@@ -1046,7 +1047,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               child: Padding(
                                 padding: const EdgeInsets.only(bottom: 24.0),
                                 child: Icon(
-                                  Icons.location_on,
+                                  LucideIcons.map_pin,
                                   size: 32,
                                   color: AppTheme.primaryEmerald,
                                   shadows: [
@@ -1070,7 +1071,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 ),
                                 child: Row(
                                   children: [
-                                    const Icon(Icons.my_location, color: Colors.white, size: 16),
+                                    const Icon(LucideIcons.locate, color: Colors.white, size: 16),
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: Text(
@@ -1206,8 +1207,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                           .withOpacity(0.2),
                                   child: Icon(
                                     notif.type == 'chat'
-                                        ? Icons.message_outlined
-                                        : Icons.notifications_active_outlined,
+                                        ? LucideIcons.message_square
+                                        : LucideIcons.bell_ring,
                                     size: 16,
                                     color: notif.type == 'chat'
                                         ? AppTheme.primaryEmerald
@@ -1256,7 +1257,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.account_circle_outlined,
+            const Icon(LucideIcons.user,
                 size: 64, color: AppTheme.textMuted),
             const SizedBox(height: 16),
             const Text('Non Connecté',
@@ -1325,7 +1326,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.verified, size: 16, color: AppTheme.primaryEmerald),
+                Icon(LucideIcons.badge_check, size: 16, color: AppTheme.primaryEmerald),
                 SizedBox(width: 6),
                 Text('Compte Client Certifié',
                     style: TextStyle(
@@ -1344,40 +1345,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: Column(
               children: [
                 ListTile(
-                  leading: const Icon(Icons.person_outline,
+                  leading: const Icon(LucideIcons.user,
                       color: AppTheme.primaryEmerald),
                   title: const Text('Modifier mes informations',
                       style:
                           TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                   subtitle: const Text('Nom, email, téléphone',
                       style: TextStyle(fontSize: 11)),
-                  trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+                  trailing: const Icon(LucideIcons.chevron_right, color: Colors.grey),
                   onTap: () => _showEditProfileDialog(context, user),
                 ),
                 const Divider(height: 1),
                 ListTile(
                   leading:
-                      const Icon(Icons.history, color: AppTheme.primaryEmerald),
+                      const Icon(LucideIcons.clock, color: AppTheme.primaryEmerald),
                   title: const Text('Historique de mes commandes',
                       style:
                           TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                  trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+                  trailing: const Icon(LucideIcons.chevron_right, color: Colors.grey),
                   onTap: () => setState(() => _currentIndex = 1),
                 ),
                 const Divider(height: 1),
                 ListTile(
-                  leading: const Icon(Icons.payment_outlined,
+                  leading: const Icon(LucideIcons.credit_card,
                       color: AppTheme.primaryEmerald),
                   title: const Text('Mode de règlement direct',
                       style:
                           TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                   subtitle: const Text('Sur devis • Espèces / Mobile Money',
                       style: TextStyle(fontSize: 11)),
-                  trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+                  trailing: const Icon(LucideIcons.chevron_right, color: Colors.grey),
                 ),
                 const Divider(height: 1),
                 ListTile(
-                  leading: const Icon(Icons.logout, color: Colors.red),
+                  leading: const Icon(LucideIcons.log_out, color: Colors.red),
                   title: const Text('Se Déconnecter',
                       style: TextStyle(
                           fontSize: 14,
@@ -1514,23 +1515,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         elevation: 0,
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home, color: AppTheme.primaryEmerald),
+            icon: Icon(LucideIcons.house),
+            activeIcon: Icon(LucideIcons.house, color: AppTheme.primaryEmerald),
             label: 'Accueil',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.list_alt_outlined),
-            activeIcon: Icon(Icons.list_alt, color: AppTheme.primaryEmerald),
+            icon: Icon(LucideIcons.list),
+            activeIcon: Icon(LucideIcons.list, color: AppTheme.primaryEmerald),
             label: 'Demandes',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.favorite_outline),
-            activeIcon: Icon(Icons.favorite, color: AppTheme.primaryEmerald),
+            icon: Icon(LucideIcons.heart),
+            activeIcon: Icon(LucideIcons.heart, color: AppTheme.primaryEmerald),
             label: 'Favoris',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person, color: AppTheme.primaryEmerald),
+            icon: Icon(LucideIcons.user),
+            activeIcon: Icon(LucideIcons.user, color: AppTheme.primaryEmerald),
             label: 'Profil',
           ),
         ],
@@ -1568,7 +1569,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             style:
                                 const TextStyle(fontWeight: FontWeight.w600)),
                         trailing:
-                            const Icon(Icons.chevron_right, color: Colors.grey),
+                            const Icon(LucideIcons.chevron_right, color: Colors.grey),
                         onTap: () {
                           Navigator.pop(ctx);
                           _openBooking(context, cat['catId'], cat['name']);
@@ -1639,7 +1640,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                   );
                 },
-                icon: const Icon(Icons.map_outlined),
+                icon: const Icon(LucideIcons.map),
                 label: const Text('Localiser et Commander'),
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 50),
@@ -1663,20 +1664,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     String statusText = 'En attente d\'un technicien...';
     Color bannerColor = AppTheme.primaryEmerald;
-    IconData statusIcon = Icons.hourglass_empty;
+    IconData statusIcon = LucideIcons.hourglass;
 
     if (booking.status == 'matched') {
       statusText = 'Un technicien a été trouvé ! En route.';
       bannerColor = AppTheme.primaryDark;
-      statusIcon = Icons.directions_car;
+      statusIcon = LucideIcons.car;
     } else if (booking.status == 'in_progress') {
       statusText = 'Le technicien est en route vers vous.';
       bannerColor = AppTheme.primaryEmerald;
-      statusIcon = Icons.motorcycle;
+      statusIcon = LucideIcons.bike;
     } else if (booking.status == 'on_site') {
       statusText = 'Le technicien est sur place !';
       bannerColor = AppTheme.primaryEmerald;
-      statusIcon = Icons.handyman;
+      statusIcon = LucideIcons.wrench;
     }
 
     return InkWell(
@@ -1734,7 +1735,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ],
               ),
             ),
-            Icon(Icons.arrow_forward_ios, color: bannerColor, size: 16),
+            Icon(LucideIcons.chevron_right, color: bannerColor, size: 16),
           ],
         ),
       ),

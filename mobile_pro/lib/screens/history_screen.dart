@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/theme.dart';
 import '../models/models.dart';
@@ -17,7 +18,7 @@ class HistoryScreen extends ConsumerWidget {
         title: const Text('Historique des Interventions'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh_rounded),
+            icon: const Icon(LucideIcons.refresh_ccw),
             onPressed: () => ref.refresh(interventionsHistoryProvider),
           ),
         ],
@@ -33,7 +34,7 @@ class HistoryScreen extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.history_rounded, size: 64, color: ProTheme.textMuted.withValues(alpha: 0.5)),
+                  Icon(LucideIcons.clock, size: 64, color: ProTheme.textMuted.withValues(alpha: 0.5)),
                   const SizedBox(height: 16),
                   const Text('Aucune intervention passée', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
                   const SizedBox(height: 6),

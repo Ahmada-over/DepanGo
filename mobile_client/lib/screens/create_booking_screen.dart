@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -176,7 +177,7 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                     color: AppTheme.primaryEmerald.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.camera_alt_rounded,
+                  child: const Icon(LucideIcons.camera,
                       color: AppTheme.primaryEmerald),
                 ),
                 title: const Text('Prendre une photo',
@@ -196,7 +197,7 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                     color: AppTheme.primaryEmerald.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.photo_library_rounded,
+                  child: const Icon(LucideIcons.image,
                       color: AppTheme.primaryEmerald),
                 ),
                 title: const Text('Choisir dans la galerie',
@@ -355,7 +356,7 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                           color: AppTheme.primaryEmerald.withOpacity(0.12),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.add_a_photo_rounded,
+                        child: const Icon(LucideIcons.camera,
                             color: AppTheme.primaryEmerald, size: 22),
                       ),
                       const SizedBox(width: 12),
@@ -441,7 +442,7 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.delete_outline_rounded,
+                      icon: const Icon(LucideIcons.trash_2,
                           color: Colors.redAccent),
                       onPressed: _removePhoto,
                       tooltip: 'Supprimer la photo',
@@ -463,7 +464,7 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
             TextField(
               controller: _addressController,
               decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.location_on,
+                prefixIcon: const Icon(LucideIcons.map_pin,
                     color: AppTheme.primaryEmerald),
                 filled: true,
                 fillColor: Colors.grey[50],
@@ -491,7 +492,7 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
               ),
               child: const Row(
                 children: [
-                  Icon(Icons.payments_outlined,
+                  Icon(LucideIcons.banknote,
                       color: Color(0xFFD97706), size: 22),
                   SizedBox(width: 12),
                   Expanded(
@@ -530,7 +531,7 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.radar_rounded, size: 20),
+                          const Icon(LucideIcons.radar, size: 20),
                           const SizedBox(width: 8),
                           Flexible(
                             child: Text(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/theme.dart';
 import 'login_screen.dart';
@@ -88,7 +89,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           )
                         else
                           Icon(
-                            index == 1 ? Icons.bolt_rounded : Icons.map_rounded,
+                            index == 1 ? LucideIcons.zap : LucideIcons.map,
                             size: 150,
                             color: AppTheme.primaryEmerald,
                           ),

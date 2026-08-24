@@ -1,4 +1,5 @@
 import 'dart:ui' as ui;
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -109,12 +110,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Future<void> _loadCustomMapMarkers() async {
     try {
       final moto = await _createCustomMarkerBitmap(
-        icon: Icons.two_wheeler_rounded,
+        icon: LucideIcons.bike,
         primaryColor: const Color(0xFF0F766E), // Emerald
         iconColor: Colors.white,
       );
       final car = await _createCustomMarkerBitmap(
-        icon: Icons.directions_car_rounded,
+        icon: LucideIcons.car,
         primaryColor: const Color(0xFF1E40AF), // Deep Blue
         iconColor: Colors.white,
       );
@@ -208,7 +209,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.wifi_off_rounded, size: 16, color: Colors.white),
+                      Icon(LucideIcons.wifi_off, size: 16, color: Colors.white),
                       SizedBox(width: 8),
                       Text(
                         'Reconnexion au réseau...',
@@ -372,8 +373,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           ),
                           Icon(
                             isOnline
-                                ? Icons.power_settings_new_rounded
-                                : Icons.play_arrow_rounded,
+                                ? LucideIcons.power
+                                : LucideIcons.play,
                             color:
                                 isOnline ? ProTheme.success : Colors.redAccent,
                             size: 20,
@@ -399,7 +400,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   CameraUpdate.newLatLngZoom(currentTechPosition, 16.0),
                 );
               },
-              child: const Icon(Icons.my_location_rounded),
+              child: const Icon(LucideIcons.locate_fixed),
             ),
           ),
 
@@ -439,7 +440,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           color: ProTheme.amber.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(Icons.navigation_rounded,
+                        child: const Icon(LucideIcons.navigation,
                             color: ProTheme.amber, size: 24),
                       ),
                       const SizedBox(width: 14),
@@ -484,7 +485,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           ],
                         ),
                       ),
-                      const Icon(Icons.chevron_right_rounded,
+                      const Icon(LucideIcons.chevron_right,
                           color: Colors.white),
                     ],
                   ),
@@ -517,16 +518,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     _buildKpiItem(
                         'Note Pro',
                         '${profile?.averageRating.toStringAsFixed(1) ?? '5.0'} ★',
-                        Icons.star_rounded,
+                        LucideIcons.star,
                         Colors.amber),
                     Container(width: 1, height: 36, color: ProTheme.darkBorder),
                     _buildKpiItem('Véhicule', isCar ? 'Voiture' : 'Moto',
-                        Icons.two_wheeler_rounded, ProTheme.primaryLight),
+                        LucideIcons.bike, ProTheme.primaryLight),
                     Container(width: 1, height: 36, color: ProTheme.darkBorder),
                     _buildKpiItem(
                         'Statut',
                         isOnline ? 'En Ligne' : 'Pause',
-                        Icons.wifi_tethering_rounded,
+                        LucideIcons.radio,
                         isOnline ? ProTheme.success : Colors.grey),
                   ],
                 ),
@@ -566,13 +567,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         },
         items: const [
           BottomNavigationBarItem(
-              icon: Icon(Icons.map_rounded), label: 'Carte Live'),
+              icon: Icon(LucideIcons.map), label: 'Carte Live'),
           BottomNavigationBarItem(
-              icon: Icon(Icons.work_history_rounded), label: 'Mission'),
+              icon: Icon(LucideIcons.clock), label: 'Mission'),
           BottomNavigationBarItem(
-              icon: Icon(Icons.receipt_long_rounded), label: 'Historique'),
+              icon: Icon(LucideIcons.receipt), label: 'Historique'),
           BottomNavigationBarItem(
-              icon: Icon(Icons.person_rounded), label: 'Profil Pro'),
+              icon: Icon(LucideIcons.user), label: 'Profil Pro'),
         ],
       ),
     );
@@ -642,7 +643,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           ),
                           child: const Row(
                             children: [
-                              Icon(Icons.bolt_rounded,
+                              Icon(LucideIcons.zap,
                                   color: ProTheme.amber, size: 18),
                               SizedBox(width: 4),
                               Text('Nouvelle demande',
@@ -713,7 +714,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.location_on_rounded,
+                          const Icon(LucideIcons.map_pin,
                               color: ProTheme.primaryLight, size: 20),
                           const SizedBox(width: 8),
                           Expanded(
@@ -770,7 +771,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 height: 52,
                                 fit: BoxFit.cover,
                                 errorBuilder: (_, __, ___) => const Icon(
-                                    Icons.broken_image_rounded,
+                                    LucideIcons.image_off,
                                     size: 40,
                                     color: Colors.grey),
                               ),
@@ -831,7 +832,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   );
                                 }
                               },
-                              icon: const Icon(Icons.check_circle_rounded,
+                              icon: const Icon(LucideIcons.circle_check,
                                   color: Colors.white),
                               label: const Text('Accepter la mission',
                                   style: TextStyle(

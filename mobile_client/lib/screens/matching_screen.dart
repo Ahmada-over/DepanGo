@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/theme.dart';
 import '../providers/app_providers.dart';
@@ -110,7 +111,7 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen>
                       color: AppTheme.primaryEmerald,
                     ),
                     child:
-                        const Icon(Icons.search, size: 50, color: Colors.white),
+                        const Icon(LucideIcons.search, size: 50, color: Colors.white),
                   ),
                 ],
               );
@@ -198,7 +199,7 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen>
               color: Colors.white.withOpacity(0.06),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.search_off_rounded,
+            child: const Icon(LucideIcons.search_x,
                 size: 64, color: Colors.white54),
           ),
           const SizedBox(height: 32),
@@ -217,7 +218,7 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen>
           const Spacer(),
           ElevatedButton.icon(
             onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back_rounded, size: 18),
+            icon: const Icon(LucideIcons.arrow_left, size: 18),
             label: const Text('Retour',
                 style: TextStyle(fontWeight: FontWeight.bold)),
             style: ElevatedButton.styleFrom(

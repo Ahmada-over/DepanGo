@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/app_providers.dart';
 import '../core/theme.dart';
@@ -26,7 +27,7 @@ class ProfileTab extends ConsumerWidget {
                 color: AppTheme.primaryEmerald,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.person, color: Colors.white, size: 20),
+              child: const Icon(LucideIcons.user, color: Colors.white, size: 20),
             ),
             const SizedBox(width: 12),
             const Text('Profile',
@@ -36,7 +37,7 @@ class ProfileTab extends ConsumerWidget {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.more_horiz, color: AppTheme.primaryDark),
+            icon: const Icon(LucideIcons.ellipsis, color: AppTheme.primaryDark),
             onPressed: () {},
           )
         ],
@@ -65,7 +66,7 @@ class ProfileTab extends ConsumerWidget {
                         shape: BoxShape.circle,
                       ),
                       child:
-                          const Icon(Icons.edit, color: Colors.white, size: 16),
+                          const Icon(LucideIcons.pen, color: Colors.white, size: 16),
                     ),
                   ),
                 ],
@@ -85,27 +86,27 @@ class ProfileTab extends ConsumerWidget {
             const Divider(height: 1, color: Color(0xFFF1F5F9)),
             const SizedBox(height: 10),
 
-            _buildMenuItem(Icons.person_outline, 'Éditer le profil',
+            _buildMenuItem(LucideIcons.user, 'Éditer le profil',
                 onTap: () {}),
-            _buildMenuItem(Icons.notifications_none, 'Notifications',
+            _buildMenuItem(LucideIcons.bell, 'Notifications',
                 onTap: () {
               Navigator.push(
                   context,
                   MaterialPageRoute(
                       builder: (_) => const NotificationsScreen()));
             }),
-            _buildMenuItem(Icons.security_outlined, 'Sécurité', onTap: () {
+            _buildMenuItem(LucideIcons.shield_alert, 'Sécurité', onTap: () {
               Navigator.push(
                   context,
                   MaterialPageRoute(
                       builder: (_) =>
                           const PlaceholderScreen(title: 'Sécurité')));
             }),
-            _buildMenuItem(Icons.language, 'Langue',
+            _buildMenuItem(LucideIcons.globe, 'Langue',
                 trailingText: 'Français', onTap: () {}),
-            _buildMenuItem(Icons.remove_red_eye_outlined, 'Mode Sombre',
+            _buildMenuItem(LucideIcons.eye, 'Mode Sombre',
                 trailingWidget: Switch(value: false, onChanged: (v) {})),
-            _buildMenuItem(Icons.lock_outline, 'Politique de confidentialité',
+            _buildMenuItem(LucideIcons.lock, 'Politique de confidentialité',
                 onTap: () {
               Navigator.push(
                   context,
@@ -113,12 +114,12 @@ class ProfileTab extends ConsumerWidget {
                       builder: (_) => const PlaceholderScreen(
                           title: 'Politique de confidentialité')));
             }),
-            _buildMenuItem(Icons.help_outline, 'Centre d\'aide', onTap: () {}),
-            _buildMenuItem(Icons.people_outline, 'Inviter des amis',
+            _buildMenuItem(LucideIcons.info, 'Centre d\'aide', onTap: () {}),
+            _buildMenuItem(LucideIcons.users, 'Inviter des amis',
                 onTap: () {}),
 
             ListTile(
-              leading: const Icon(Icons.logout, color: Colors.redAccent),
+              leading: const Icon(LucideIcons.log_out, color: Colors.redAccent),
               title: const Text('Déconnexion',
                   style: TextStyle(
                       color: Colors.redAccent, fontWeight: FontWeight.w600)),
@@ -150,10 +151,10 @@ class ProfileTab extends ConsumerWidget {
                             color: AppTheme.textMuted,
                             fontWeight: FontWeight.w500)),
                     const SizedBox(width: 8),
-                    const Icon(Icons.chevron_right, color: AppTheme.textMuted),
+                    const Icon(LucideIcons.chevron_right, color: AppTheme.textMuted),
                   ],
                 )
-              : const Icon(Icons.chevron_right, color: AppTheme.textMuted)),
+              : const Icon(LucideIcons.chevron_right, color: AppTheme.textMuted)),
       onTap: onTap,
     );
   }

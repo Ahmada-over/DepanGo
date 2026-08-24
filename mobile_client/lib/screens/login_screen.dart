@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/theme.dart';
 import '../core/app_toast.dart';
@@ -152,7 +153,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.error_outline,
+                      const Icon(LucideIcons.circle_alert,
                           color: Colors.red, size: 20),
                       const SizedBox(width: 10),
                       Expanded(
@@ -174,7 +175,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 keyboardType: TextInputType.emailAddress,
                 decoration: InputDecoration(
                   labelText: 'Adresse Email',
-                  prefixIcon: const Icon(Icons.email_outlined,
+                  prefixIcon: const Icon(LucideIcons.mail,
                       color: AppTheme.primaryEmerald),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
@@ -199,7 +200,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 obscureText: true,
                 decoration: InputDecoration(
                   labelText: 'Mot de passe',
-                  prefixIcon: const Icon(Icons.lock_outline,
+                  prefixIcon: const Icon(LucideIcons.lock,
                       color: AppTheme.primaryEmerald),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),

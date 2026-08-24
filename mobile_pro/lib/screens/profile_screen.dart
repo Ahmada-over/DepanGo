@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -164,7 +165,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         title: const Text('Fiche Profil & Spécialités Pro'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.check_circle_rounded, color: ProTheme.primaryLight),
+            icon: const Icon(LucideIcons.circle_check, color: ProTheme.primaryLight),
             onPressed: _isSaving ? null : _saveProfileChanges,
             tooltip: 'Enregistrer',
           ),
@@ -209,7 +210,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             ),
                             child: _isUploadingImage
                                 ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
-                                : const Icon(Icons.camera_alt_rounded, color: Colors.black, size: 16),
+                                : const Icon(LucideIcons.camera, color: Colors.black, size: 16),
                           ),
                         ),
                       ],
@@ -224,7 +225,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         ),
                         const SizedBox(width: 6),
                         Icon(
-                          isVerified ? Icons.verified_rounded : Icons.pending_rounded,
+                          isVerified ? Icons.verified_rounded : LucideIcons.clock,
                           color: isVerified ? ProTheme.primaryLight : Colors.amber,
                           size: 20,
                         ),
@@ -270,7 +271,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       decoration: const InputDecoration(
                         labelText: 'Nom et Prénom',
                         labelStyle: TextStyle(color: ProTheme.textMuted, fontSize: 13),
-                        prefixIcon: Icon(Icons.person_rounded, color: ProTheme.primaryLight, size: 20),
+                        prefixIcon: Icon(LucideIcons.user, color: ProTheme.primaryLight, size: 20),
                         enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: ProTheme.darkBorder)),
                       ),
                       validator: (v) => v?.trim().isEmpty == true ? 'Nom requis' : null,
@@ -282,7 +283,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       decoration: const InputDecoration(
                         labelText: 'Numéro de Téléphone (Joignable par le client)',
                         labelStyle: TextStyle(color: ProTheme.textMuted, fontSize: 13),
-                        prefixIcon: Icon(Icons.phone_rounded, color: ProTheme.primaryLight, size: 20),
+                        prefixIcon: Icon(LucideIcons.phone, color: ProTheme.primaryLight, size: 20),
                         enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: ProTheme.darkBorder)),
                       ),
                       validator: (v) => v?.trim().isEmpty == true ? 'Téléphone requis' : null,
@@ -294,7 +295,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       decoration: const InputDecoration(
                         labelText: 'Adresse Email (Optionnelle)',
                         labelStyle: TextStyle(color: ProTheme.textMuted, fontSize: 13),
-                        prefixIcon: Icon(Icons.email_rounded, color: ProTheme.primaryLight, size: 20),
+                        prefixIcon: Icon(LucideIcons.mail, color: ProTheme.primaryLight, size: 20),
                         border: InputBorder.none,
                       ),
                     ),
@@ -325,7 +326,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.two_wheeler_rounded, color: ProTheme.primaryLight, size: 22),
+                            Icon(LucideIcons.bike, color: ProTheme.primaryLight, size: 22),
                             SizedBox(width: 8),
                             Flexible(child: Text('Moto Express', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13), overflow: TextOverflow.ellipsis)),
                           ],
@@ -351,7 +352,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.directions_car_rounded, color: Colors.blue, size: 22),
+                            Icon(LucideIcons.car, color: Colors.blue, size: 22),
                             SizedBox(width: 8),
                             Flexible(child: Text('Voiture / Fourgon', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13), overflow: TextOverflow.ellipsis)),
                           ],
@@ -445,13 +446,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     value: _selectedZone,
                     dropdownColor: ProTheme.darkSurface,
                     isExpanded: true,
-                    icon: const Icon(Icons.arrow_drop_down_rounded, color: ProTheme.primaryLight),
+                    icon: const Icon(LucideIcons.chevron_down, color: ProTheme.primaryLight),
                     items: _dakarZones.map((z) {
                       return DropdownMenuItem(
                         value: z,
                         child: Row(
                           children: [
-                            const Icon(Icons.location_city_rounded, color: ProTheme.primaryLight, size: 18),
+                            const Icon(LucideIcons.building_2, color: ProTheme.primaryLight, size: 18),
                             const SizedBox(width: 10),
                             Text(z, style: const TextStyle(color: Colors.white, fontSize: 13)),
                           ],
@@ -474,7 +475,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   onPressed: _isSaving ? null : _saveProfileChanges,
                   icon: _isSaving
                       ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
-                      : const Icon(Icons.save_rounded, color: Colors.black, size: 20),
+                      : const Icon(LucideIcons.save, color: Colors.black, size: 20),
                   label: Text(
                     _isSaving ? 'ENREGISTREMENT...' : 'ENREGISTRER LES MODIFICATIONS',
                     style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: Colors.black, letterSpacing: 0.3),
@@ -490,8 +491,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               // Déconnexion
               Center(
                 child: TextButton.icon(
-                  onPressed: () => ref.read(authProvider.notifier).logout(),
-                  icon: const Icon(Icons.power_settings_new_rounded, color: Colors.redAccent, size: 18),
+                  onPressed: () async {
+                    await ref.read(authProvider.notifier).logout();
+                    if (context.mounted) {
+                      Navigator.of(context).popUntil((route) => route.isFirst);
+                    }
+                  },
+                  icon: const Icon(LucideIcons.power, color: Colors.redAccent, size: 18),
                   label: const Text('Se Déconnecter', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 13)),
                 ),
               ),

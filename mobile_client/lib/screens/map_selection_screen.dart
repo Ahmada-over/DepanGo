@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -333,19 +334,19 @@ class _MapSelectionScreenState extends ConsumerState<MapSelectionScreen> {
                     return ListTile(
                       leading: const CircleAvatar(
                         backgroundColor: AppTheme.primaryEmerald,
-                        child: Icon(Icons.person_rounded, color: Colors.white),
+                        child: Icon(LucideIcons.user, color: Colors.white),
                       ),
                       title: Text(tech.name,
                           style: const TextStyle(fontWeight: FontWeight.w600)),
                       subtitle: Row(
                         children: [
-                          const Icon(Icons.star_rounded,
+                          const Icon(LucideIcons.star,
                               color: Colors.amber, size: 16),
                           const SizedBox(width: 4),
                           Text(tech.averageRating.toStringAsFixed(1)),
                         ],
                       ),
-                      trailing: const Icon(Icons.chevron_right_rounded),
+                      trailing: const Icon(LucideIcons.chevron_right),
                       onTap: () {
                         Navigator.pop(context);
                         ref.read(selectedLocationProvider.notifier).state =
@@ -425,7 +426,7 @@ class _MapSelectionScreenState extends ConsumerState<MapSelectionScreen> {
             child: Row(
               children: [
                 MapFloatingButton(
-                  icon: Icons.arrow_back_rounded,
+                  icon: LucideIcons.arrow_left,
                   onPressed: () {
                     if (_selectedTech != null) {
                       setState(() => _selectedTech = null);
@@ -438,7 +439,7 @@ class _MapSelectionScreenState extends ConsumerState<MapSelectionScreen> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: MapInfoChip(
-                    icon: Icons.place_outlined,
+                    icon: LucideIcons.map_pin,
                     title: _isDragging ? 'Déplacez la carte…' : _addressText,
                     subtitle:
                         '${_techLocations.length} technicien(s) à proximité',
@@ -446,7 +447,7 @@ class _MapSelectionScreenState extends ConsumerState<MapSelectionScreen> {
                 ),
                 const SizedBox(width: 10),
                 MapFloatingButton(
-                  icon: Icons.my_location_rounded,
+                  icon: LucideIcons.locate_fixed,
                   onPressed: _recenterOnUser,
                 ),
               ],
@@ -511,7 +512,7 @@ class _MapSelectionScreenState extends ConsumerState<MapSelectionScreen> {
                       children: [
                         const CircleAvatar(
                           backgroundColor: AppTheme.primaryLight,
-                          child: Icon(Icons.person,
+                          child: Icon(LucideIcons.user,
                               color: AppTheme.primaryEmerald),
                         ),
                         const SizedBox(width: 12),
@@ -529,7 +530,7 @@ class _MapSelectionScreenState extends ConsumerState<MapSelectionScreen> {
                               ),
                               Row(
                                 children: [
-                                  const Icon(Icons.star,
+                                  const Icon(LucideIcons.star,
                                       color: Colors.amber, size: 14),
                                   const SizedBox(width: 4),
                                   Text(

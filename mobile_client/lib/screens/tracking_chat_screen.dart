@@ -1,4 +1,5 @@
 import 'dart:ui' as ui;
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -123,17 +124,17 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
     if (!mounted) return;
     try {
       final moto = await _createCustomMarkerBitmap(
-        icon: Icons.two_wheeler_rounded,
+        icon: LucideIcons.bike,
         primaryColor: AppTheme.primaryEmerald, // Emerald
         iconColor: Colors.white,
       );
       final car = await _createCustomMarkerBitmap(
-        icon: Icons.directions_car_rounded,
+        icon: LucideIcons.car,
         primaryColor: AppTheme.primaryDark, // Deep Blue
         iconColor: Colors.white,
       );
       final dest = await _createCustomMarkerBitmap(
-        icon: Icons.person_pin_circle_rounded,
+        icon: LucideIcons.map_pin,
         primaryColor: Colors.redAccent, // Red
         iconColor: Colors.white,
       );
@@ -669,7 +670,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
             child: Row(
               children: [
                 MapFloatingButton(
-                  icon: Icons.arrow_back_rounded,
+                  icon: LucideIcons.arrow_left,
                   onPressed: () => Navigator.pop(context),
                 ),
                 const SizedBox(width: 10),
@@ -677,9 +678,9 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                   child: MapInfoChip(
                     icon: status == 'in_progress'
                         ? (techTransport == 'voiture'
-                            ? Icons.directions_car_rounded
-                            : Icons.two_wheeler_rounded)
-                        : Icons.info_outline_rounded,
+                            ? LucideIcons.car
+                            : LucideIcons.bike)
+                        : LucideIcons.info,
                     title: _getStatusTitle(status),
                     subtitle: _getStatusDescription(
                         status, dynamicEtaText, dynamicDistanceText),
@@ -801,7 +802,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                                               overflow: TextOverflow.ellipsis),
                                         ),
                                         const SizedBox(width: 4),
-                                        const Icon(Icons.verified,
+                                        const Icon(LucideIcons.badge_check,
                                             size: 16,
                                             color: AppTheme.primaryEmerald),
                                       ],
@@ -824,7 +825,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                                                 techTransport == 'voiture'
                                                     ? Icons
                                                         .directions_car_rounded
-                                                    : Icons.two_wheeler_rounded,
+                                                    : LucideIcons.bike,
                                                 size: 13,
                                                 color: techTransport ==
                                                         'voiture'
@@ -849,7 +850,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                                           ),
                                         ),
                                         const SizedBox(width: 8),
-                                        const Icon(Icons.star,
+                                        const Icon(LucideIcons.star,
                                             size: 13, color: Colors.amber),
                                         Text(
                                             ' ${techRating.toStringAsFixed(1)}',
@@ -899,7 +900,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                             height: 46,
                             child: ElevatedButton.icon(
                               onPressed: () => _makePhoneCall(techPhone),
-                              icon: const Icon(Icons.phone_in_talk_rounded,
+                              icon: const Icon(LucideIcons.phone_call,
                                   color: Colors.white, size: 20),
                               label: Text(
                                 'Appeler le Technicien ($techPhone)',
@@ -1090,7 +1091,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                 children: List.generate(5, (idx) {
                   return IconButton(
                     icon: Icon(
-                      idx < selectedStars ? Icons.star : Icons.star_border,
+                      idx < selectedStars ? LucideIcons.star : LucideIcons.star,
                       color: Colors.amber,
                       size: 32,
                     ),
@@ -1374,7 +1375,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                         height: 54,
                         fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) => const Icon(
-                            Icons.broken_image_rounded,
+                            LucideIcons.image_off,
                             size: 40,
                             color: Colors.grey),
                       ),
@@ -1422,7 +1423,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Icon(
-                            Icons.location_on_rounded,
+                            LucideIcons.map_pin,
                             size: 16,
                             color: AppTheme.primaryEmerald,
                           ),
@@ -1449,7 +1450,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.near_me_rounded,
+                            const Icon(LucideIcons.navigation,
                                 size: 12, color: Colors.deepOrange),
                             const SizedBox(width: 4),
                             Text(
@@ -1509,7 +1510,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                           child: const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.center_focus_strong_rounded,
+                              Icon(LucideIcons.crosshair,
                                   size: 14, color: AppTheme.primaryEmerald),
                               SizedBox(width: 6),
                               Text(
@@ -1548,7 +1549,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                         ),
                         child: const Row(
                           children: [
-                            Icon(Icons.copy_rounded,
+                            Icon(LucideIcons.copy,
                                 size: 14, color: AppTheme.textMuted),
                             SizedBox(width: 4),
                             Text(
@@ -1579,7 +1580,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
               const Row(
                 children: [
                   Icon(
-                    Icons.payments_outlined,
+                    LucideIcons.banknote,
                     size: 15,
                     color: AppTheme.textMuted,
                   ),
@@ -1597,7 +1598,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
               Row(
                 children: [
                   const Icon(
-                    Icons.access_time_rounded,
+                    LucideIcons.clock,
                     size: 14,
                     color: AppTheme.textMuted,
                   ),

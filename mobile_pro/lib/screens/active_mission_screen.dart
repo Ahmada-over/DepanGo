@@ -1,4 +1,5 @@
 import 'dart:ui' as ui;
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -111,17 +112,17 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen> {
   Future<void> _loadCustomMarkers() async {
     try {
       final moto = await _createCustomMarkerBitmap(
-        icon: Icons.two_wheeler_rounded,
+        icon: LucideIcons.bike,
         primaryColor: const Color(0xFF0F766E), // Emerald
         iconColor: Colors.white,
       );
       final car = await _createCustomMarkerBitmap(
-        icon: Icons.directions_car_rounded,
+        icon: LucideIcons.car,
         primaryColor: const Color(0xFF1E40AF), // Blue
         iconColor: Colors.white,
       );
       final client = await _createCustomMarkerBitmap(
-        icon: Icons.person_pin_circle_rounded,
+        icon: LucideIcons.map_pin,
         primaryColor: const Color(0xFFDC2626), // Red
         iconColor: Colors.white,
       );
@@ -336,7 +337,7 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.check_circle_outline_rounded, size: 64, color: ProTheme.primaryLight),
+              const Icon(LucideIcons.circle_check, size: 64, color: ProTheme.primaryLight),
               const SizedBox(height: 16),
               const Text('Aucune mission active', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
               const SizedBox(height: 8),
@@ -486,7 +487,7 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen> {
                       border: Border.all(color: ProTheme.darkBorder),
                       boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 8)],
                     ),
-                    child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
+                    child: const Icon(LucideIcons.arrow_left, color: Colors.white, size: 20),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -510,7 +511,7 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen> {
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Icon(
-                            isCar ? Icons.directions_car_rounded : Icons.two_wheeler_rounded,
+                            isCar ? LucideIcons.car : LucideIcons.bike,
                             color: ProTheme.primaryLight,
                             size: 18,
                           ),
@@ -560,7 +561,7 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen> {
                   CameraUpdate.newLatLngZoom(currentTechPosition, 16.5),
                 );
               },
-              child: const Icon(Icons.my_location_rounded),
+              child: const Icon(LucideIcons.locate_fixed),
             ),
           ),
 
@@ -681,7 +682,7 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen> {
                             height: 46,
                             child: ElevatedButton.icon(
                               onPressed: () => _makePhoneCall(activeMission.clientPhone),
-                              icon: const Icon(Icons.phone_in_talk_rounded, color: Colors.white, size: 20),
+                              icon: const Icon(LucideIcons.phone_call, color: Colors.white, size: 20),
                               label: Text(
                                 'Appeler le Client (${activeMission.clientPhone})',
                                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
@@ -710,7 +711,7 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen> {
                         children: [
                           Row(
                             children: [
-                              const Icon(Icons.location_on_rounded, color: ProTheme.primaryLight, size: 16),
+                              const Icon(LucideIcons.map_pin, color: ProTheme.primaryLight, size: 16),
                               const SizedBox(width: 6),
                               const Text('Adresse d\'intervention', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: ProTheme.textMuted)),
                               const Spacer(),
@@ -757,7 +758,7 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen> {
                                       width: 60,
                                       height: 60,
                                       fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) => const Icon(Icons.broken_image_rounded, size: 40, color: Colors.grey),
+                                      errorBuilder: (_, __, ___) => const Icon(LucideIcons.image_off, size: 40, color: Colors.grey),
                                     ),
                                   ),
                                 ),
@@ -786,7 +787,7 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen> {
                       ),
                       child: const Row(
                         children: [
-                          Icon(Icons.payments_outlined, color: ProTheme.amber, size: 20),
+                          Icon(LucideIcons.banknote, color: ProTheme.amber, size: 20),
                           SizedBox(width: 10),
                           Expanded(
                             child: Text(
@@ -805,7 +806,7 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen> {
                         height: 52,
                         child: ElevatedButton.icon(
                           onPressed: _actionLoading ? null : () => _handleStatusUpdate('in_progress'),
-                          icon: const Icon(Icons.directions_bike_rounded, size: 22),
+                          icon: const Icon(LucideIcons.bike, size: 22),
                           label: const Text('🚗 PASSER : EN ROUTE', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900)),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: ProTheme.amber,
@@ -820,7 +821,7 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen> {
                         height: 52,
                         child: ElevatedButton.icon(
                           onPressed: _actionLoading ? null : () => _handleStatusUpdate('on_site'),
-                          icon: const Icon(Icons.location_on_rounded, size: 22),
+                          icon: const Icon(LucideIcons.map_pin, size: 22),
                           label: const Text('📍 PASSER : SUR PLACE', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900)),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: ProTheme.primaryLight,
@@ -835,7 +836,7 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen> {
                         height: 52,
                         child: ElevatedButton.icon(
                           onPressed: _actionLoading ? null : () => _handleStatusUpdate('completed'),
-                          icon: const Icon(Icons.check_circle_rounded, size: 22),
+                          icon: const Icon(LucideIcons.circle_check, size: 22),
                           label: const Text('✅ CLÔTURER LE DOSSIER', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900)),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: ProTheme.success,
@@ -852,7 +853,7 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen> {
                       height: 44,
                       child: TextButton.icon(
                         onPressed: () => _showCancelDialog(context),
-                        icon: const Icon(Icons.close_rounded, color: Colors.redAccent, size: 18),
+                        icon: const Icon(LucideIcons.x, color: Colors.redAccent, size: 18),
                         label: const Text('Annuler l\'intervention', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 12)),
                       ),
                     ),

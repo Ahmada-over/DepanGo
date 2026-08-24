@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/app_providers.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -92,7 +93,7 @@ class BookingDetailsScreen extends ConsumerWidget {
           Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.black),
+                icon: const Icon(LucideIcons.arrow_left, color: Colors.black),
                 onPressed: () => Navigator.pop(context),
               ),
             ],
@@ -117,7 +118,7 @@ class BookingDetailsScreen extends ConsumerWidget {
                       boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 4))],
                     ),
                     child: const Center(
-                      child: Icon(Icons.handyman, size: 36, color: AppTheme.primaryEmerald),
+                      child: Icon(LucideIcons.wrench, size: 36, color: AppTheme.primaryEmerald),
                     ),
                   ),
                 ),
@@ -138,9 +139,9 @@ class BookingDetailsScreen extends ConsumerWidget {
                           ? Image.network(
                               'https://i.pravatar.cc/150?u=${booking.technicianId}',
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => const Icon(Icons.person, size: 40, color: Colors.grey),
+                              errorBuilder: (_, __, ___) => const Icon(LucideIcons.user, size: 40, color: Colors.grey),
                             )
-                          : const Icon(Icons.person, size: 40, color: Colors.white),
+                          : const Icon(LucideIcons.user, size: 40, color: Colors.white),
                     ),
                   ),
                 ),
@@ -167,7 +168,7 @@ class BookingDetailsScreen extends ConsumerWidget {
       ),
       child: const Column(
         children: [
-          Icon(Icons.headset_mic, color: Colors.black87),
+          Icon(LucideIcons.headset, color: Colors.black87),
           SizedBox(height: 4),
           Text('Aide', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.black87)),
         ],
@@ -211,7 +212,7 @@ class BookingDetailsScreen extends ConsumerWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.location_on, color: Colors.black87, size: 20),
+                const Icon(LucideIcons.map_pin, color: Colors.black87, size: 20),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -264,7 +265,7 @@ class BookingDetailsScreen extends ConsumerWidget {
           const Text('Prix de la commande', style: TextStyle(fontSize: 15, color: Colors.black87)),
           Row(
             children: const [
-              Icon(Icons.bolt, color: Colors.amber, size: 18),
+              Icon(LucideIcons.zap, color: Colors.amber, size: 18),
               SizedBox(width: 4),
               Text('Sur devis', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black)),
             ],

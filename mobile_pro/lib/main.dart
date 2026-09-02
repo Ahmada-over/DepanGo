@@ -5,7 +5,7 @@ import 'core/app_toast.dart';
 import 'providers/pro_providers.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
-import 'screens/onboarding_screen.dart';
+import 'screens/onboarding/onboarding_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final sharedPreferencesProvider = Provider<SharedPreferences>((ref) => throw UnimplementedError());

@@ -1,0 +1,88 @@
+{
+  "operation": "GET /api/v1/technicians/nearby",
+  "method": "GET",
+  "path_template": "/api/v1/technicians/nearby",
+  "fingerprint": "48aab03e",
+  "case_id": "O2de8P",
+  "code_sample": "curl -X GET 'http://localhost:8001/api/v1/technicians/nearby?category_id=&lat=0.0&lng=0.0&x-schemathesis-unknown-property=42'",
+  "sequence": [
+    {
+      "method": "GET",
+      "url": "http://localhost:8001/api/v1/technicians/nearby?category_id=&lat=0.0&lng=0.0&x-schemathesis-unknown-property=42",
+      "url_template": "http://localhost:8001/api/v1/technicians/nearby",
+      "headers": {
+        "User-Agent": "schemathesis/4.25.2",
+        "Accept-Encoding": "gzip, deflate",
+        "Accept": "*/*",
+        "Connection": "keep-alive",
+        "X-Schemathesis-TestCaseId": "O2de8P"
+      },
+      "response": {
+        "status_code": 200,
+        "headers": {
+          "date": "Wed, 02 Sep 2026 11:04:40 GMT",
+          "server": "uvicorn",
+          "content-length": "2",
+          "content-type": "application/json"
+        },
+        "body": "[]"
+      },
+      "link": null,
+      "checks": [
+        {
+          "name": "negative_data_rejection",
+          "status": "failure",
+          "message": "API accepted schema-violating request\n\nInvalid data should have been rejected\nExpected: 400, 401, 403, 404, 405, 406, 409, 422, 428, 5xx\nInvalid component: in query - object with unexpected properties"
+        }
+      ],
+      "meta": {
+        "generation": {
+          "time": 1.2707998394034803e-05,
+          "mode": "negative"
+        },
+        "components": {
+          "QUERY": "negative"
+        },
+        "phase": {
+          "name": "coverage",
+          "data": {
+            "type": "CoveragePhaseData",
+            "description": "Object with unexpected properties",
+            "location": null,
+            "parameter": null,
+            "parameter_location": "QUERY",
+            "scenario": "object_unexpected_properties"
+          }
+        },
+        "pool_draws": [],
+        "pool_misses": [],
+        "semantic_draws": [],
+        "dictionary_draws": [],
+        "constants_draws": [],
+        "raw_containers": {
+          "QUERY": {
+            "category_id": "",
+            "lat": 0.0,
+            "lng": 0.0,
+            "x-schemathesis-unknown-property": 42
+          }
+        }
+      },
+      "path": "/api/v1/technicians/nearby",
+      "path_parameters": {},
+      "query": {
+        "category_id": "",
+        "lat": "0.0",
+        "lng": "0.0",
+        "x-schemathesis-unknown-property": "42"
+      },
+      "case_headers": {},
+      "cookies": {},
+      "case_body": {
+        "encoding": "none"
+      },
+      "media_type": null,
+      "parent_index": null
+    }
+  ]
+}

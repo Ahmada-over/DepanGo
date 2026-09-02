@@ -1,0 +1,82 @@
+{
+  "operation": "POST /api/v1/bookings/upload_photo",
+  "method": "OPTIONS",
+  "path_template": "/api/v1/bookings/upload_photo",
+  "fingerprint": "4a832aae",
+  "case_id": "Rq36eY",
+  "code_sample": "curl -X OPTIONS -H 'Content-Type: multipart/form-data; boundary=f285036a8c295d1ae842dab631dd74d2' -d $'--c662b812a4619e5e66349cf5f2ff831e\\r\\nContent-Disposition: form-data; name=\"file\"\\r\\n\\r\\n\\r\\n--c662b812a4619e5e66349cf5f2ff831e--\\r\\n' http://localhost:8001/api/v1/bookings/upload_photo",
+  "sequence": [
+    {
+      "method": "OPTIONS",
+      "url": "http://localhost:8001/api/v1/bookings/upload_photo",
+      "url_template": "http://localhost:8001/api/v1/bookings/upload_photo",
+      "headers": {
+        "User-Agent": "schemathesis/4.25.2",
+        "Accept-Encoding": "gzip, deflate",
+        "Accept": "*/*",
+        "Connection": "keep-alive",
+        "X-Schemathesis-TestCaseId": "Rq36eY",
+        "Content-Length": "123",
+        "Content-Type": "multipart/form-data; boundary=f285036a8c295d1ae842dab631dd74d2"
+      },
+      "response": {
+        "status_code": 405,
+        "headers": {
+          "date": "Wed, 02 Sep 2026 11:04:40 GMT",
+          "server": "uvicorn",
+          "allow": "GET",
+          "content-length": "31",
+          "content-type": "application/json"
+        },
+        "body": "{\"detail\":\"Method Not Allowed\"}"
+      },
+      "link": null,
+      "checks": [
+        {
+          "name": "allow_header_conformance",
+          "status": "failure",
+          "message": "Invalid Allow header\n\n`Allow` header does not match the schema \u2014 missing documented methods: POST; undocumented methods advertised: GET\n\nList exactly the methods this resource supports in `Allow`"
+        }
+      ],
+      "meta": {
+        "generation": {
+          "time": 1.4169927453622222e-06,
+          "mode": "negative"
+        },
+        "components": {
+          "BODY": "positive"
+        },
+        "phase": {
+          "name": "coverage",
+          "data": {
+            "type": "CoveragePhaseData",
+            "description": "Unspecified HTTP method: OPTIONS",
+            "location": null,
+            "parameter": null,
+            "parameter_location": null,
+            "scenario": "unspecified_http_method"
+          }
+        },
+        "pool_draws": [],
+        "pool_misses": [],
+        "semantic_draws": [],
+        "dictionary_draws": [],
+        "constants_draws": [],
+        "raw_containers": {}
+      },
+      "path": "/api/v1/bookings/upload_photo",
+      "path_parameters": {},
+      "query": {},
+      "case_headers": {},
+      "cookies": {},
+      "case_body": {
+        "encoding": "json",
+        "value": {
+          "file": ""
+        }
+      },
+      "media_type": "multipart/form-data",
+      "parent_index": null
+    }
+  ]
+}

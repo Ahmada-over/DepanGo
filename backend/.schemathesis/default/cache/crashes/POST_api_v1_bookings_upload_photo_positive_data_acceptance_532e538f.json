@@ -1,0 +1,81 @@
+{
+  "operation": "POST /api/v1/bookings/upload_photo",
+  "method": "POST",
+  "path_template": "/api/v1/bookings/upload_photo",
+  "fingerprint": "532e538f",
+  "case_id": "9fWdux",
+  "code_sample": "curl -X POST -H 'Content-Type: multipart/form-data; boundary=5fca92a15907805e71a4d27eacc10502' -d $'--414462b2e36bac06fec84f252280a0d4\\r\\nContent-Disposition: form-data; name=\"file\"\\r\\n\\r\\n\\r\\n--414462b2e36bac06fec84f252280a0d4--\\r\\n' http://localhost:8001/api/v1/bookings/upload_photo",
+  "sequence": [
+    {
+      "method": "POST",
+      "url": "http://localhost:8001/api/v1/bookings/upload_photo",
+      "url_template": "http://localhost:8001/api/v1/bookings/upload_photo",
+      "headers": {
+        "User-Agent": "schemathesis/4.25.2",
+        "Accept-Encoding": "gzip, deflate",
+        "Accept": "*/*",
+        "Connection": "keep-alive",
+        "X-Schemathesis-TestCaseId": "9fWdux",
+        "Content-Length": "123",
+        "Content-Type": "multipart/form-data; boundary=5fca92a15907805e71a4d27eacc10502"
+      },
+      "response": {
+        "status_code": 422,
+        "headers": {
+          "date": "Wed, 02 Sep 2026 11:04:41 GMT",
+          "server": "uvicorn",
+          "content-length": "89",
+          "content-type": "application/json"
+        },
+        "body": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"file\"],\"msg\":\"Field required\",\"input\":null}]}"
+      },
+      "link": null,
+      "checks": [
+        {
+          "name": "positive_data_acceptance",
+          "status": "failure",
+          "message": "API rejected schema-compliant request\n\nValid data should have been accepted\nExpected: 2xx, 401, 403, 404, 409, 5xx"
+        }
+      ],
+      "meta": {
+        "generation": {
+          "time": 0.0017366670072078705,
+          "mode": "positive"
+        },
+        "components": {
+          "BODY": "positive"
+        },
+        "phase": {
+          "name": "fuzzing",
+          "data": {
+            "type": "FuzzingPhaseData",
+            "description": "Positive test case",
+            "location": null,
+            "parameter": null,
+            "parameter_location": null,
+            "mutations": []
+          }
+        },
+        "pool_draws": [],
+        "pool_misses": [],
+        "semantic_draws": [],
+        "dictionary_draws": [],
+        "constants_draws": [],
+        "raw_containers": {}
+      },
+      "path": "/api/v1/bookings/upload_photo",
+      "path_parameters": {},
+      "query": {},
+      "case_headers": {},
+      "cookies": {},
+      "case_body": {
+        "encoding": "json",
+        "value": {
+          "file": ""
+        }
+      },
+      "media_type": "multipart/form-data",
+      "parent_index": null
+    }
+  ]
+}

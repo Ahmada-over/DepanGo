@@ -105,3 +105,10 @@ class SubscriptionResponse(BaseModel):
 
 class SubscriptionCreateRequest(BaseModel):
     plan_name: str
+
+
+class FirebaseLoginRequest(BaseModel):
+    id_token: str
+    name: Optional[str] = None
+    role: Optional[str] = "technician"
+

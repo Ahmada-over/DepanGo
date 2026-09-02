@@ -1,0 +1,89 @@
+{
+  "operation": "POST /api/v1/bookings/{booking_id}/decline",
+  "method": "POST",
+  "path_template": "/api/v1/bookings/{booking_id}/decline",
+  "fingerprint": "4f441ff0",
+  "case_id": "5ZIM9G",
+  "code_sample": "curl -X POST http://localhost:8001/api/v1/bookings/0/decline",
+  "sequence": [
+    {
+      "method": "POST",
+      "url": "http://localhost:8001/api/v1/bookings/0/decline",
+      "url_template": "http://localhost:8001/api/v1/bookings/{booking_id}/decline",
+      "headers": {
+        "User-Agent": "schemathesis/4.25.2",
+        "Accept-Encoding": "gzip, deflate",
+        "Accept": "*/*",
+        "Connection": "keep-alive",
+        "X-Schemathesis-TestCaseId": "5ZIM9G",
+        "Content-Length": "0"
+      },
+      "response": {
+        "status_code": 401,
+        "headers": {
+          "date": "Wed, 02 Sep 2026 11:04:40 GMT",
+          "server": "uvicorn",
+          "www-authenticate": "[Filtered]",
+          "content-length": "30",
+          "content-type": "application/json"
+        },
+        "body": "{\"detail\":\"Not authenticated\"}"
+      },
+      "link": null,
+      "checks": [
+        {
+          "name": "status_code_conformance",
+          "status": "failure",
+          "message": "Undocumented HTTP status code\n\nReceived: 401\nDocumented: 200, 422"
+        }
+      ],
+      "meta": {
+        "generation": {
+          "time": 7.704099698457867e-05,
+          "mode": "positive"
+        },
+        "components": {
+          "PATH": "positive"
+        },
+        "phase": {
+          "name": "coverage",
+          "data": {
+            "type": "CoveragePhaseData",
+            "description": "Default positive test case",
+            "location": null,
+            "parameter": null,
+            "parameter_location": null,
+            "scenario": "default_positive_test"
+          }
+        },
+        "pool_draws": [],
+        "pool_misses": [
+          [
+            "path",
+            "booking_id"
+          ]
+        ],
+        "semantic_draws": [],
+        "dictionary_draws": [],
+        "constants_draws": [],
+        "raw_containers": {
+          "PATH": {
+            "booking_id": "0"
+          }
+        }
+      },
+      "path": "/api/v1/bookings/{booking_id}/decline",
+      "path_parameters": {
+        "booking_id": "0"
+      },
+      "query": {},
+      "case_headers": {},
+      "cookies": {},
+      "case_body": {
+        "encoding": "none"
+      },
+      "media_type": null,
+      "parent_index": null
+    }
+  ]
+}

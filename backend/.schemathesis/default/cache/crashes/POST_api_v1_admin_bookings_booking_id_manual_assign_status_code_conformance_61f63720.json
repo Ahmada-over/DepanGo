@@ -1,0 +1,92 @@
+{
+  "operation": "POST /api/v1/admin/bookings/{booking_id}/manual-assign",
+  "method": "POST",
+  "path_template": "/api/v1/admin/bookings/{booking_id}/manual-assign",
+  "fingerprint": "61f63720",
+  "case_id": "MVyd31",
+  "code_sample": "curl -X POST -H 'Content-Type: application/json' -d '{}' http://localhost:8001/api/v1/admin/bookings/0/manual-assign",
+  "sequence": [
+    {
+      "method": "POST",
+      "url": "http://localhost:8001/api/v1/admin/bookings/0/manual-assign",
+      "url_template": "http://localhost:8001/api/v1/admin/bookings/{booking_id}/manual-assign",
+      "headers": {
+        "User-Agent": "schemathesis/4.25.2",
+        "Accept-Encoding": "gzip, deflate",
+        "Accept": "*/*",
+        "Connection": "keep-alive",
+        "X-Schemathesis-TestCaseId": "MVyd31",
+        "Content-Type": "application/json",
+        "Content-Length": "2"
+      },
+      "response": {
+        "status_code": 401,
+        "headers": {
+          "date": "Wed, 02 Sep 2026 11:04:40 GMT",
+          "server": "uvicorn",
+          "www-authenticate": "[Filtered]",
+          "content-length": "30",
+          "content-type": "application/json"
+        },
+        "body": "{\"detail\":\"Not authenticated\"}"
+      },
+      "link": null,
+      "checks": [
+        {
+          "name": "status_code_conformance",
+          "status": "failure",
+          "message": "Undocumented HTTP status code\n\nReceived: 401\nDocumented: 200, 422"
+        }
+      ],
+      "meta": {
+        "generation": {
+          "time": 1.2208998668938875e-05,
+          "mode": "negative"
+        },
+        "components": {
+          "PATH": "positive",
+          "BODY": "negative"
+        },
+        "phase": {
+          "name": "coverage",
+          "data": {
+            "type": "CoveragePhaseData",
+            "description": "Missing required property: technician_user_id",
+            "location": "/required",
+            "parameter": "application/json",
+            "parameter_location": "BODY",
+            "scenario": "object_missing_required_property"
+          }
+        },
+        "pool_draws": [],
+        "pool_misses": [
+          [
+            "path",
+            "booking_id"
+          ]
+        ],
+        "semantic_draws": [],
+        "dictionary_draws": [],
+        "constants_draws": [],
+        "raw_containers": {
+          "PATH": {
+            "booking_id": "0"
+          }
+        }
+      },
+      "path": "/api/v1/admin/bookings/{booking_id}/manual-assign",
+      "path_parameters": {
+        "booking_id": "0"
+      },
+      "query": {},
+      "case_headers": {},
+      "cookies": {},
+      "case_body": {
+        "encoding": "json",
+        "value": {}
+      },
+      "media_type": "application/json",
+      "parent_index": null
+    }
+  ]
+}

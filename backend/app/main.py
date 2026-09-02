@@ -21,6 +21,27 @@ from app.presentation.api.v1.subscriptions import router as subscriptions_router
 from app.presentation.api.v1.websockets import router as websockets_router
 from app.presentation.api.v1.admin import router as admin_router
 
+
+import os
+import firebase_admin
+from firebase_admin import credentials
+
+# ---------------------------------------------------------------------------
+# Initialize Firebase Admin SDK
+# ---------------------------------------------------------------------------
+try:
+    if not firebase_admin._apps:
+        # Assuming the JSON file is at the root of the backend directory
+        cred_path = os.path.join(os.getcwd(), "firebase-credentials.json")
+        if os.path.exists(cred_path):
+            cred = credentials.Certificate(cred_path)
+            firebase_admin.initialize_app(cred)
+        else:
+            print("WARNING: firebase-credentials.json not found!")
+except Exception as e:
+    print(f"Error initializing Firebase Admin: {e}")
+
+
 # ---------------------------------------------------------------------------
 # Rate limiter
 # ---------------------------------------------------------------------------

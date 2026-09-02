@@ -98,6 +98,68 @@ class AuthUseCases:
             }
         }
 
+    async def firebase_login(self, id_token: str, name: Optional[str] = None, role: str = "technician") -> dict:
+        try:
+            from firebase_admin import auth
+            decoded_token = auth.verify_id_token(id_token)
+            phone_number = decoded_token.get("phone_number")
+            if not phone_number:
+                raise ValueError("Numéro de téléphone introuvable dans le token Firebase.")
+            
+            user = await self.user_repo.get_by_phone(phone_number)
+            if not user and phone_number.startswith("+"):
+                user = await self.user_repo.get_by_phone(phone_number[1:])
+            
+            if not user:
+                # Auto-register if not found
+                if not name:
+                    name = "Utilisateur Inconnu"
+                
+                user_id = str(uuid.uuid4())
+                user_role = UserRole.TECHNICIAN if role.lower() == "technician" else UserRole.CLIENT
+                
+                user = UserDomain(
+                    id=user_id,
+                    name=name,
+                    phone=phone_number,
+                    email=f"{phone_number.replace('+', '')}@techconnect.sn",
+                    role=user_role,
+                    password_hash=""
+                )
+                await self.user_repo.create(user)
+                
+                if user_role == UserRole.TECHNICIAN:
+                    tech_profile = TechnicianProfileDomain(
+                        id=str(uuid.uuid4()),
+                        user_id=user_id,
+                        category_ids=["cat_plumbing"],
+                        latitude=14.6937,
+                        longitude=-17.4441,
+                        availability_status=AvailabilityStatus.ONLINE,
+                        average_rating=5.0,
+                        verified=True,
+                        user_name=name,
+                        user_phone=phone_number,
+                        transport_mode="moto"
+                    )
+                    await self.tech_repo.create_profile(tech_profile)
+                
+            token = create_access_token(user.id)
+            return {
+                "access_token": token,
+                "token_type": "bearer",
+                "user": {
+                    "id": user.id,
+                    "name": user.name,
+                    "email": user.email,
+                    "phone": user.phone,
+                    "role": user.role.value
+                }
+            }
+        except Exception as e:
+            logger.error(f"Erreur Firebase login: {str(e)}")
+            raise ValueError(f"Échec de l'authentification Firebase: {str(e)}")
+
 class BookingUseCases:
     def __init__(self, booking_repo: BookingRepositoryPort, tech_repo: TechnicianRepositoryPort, user_repo: UserRepositoryPort):
         self.booking_repo = booking_repo

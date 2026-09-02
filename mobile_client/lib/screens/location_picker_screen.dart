@@ -10,7 +10,7 @@ import '../providers/app_providers.dart';
 import '../core/map_style.dart';
 
 class LocationPickerScreen extends ConsumerStatefulWidget {
-  const LocationPickerScreen({Key? key}) : super(key: key);
+  const LocationPickerScreen({super.key});
 
   @override
   ConsumerState<LocationPickerScreen> createState() => _LocationPickerScreenState();
@@ -142,7 +142,7 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
                   color: AppTheme.primaryEmerald,
                   shadows: [
                     Shadow(
-                      color: Colors.black.withOpacity(0.3),
+                      color: Colors.black.withValues(alpha: 0.3),
                       blurRadius: 10,
                       offset: const Offset(0, 5),
                     )

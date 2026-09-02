@@ -90,6 +90,30 @@ class AuthNotifier extends StateNotifier<UserModel?> {
     return false;
   }
 
+  Future<bool> firebaseLogin(String idToken, {String? name}) async {
+    try {
+      final dio = _ref.read(apiClientProvider);
+      final res = await dio.post('/auth/firebase-login', data: {
+        'id_token': idToken,
+        if (name != null) 'name': name,
+        'role': 'technician',
+      });
+      if (res.statusCode == 200) {
+        final data = res.data;
+        token = data['access_token'];
+        state = UserModel.fromJson(data['user']);
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('tech_token', token!);
+        await prefs.setString('tech_user', jsonEncode(data['user']));
+        _ref.read(proWebSocketProvider).connect();
+        return true;
+      }
+    } catch (e) {
+      debugPrint('[Auth] Firebase Login error: $e');
+    }
+    return false;
+  }
+
   Future<void> logout() async {
     token = null;
     state = null;
@@ -153,12 +177,24 @@ class OnlineStatusNotifier extends StateNotifier<bool> {
     _startGpsBroadcast();
   }
 
-  void toggleOnline() {
-    state = !state;
-    if (state) {
+  Future<void> toggleOnline() async {
+    final newState = !state;
+    state = newState;
+    if (newState) {
       _startGpsBroadcast();
     } else {
       _gpsTimer?.cancel();
+    }
+    try {
+      final dio = _ref.read(apiClientProvider);
+      final pos = _ref.read(liveLocationProvider);
+      await dio.patch('/technicians/me/availability', data: {
+        'status': newState ? 'online' : 'offline',
+        'latitude': pos?.latitude ?? 0.0,
+        'longitude': pos?.longitude ?? 0.0,
+      });
+    } catch (e) {
+      debugPrint('[Availability] Error: $e');
     }
   }
 

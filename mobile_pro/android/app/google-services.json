@@ -1,0 +1,98 @@
+{
+  "project_info": {
+    "project_number": "554023519932",
+    "project_id": "depango-d9e2f",
+    "storage_bucket": "depango-d9e2f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:554023519932:android:f0cffa7e288483ecb8b2b9",
+        "android_client_info": {
+          "package_name": "sn.depango.client"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "554023519932-u28fevsjron3c86dluno5phftp9d7f1f.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "sn.depango.client",
+            "certificate_hash": "20477b16b79533f1dfbec226d5cca91af99804c5"
+          }
+        },
+        {
+          "client_id": "554023519932-h3kvbutnnrbghvu4rr6i7745uagkatoi.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDq6AK7-ASC7rfuWWOjnNCfitpkY94miZE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "554023519932-h3kvbutnnrbghvu4rr6i7745uagkatoi.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "554023519932-2kt0pudcs4ek3d3i1bn0drmdngmm1rce.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "sn.depango.pro"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:554023519932:android:3ef0e94773b044f2b8b2b9",
+        "android_client_info": {
+          "package_name": "sn.depango.pro"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "554023519932-9i16cqrul6b716fig3jovprfkep30369.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "sn.depango.pro",
+            "certificate_hash": "20477b16b79533f1dfbec226d5cca91af99804c5"
+          }
+        },
+        {
+          "client_id": "554023519932-h3kvbutnnrbghvu4rr6i7745uagkatoi.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDq6AK7-ASC7rfuWWOjnNCfitpkY94miZE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "554023519932-h3kvbutnnrbghvu4rr6i7745uagkatoi.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "554023519932-2kt0pudcs4ek3d3i1bn0drmdngmm1rce.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "sn.depango.pro"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

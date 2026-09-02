@@ -120,8 +120,8 @@ class TechnicianProfileScreen extends ConsumerWidget {
                           child: const Icon(LucideIcons.circle_check,
                               color: AppTheme.primaryEmerald),
                         ),
-                        title: Text('Intervention Terminée',
-                            style: const TextStyle(
+                        title: const Text('Intervention Terminée',
+                            style: TextStyle(
                                 fontWeight: FontWeight.bold, fontSize: 14)),
                         subtitle: Text(
                             DateFormat('dd/MM/yyyy HH:mm').format(b.createdAt)),

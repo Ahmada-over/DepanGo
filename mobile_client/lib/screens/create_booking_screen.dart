@@ -174,7 +174,7 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                 leading: Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryEmerald.withOpacity(0.12),
+                    color: AppTheme.primaryEmerald.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(LucideIcons.camera,
@@ -194,7 +194,7 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                 leading: Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryEmerald.withOpacity(0.12),
+                    color: AppTheme.primaryEmerald.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(LucideIcons.image,
@@ -244,9 +244,9 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: catColor.withOpacity(0.08),
+                color: catColor.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: catColor.withOpacity(0.25)),
+                border: Border.all(color: catColor.withValues(alpha: 0.25)),
               ),
               child: Row(
                 children: [
@@ -353,7 +353,7 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryEmerald.withOpacity(0.12),
+                          color: AppTheme.primaryEmerald.withValues(alpha: 0.12),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(LucideIcons.camera,
@@ -384,7 +384,7 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
                   color: Colors.grey[50],
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                      color: AppTheme.primaryEmerald.withOpacity(0.4)),
+                      color: AppTheme.primaryEmerald.withValues(alpha: 0.4)),
                 ),
                 child: Row(
                   children: [

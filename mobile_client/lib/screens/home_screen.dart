@@ -416,7 +416,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
+                    color: Colors.black.withValues(alpha: 0.04),
                     blurRadius: 10,
                     offset: const Offset(0, 4)),
               ],
@@ -466,7 +466,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 6,
                     offset: const Offset(0, 6)),
               ],
@@ -568,7 +568,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     border: Border.all(color: const Color(0xFFF1F5F9)),
                     boxShadow: [
                       BoxShadow(
-                          color: Colors.black.withOpacity(0.02),
+                          color: Colors.black.withValues(alpha: 0.02),
                           blurRadius: 6,
                           offset: const Offset(0, 2)),
                     ],
@@ -579,7 +579,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryLight.withOpacity(0.5),
+                          color: AppTheme.primaryLight.withValues(alpha: 0.5),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(item['icon'] as IconData,
@@ -669,10 +669,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                                color: Colors.black.withOpacity(0.1)),
+                                color: Colors.black.withValues(alpha: 0.1)),
                             boxShadow: [
                               BoxShadow(
-                                  color: Colors.black.withOpacity(0.02),
+                                  color: Colors.black.withValues(alpha: 0.02),
                                   blurRadius: 6,
                                   offset: const Offset(0, 2)),
                             ],
@@ -818,7 +818,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     border: Border.all(color: const Color(0xFFF1F5F9)),
                     boxShadow: [
                       BoxShadow(
-                          color: Colors.black.withOpacity(0.03),
+                          color: Colors.black.withValues(alpha: 0.03),
                           blurRadius: 10,
                           offset: const Offset(0, 4)),
                     ],
@@ -847,7 +847,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 8, vertical: 3),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.9),
+                                color: Colors.white.withValues(alpha: 0.9),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
@@ -884,8 +884,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ],
                       ),
                       const SizedBox(height: 6),
-                      Row(
-                        children: const [
+                      const Row(
+                        children: [
                           Icon(LucideIcons.badge_check,
                               size: 12, color: AppTheme.primaryEmerald),
                           SizedBox(width: 4),
@@ -1028,9 +1028,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         child: Stack(
                           children: [
                             // Static map preview (disabled interaction)
-                            AbsorbPointer(
+                            const AbsorbPointer(
                               child: GoogleMap(
-                                initialCameraPosition: const CameraPosition(
+                                initialCameraPosition: CameraPosition(
                                   target: LatLng(14.6928, -17.4467), // Default Dakar
                                   zoom: 14.0,
                                 ),
@@ -1043,9 +1043,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             ),
                             
                             // Center Marker
-                            Center(
+                            const Center(
                               child: Padding(
-                                padding: const EdgeInsets.only(bottom: 24.0),
+                                padding: EdgeInsets.only(bottom: 24.0),
                                 child: Icon(
                                   LucideIcons.map_pin,
                                   size: 32,
@@ -1066,7 +1066,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   gradient: LinearGradient(
                                     begin: Alignment.bottomCenter,
                                     end: Alignment.topCenter,
-                                    colors: [Colors.black.withOpacity(0.7), Colors.transparent],
+                                    colors: [Colors.black.withValues(alpha: 0.7), Colors.transparent],
                                   )
                                 ),
                                 child: Row(
@@ -1189,13 +1189,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             decoration: BoxDecoration(
                               color: notif.isRead
                                   ? Colors.white
-                                  : AppTheme.primaryLight.withOpacity(0.3),
+                                  : AppTheme.primaryLight.withValues(alpha: 0.3),
                               borderRadius: BorderRadius.circular(14),
                               border: Border.all(
                                   color: notif.isRead
                                       ? const Color(0xFFF1F5F9)
                                       : AppTheme.primaryEmerald
-                                          .withOpacity(0.4)),
+                                          .withValues(alpha: 0.4)),
                             ),
                             child: Row(
                               children: [
@@ -1204,7 +1204,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   backgroundColor: notif.type == 'chat'
                                       ? AppTheme.primaryEmerald.withValues(alpha: 0.15)
                                       : AppTheme.primaryEmerald
-                                          .withOpacity(0.2),
+                                          .withValues(alpha: 0.2),
                                   child: Icon(
                                     notif.type == 'chat'
                                         ? LucideIcons.message_square
@@ -1366,15 +1366,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   onTap: () => setState(() => _currentIndex = 1),
                 ),
                 const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(LucideIcons.credit_card,
+                const ListTile(
+                  leading: Icon(LucideIcons.credit_card,
                       color: AppTheme.primaryEmerald),
-                  title: const Text('Mode de règlement direct',
+                  title: Text('Mode de règlement direct',
                       style:
                           TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                  subtitle: const Text('Sur devis • Espèces / Mobile Money',
+                  subtitle: Text('Sur devis • Espèces / Mobile Money',
                       style: TextStyle(fontSize: 11)),
-                  trailing: const Icon(LucideIcons.chevron_right, color: Colors.grey),
+                  trailing: Icon(LucideIcons.chevron_right, color: Colors.grey),
                 ),
                 const Divider(height: 1),
                 ListTile(
@@ -1465,7 +1465,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: AppTheme.primaryLight.withOpacity(0.4),
+            color: AppTheme.primaryLight.withValues(alpha: 0.4),
             shape: BoxShape.circle,
           ),
           child: Icon(icon, color: AppTheme.primaryEmerald, size: 20),
@@ -1502,7 +1502,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(top: BorderSide(color: Colors.black.withOpacity(0.05))),
+        border: Border(top: BorderSide(color: Colors.black.withValues(alpha: 0.05))),
       ),
       child: BottomNavigationBar(
         currentIndex: _currentIndex > 3 ? 3 : _currentIndex,
@@ -1575,7 +1575,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           _openBooking(context, cat['catId'], cat['name']);
                         },
                       ))
-                  .toList(),
+                  ,
             ],
           ),
         );
@@ -1695,8 +1695,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         width: double.infinity,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: bannerColor.withOpacity(0.1),
-          border: Border.all(color: bannerColor.withOpacity(0.5)),
+          color: bannerColor.withValues(alpha: 0.1),
+          border: Border.all(color: bannerColor.withValues(alpha: 0.5)),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(

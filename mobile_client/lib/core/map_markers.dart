@@ -355,7 +355,7 @@ class MapCenterPin extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          SizedBox(
+          const SizedBox(
             width: 44,
             height: 56,
             child: CustomPaint(

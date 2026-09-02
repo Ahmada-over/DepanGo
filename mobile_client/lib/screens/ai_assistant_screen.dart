@@ -152,7 +152,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
     _forceScrollToBottom();
 
     // Simuler le streaming depuis le backend
-    final responseMock = "Je comprends. Laissez-moi analyser la situation... \n\n"
+    const responseMock = "Je comprends. Laissez-moi analyser la situation... \n\n"
         "Il semblerait qu'il s'agisse d'un problème électrique général. "
         "Avant de faire intervenir un professionnel, veuillez vérifier si le disjoncteur principal n'a pas sauté. "
         "Si ce n'est pas le cas, nous pouvons vous envoyer un électricien qualifié immédiatement.";
@@ -315,7 +315,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                 color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 10,
                     offset: const Offset(0, -2),
                   ),

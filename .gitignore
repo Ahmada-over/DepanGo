@@ -40,3 +40,4 @@ mobile_client/.dart_tool/
 mobile_client/build/
 mobile_client/.flutter-plugins
 mobile_client/.flutter-plugins-dependencies
+firebase-credentials.json

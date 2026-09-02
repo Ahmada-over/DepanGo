@@ -137,10 +137,10 @@ class ProfileTab extends ConsumerWidget {
   Widget _buildMenuItem(IconData icon, String title,
       {String? trailingText, Widget? trailingWidget, VoidCallback? onTap}) {
     return ListTile(
-      leading: Icon(icon, color: AppTheme.primaryDark),
+      leading: Icon(icon, color: Colors.black),
       title: Text(title,
-          style: const TextStyle(
-              fontWeight: FontWeight.w600, color: AppTheme.primaryDark)),
+          style: TextStyle(
+              fontWeight: FontWeight.w600, color: Colors.grey[700])),
       trailing: trailingWidget ??
           (trailingText != null
               ? Row(

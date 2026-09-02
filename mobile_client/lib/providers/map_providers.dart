@@ -2,9 +2,7 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import '../core/config.dart';
-import 'package:dio/dio.dart';
 import '../core/api_client.dart';
-import '../providers/app_providers.dart';
 
 // Modèle pour le technicien sur la carte
 class MapTechnician {

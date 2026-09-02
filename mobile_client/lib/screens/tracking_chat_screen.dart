@@ -337,8 +337,9 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
   }
 
   void _resolveBookingAddress(BookingModel booking) async {
-    if (_lastGeocodedBookingId == booking.id && _resolvedAddress != null)
+    if (_lastGeocodedBookingId == booking.id && _resolvedAddress != null) {
       return;
+    }
     _lastGeocodedBookingId = booking.id;
 
     if (booking.addressText.isNotEmpty &&
@@ -355,14 +356,19 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
       if (placemarks.isNotEmpty && mounted) {
         final p = placemarks.first;
         final parts = <String>[];
-        if (p.subLocality != null && p.subLocality!.isNotEmpty)
+        if (p.subLocality != null && p.subLocality!.isNotEmpty) {
           parts.add(p.subLocality!);
+        }
         if (p.street != null &&
             p.street!.isNotEmpty &&
-            p.street != p.subLocality) parts.add(p.street!);
+            p.street != p.subLocality) {
+          parts.add(p.street!);
+        }
         if (p.locality != null &&
             p.locality!.isNotEmpty &&
-            !parts.contains(p.locality)) parts.add(p.locality!);
+            !parts.contains(p.locality)) {
+          parts.add(p.locality!);
+        }
 
         final dynamicAddress = parts.isNotEmpty
             ? parts.join(', ')
@@ -393,8 +399,9 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
   String _getStatusTitle(String status) {
     if (status == 'matched') return 'Technicien Assigné';
     if (status == 'in_progress') return 'Technicien En Route';
-    if (status == 'on_site' || status == 'arrived')
+    if (status == 'on_site' || status == 'arrived') {
       return 'Technicien Sur Place';
+    }
     if (status == 'completed') return 'Intervention Clôturée';
     if (status == 'no_technician_found') return 'Aucun technicien';
     if (status == 'expired') return 'Demande Expirée';
@@ -1168,7 +1175,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                 decoration: const InputDecoration(
                     border: OutlineInputBorder(), isDense: true),
                 hint: const Text('Sélectionner un motif'),
-                value: selectedReason,
+                initialValue: selectedReason,
                 items: reasons
                     .map((r) => DropdownMenuItem(
                         value: r,
@@ -1602,7 +1609,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                     size: 14,
                     color: AppTheme.textMuted,
                   ),
-                  SizedBox(width: 4),
+                  const SizedBox(width: 4),
                   Text(
                     dateStr,
                     style: const TextStyle(

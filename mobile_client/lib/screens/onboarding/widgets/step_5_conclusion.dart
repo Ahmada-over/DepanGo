@@ -3,7 +3,7 @@ import '../../../core/theme.dart';
 
 class Step5Conclusion extends StatefulWidget {
   final VoidCallback onStart;
-  const Step5Conclusion({Key? key, required this.onStart}) : super(key: key);
+  const Step5Conclusion({super.key, required this.onStart});
 
   @override
   State<Step5Conclusion> createState() => _Step5ConclusionState();
@@ -54,7 +54,7 @@ class _Step5ConclusionState extends State<Step5Conclusion> with SingleTickerProv
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.primaryEmerald.withOpacity(0.3),
+                    color: AppTheme.primaryEmerald.withValues(alpha: 0.3),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),

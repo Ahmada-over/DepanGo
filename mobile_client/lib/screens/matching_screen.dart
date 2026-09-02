@@ -100,7 +100,7 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen>
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: AppTheme.primaryEmerald
-                          .withOpacity(1.0 - _pulseController.value),
+                          .withValues(alpha: 1.0 - _pulseController.value),
                     ),
                   ),
                   Container(
@@ -196,7 +196,7 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen>
           Container(
             padding: const EdgeInsets.all(28),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.06),
+              color: Colors.white.withValues(alpha: 0.06),
               shape: BoxShape.circle,
             ),
             child: const Icon(LucideIcons.search_x,

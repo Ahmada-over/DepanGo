@@ -3,7 +3,7 @@ import '../../../core/theme.dart';
 
 class Step1Problem extends StatefulWidget {
   final VoidCallback onNext;
-  const Step1Problem({Key? key, required this.onNext}) : super(key: key);
+  const Step1Problem({super.key, required this.onNext});
 
   @override
   State<Step1Problem> createState() => _Step1ProblemState();
@@ -68,7 +68,7 @@ class _Step1ProblemState extends State<Step1Problem> with SingleTickerProviderSt
                 Container(
                   width: 80,
                   height: 80,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: AppTheme.primaryLight,
                     shape: BoxShape.circle,
                   ),
@@ -82,7 +82,7 @@ class _Step1ProblemState extends State<Step1Problem> with SingleTickerProviderSt
                 ...List.generate(services.length, (index) {
                   // Calculate positions in a circle
                   final double angle = (index * (360 / services.length)) * 3.14159 / 180;
-                  final double radius = 100.0;
+                  const double radius = 100.0;
                   
                   return AnimatedBuilder(
                     animation: _controller,
@@ -111,7 +111,7 @@ class _Step1ProblemState extends State<Step1Problem> with SingleTickerProviderSt
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),

@@ -1,0 +1,49 @@
+import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, kIsWeb, TargetPlatform;
+
+class DefaultFirebaseOptions {
+  static FirebaseOptions get currentPlatform {
+    if (kIsWeb) {
+      return web;
+    }
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        return android;
+      case TargetPlatform.iOS:
+        return ios;
+      case TargetPlatform.macOS:
+        return ios;
+      case TargetPlatform.windows:
+      case TargetPlatform.linux:
+      case TargetPlatform.fuchsia:
+        return ios;
+    }
+  }
+
+  static const FirebaseOptions android = FirebaseOptions(
+    apiKey: 'AIzaSyDq6AK7-ASC7rfuWWOjnNCfitpkY94miZE',
+    appId: '1:554023519932:android:3ef0e94773b044f2b8b2b9',
+    messagingSenderId: '554023519932',
+    projectId: 'depango-d9e2f',
+    storageBucket: 'depango-d9e2f.firebasestorage.app',
+  );
+
+  static const FirebaseOptions ios = FirebaseOptions(
+    apiKey: 'AIzaSyAKoRBKzCI5GHkOaH_AtEOtcUZHDD-Suc4',
+    appId: '1:554023519932:ios:74bd2574c19f14e6b8b2b9',
+    messagingSenderId: '554023519932',
+    projectId: 'depango-d9e2f',
+    storageBucket: 'depango-d9e2f.firebasestorage.app',
+    iosBundleId: 'sn.depango.pro',
+  );
+
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyDAU0SYY-rw3eBWImyHvia2DHJUkhEf7p8',
+    appId: '1:554023519932:web:3d77f77fad4fe3a6b8b2b9',
+    messagingSenderId: '554023519932',
+    projectId: 'depango-d9e2f',
+    authDomain: 'depango-d9e2f.firebaseapp.com',
+    storageBucket: 'depango-d9e2f.firebasestorage.app',
+  );
+}

@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Techconnect Mobile</string>
+	<string>depango</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -15,7 +15,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>techconnect_mobile</string>
+	<string>depango</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -79,5 +79,16 @@
 	<string>Cette application utilise l'appareil photo pour vous permettre de photographier la panne à réparer.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Cette application accède à vos photos pour joindre une photo de l'installation.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.554023519932-f33b7hqvv916o22qoobv2ibrpe2ksrqu</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

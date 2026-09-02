@@ -3,7 +3,7 @@ import '../../../core/theme.dart';
 
 class Step6Complete extends StatefulWidget {
   final VoidCallback onStart;
-  const Step6Complete({Key? key, required this.onStart}) : super(key: key);
+  const Step6Complete({super.key, required this.onStart});
 
   @override
   State<Step6Complete> createState() => _Step6CompleteState();
@@ -63,7 +63,7 @@ class _Step6CompleteState extends State<Step6Complete> with SingleTickerProvider
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: ProTheme.primaryEmerald.withOpacity(0.3),
+                    color: ProTheme.primaryEmerald.withValues(alpha: 0.3),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),
@@ -103,11 +103,11 @@ class _Step6CompleteState extends State<Step6Complete> with SingleTickerProvider
               decoration: BoxDecoration(
                 color: ProTheme.darkCard,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: ProTheme.amber.withOpacity(0.5)),
+                border: Border.all(color: ProTheme.amber.withValues(alpha: 0.5)),
               ),
-              child: Row(
+              child: const Row(
                 mainAxisSize: MainAxisSize.min,
-                children: const [
+                children: [
                   Icon(Icons.star, color: ProTheme.amber, size: 24),
                   SizedBox(width: 8),
                   Text(

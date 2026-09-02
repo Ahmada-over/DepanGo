@@ -912,7 +912,7 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen> {
               const Text('Précisez le motif d\'annulation de cette intervention :', style: TextStyle(fontSize: 13, color: ProTheme.textMuted)),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: selectedReason,
+                initialValue: selectedReason,
                 dropdownColor: ProTheme.darkSurface,
                 decoration: const InputDecoration(border: OutlineInputBorder()),
                 items: reasons.map((r) => DropdownMenuItem(value: r, child: Text(r, style: const TextStyle(fontSize: 12, color: Colors.white)))).toList(),

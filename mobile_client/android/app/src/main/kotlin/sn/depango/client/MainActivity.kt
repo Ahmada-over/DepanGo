@@ -1,4 +1,4 @@
-package com.techconnect.techconnect_pro
+package sn.depango.client
 
 import io.flutter.embedding.android.FlutterActivity
 

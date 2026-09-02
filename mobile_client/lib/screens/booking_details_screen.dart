@@ -11,7 +11,7 @@ import '../core/map_style.dart';
 class BookingDetailsScreen extends ConsumerWidget {
   final BookingModel booking;
 
-  const BookingDetailsScreen({Key? key, required this.booking}) : super(key: key);
+  const BookingDetailsScreen({super.key, required this.booking});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -112,7 +112,7 @@ class BookingDetailsScreen extends ConsumerWidget {
                   child: Container(
                     width: 70,
                     height: 70,
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       color: Colors.white,
                       shape: BoxShape.circle,
                       boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 4))],
@@ -132,7 +132,7 @@ class BookingDetailsScreen extends ConsumerWidget {
                       color: Colors.grey[300],
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.white, width: 4),
-                      boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 4))],
+                      boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 4))],
                     ),
                     child: ClipOval(
                       child: hasTechnician
@@ -181,7 +181,7 @@ class BookingDetailsScreen extends ConsumerWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 20, offset: const Offset(0, 4))],
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -259,12 +259,12 @@ class BookingDetailsScreen extends ConsumerWidget {
         color: const Color(0xFFF1F3F5),
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Row(
+      child: const Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text('Prix de la commande', style: TextStyle(fontSize: 15, color: Colors.black87)),
+          Text('Prix de la commande', style: TextStyle(fontSize: 15, color: Colors.black87)),
           Row(
-            children: const [
+            children: [
               Icon(LucideIcons.zap, color: Colors.amber, size: 18),
               SizedBox(width: 4),
               Text('Sur devis', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black)),

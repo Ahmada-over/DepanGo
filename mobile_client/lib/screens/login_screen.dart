@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_lucide/flutter_lucide.dart';
+import 'package:intl_phone_number_input/intl_phone_number_input.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:pinput/pinput.dart';
 import '../core/theme.dart';
 import '../core/app_toast.dart';
 import '../providers/app_providers.dart';
-import 'home_screen.dart';
-import 'register_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -15,266 +16,248 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  bool _isLoading = false;
-  String? _errorMessage;
+  
+  bool _loading = false;
+  bool _codeSent = false;
+  String _verificationId = '';
+  
+  final _phoneController = TextEditingController();
+  String _completePhoneNumber = '';
+  
+  final _otpController = TextEditingController();
 
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
-  }
-
-  void _handleLogin() async {
-    final email = _emailController.text.trim();
-    final password = _passwordController.text.trim();
-
-    if (email.isEmpty || password.isEmpty) {
-      AppToast.show(
-        context,
-        title: 'Champs obligatoires',
-        message: 'Veuillez renseigner votre email et mot de passe.',
-        type: AppToastType.warning,
-      );
+  Future<void> _verifyPhone() async {
+    final phone = _completePhoneNumber.isNotEmpty ? _completePhoneNumber : _phoneController.text.trim();
+    if (phone.isEmpty) {
+      AppToast.show(context, title: 'Erreur', message: 'Veuillez entrer votre numéro.', type: AppToastType.error);
       return;
     }
+    
+    setState(() => _loading = true);
 
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+    String formattedPhone = phone;
+    if (!formattedPhone.startsWith('+')) {
+      if (formattedPhone.startsWith('221')) {
+        formattedPhone = '+$formattedPhone';
+      } else {
+        formattedPhone = '+221$formattedPhone';
+      }
+    }
 
-    final success =
-        await ref.read(authProvider.notifier).login(email, password);
-
-    if (!mounted) return;
-
-    setState(() {
-      _isLoading = false;
-    });
-
-    if (success && mounted) {
-      AppToast.show(
-        context,
-        title: 'Connexion réussie !',
-        message: 'Bienvenue sur depanGo.',
-        type: AppToastType.success,
+    try {
+      await FirebaseAuth.instance.verifyPhoneNumber(
+        phoneNumber: formattedPhone,
+        verificationCompleted: (PhoneAuthCredential credential) async {
+          await _signInWithCredential(credential);
+        },
+        verificationFailed: (FirebaseAuthException e) {
+          setState(() => _loading = false);
+          AppToast.show(context, title: 'Erreur', message: 'Erreur: ${e.message}', type: AppToastType.error);
+        },
+        codeSent: (String verificationId, int? resendToken) {
+          setState(() {
+            _loading = false;
+            _codeSent = true;
+            _verificationId = verificationId;
+          });
+          AppToast.show(context, title: 'Info', message: 'Vérifiez vos SMS.', type: AppToastType.success);
+        },
+        codeAutoRetrievalTimeout: (String verificationId) {
+          _verificationId = verificationId;
+        },
       );
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
+    } catch (e) {
+      setState(() => _loading = false);
+      AppToast.show(context, title: 'Erreur', message: 'Impossible d\'envoyer le code.', type: AppToastType.error);
+    }
+  }
+
+  Future<void> _verifyOTP() async {
+    final code = _otpController.text.trim();
+    if (code.length != 6) return;
+    
+    setState(() => _loading = true);
+    try {
+      final credential = PhoneAuthProvider.credential(
+        verificationId: _verificationId,
+        smsCode: code,
       );
-    } else {
-      final msg = ref.read(authProvider.notifier).errorMessage ??
-          'Identifiants invalides ou problème de connexion';
-      setState(() {
-        _errorMessage = msg;
-      });
-      AppToast.show(
-        context,
-        title: 'Échec de connexion',
-        message: msg,
-        type: AppToastType.error,
-      );
+      await _signInWithCredential(credential);
+    } catch (e) {
+      setState(() => _loading = false);
+      AppToast.show(context, title: 'Erreur', message: 'Le code saisi est incorrect.', type: AppToastType.error);
+    }
+  }
+
+  Future<void> _signInWithCredential(PhoneAuthCredential credential) async {
+    try {
+      final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+      final idToken = await userCredential.user?.getIdToken();
+      
+      if (idToken != null) {
+        final success = await ref.read(authProvider.notifier).firebaseLogin(
+          idToken,
+          name: null
+        );
+        if (!success && mounted) {
+           AppToast.show(context, title: 'Erreur', message: 'Erreur lors de la connexion.', type: AppToastType.error);
+           setState(() => _loading = false);
+        }
+      }
+    } catch (e) {
+      AppToast.show(context, title: 'Erreur', message: 'Authentification Firebase échouée.', type: AppToastType.error);
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final defaultPinTheme = PinTheme(
+      width: 56,
+      height: 56,
+      textStyle: const TextStyle(fontSize: 20, color: AppTheme.textDark, fontWeight: FontWeight.w600),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(12),
+        color: Colors.white,
+      ),
+    );
+
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AppTheme.bgLight,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 40),
-
-              // App Brand Logo
               Center(
-                child: Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppTheme.primaryEmerald.withValues(alpha: 0.2),
-                        blurRadius: 15,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
+                child: Hero(
+                  tag: 'app_logo',
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(16),
                     child: Image.asset(
                       'assets/images/logo.png',
-                      fit: BoxFit.contain,
+                      height: 100,
+                      width: 100,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Icon(LucideIcons.house, size: 80, color: AppTheme.primaryEmerald),
                     ),
                   ),
                 ),
               ),
-
-              const SizedBox(height: 24),
-
-              const Text(
-                'Bienvenue sur depanGo',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.textDark,
-                ),
-              ),
-
+              const SizedBox(height: 30),
+              Text(_codeSent ? 'Vérification SMS' : 'Connexion / Inscription', textAlign: TextAlign.center, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppTheme.textDark)),
               const SizedBox(height: 8),
-
-              const Text(
-                'Trouvez un technicien certifié à proximité en quelques secondes',
+              Text(
+                _codeSent 
+                  ? 'Entrez le code à 6 chiffres envoyé au ${_phoneController.text}'
+                  : 'Connectez-vous pour continuer.',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
-                ),
+                style: const TextStyle(fontSize: 14, color: AppTheme.textMuted),
               ),
-
               const SizedBox(height: 40),
 
-              if (_errorMessage != null) ...[
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.red[50],
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.red[200]!),
+              if (!_codeSent) ...[
+                const Text('Numéro de Téléphone', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textDark)),
+                const SizedBox(height: 6),
+                InternationalPhoneNumberInput(
+                  onInputChanged: (PhoneNumber number) {
+                    _completePhoneNumber = number.phoneNumber ?? '';
+                  },
+                  searchBoxDecoration: InputDecoration(
+                    hintText: 'Rechercher un pays',
+                    prefixIcon: const Icon(LucideIcons.search, color: Colors.grey),
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
                   ),
-                  child: Row(
-                    children: [
-                      const Icon(LucideIcons.circle_alert,
-                          color: Colors.red, size: 20),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          _errorMessage!,
-                          style:
-                              const TextStyle(color: Colors.red, fontSize: 13),
-                        ),
-                      ),
-                    ],
+                  selectorConfig: const SelectorConfig(
+                    selectorType: PhoneInputSelectorType.BOTTOM_SHEET,
+                    useBottomSheetSafeArea: true,
+                    leadingPadding: 16,
+                  ),
+                  ignoreBlank: false,
+                  autoValidateMode: AutovalidateMode.disabled,
+                  selectorTextStyle: const TextStyle(color: AppTheme.textDark, fontSize: 16, fontWeight: FontWeight.w600, letterSpacing: 1.5),
+                  initialValue: PhoneNumber(isoCode: 'SN'),
+                  textFieldController: _phoneController,
+                  formatInput: true,
+                  keyboardType: const TextInputType.numberWithOptions(signed: true, decimal: true),
+                  inputDecoration: InputDecoration(
+                    hintText: '77 000 00 00',
+                    hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16, fontWeight: FontWeight.normal, letterSpacing: 1.5),
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(color: Colors.grey[200]!, width: 1.5),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(color: AppTheme.primaryEmerald, width: 2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 30),
+                SizedBox(
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: _loading ? null : _verifyPhone,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryEmerald,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: _loading
+                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                        : const Text('Continuer', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
                   ),
                 ),
                 const SizedBox(height: 20),
-              ],
-
-              // Email input
-              TextField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: InputDecoration(
-                  labelText: 'Adresse Email',
-                  prefixIcon: const Icon(LucideIcons.mail,
-                      color: AppTheme.primaryEmerald),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
+              ] else ...[
+                const SizedBox(height: 10),
+                Pinput(
+                  controller: _otpController,
+                  length: 6,
+                  defaultPinTheme: defaultPinTheme,
+                  focusedPinTheme: defaultPinTheme.copyDecorationWith(
+                    border: Border.all(color: AppTheme.primaryEmerald, width: 2),
                   ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(
-                        color: AppTheme.primaryEmerald, width: 2),
-                  ),
+                  onCompleted: (pin) {
+                    if (!_loading) _verifyOTP();
+                  },
                 ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Password input
-              TextField(
-                controller: _passwordController,
-                obscureText: true,
-                decoration: InputDecoration(
-                  labelText: 'Mot de passe',
-                  prefixIcon: const Icon(LucideIcons.lock,
-                      color: AppTheme.primaryEmerald),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(
-                        color: AppTheme.primaryEmerald, width: 2),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Submit Login Button
-              ElevatedButton(
-                onPressed: _isLoading ? null : _handleLogin,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryEmerald,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  elevation: 2,
-                ),
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 24,
-                        width: 24,
-                        child: CircularProgressIndicator(
-                            color: Colors.white, strokeWidth: 2.5),
-                      )
-                    : const Text(
-                        'Se Connecter',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Register Link
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    'Nouveau client ? ',
-                    style: TextStyle(color: Colors.grey, fontSize: 14),
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                            builder: (_) => const RegisterScreen()),
-                      );
-                    },
-                    child: const Text(
-                      'Créer un compte',
-                      style: TextStyle(
-                        color: AppTheme.primaryEmerald,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
+                const SizedBox(height: 40),
+                SizedBox(
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: _loading ? null : _verifyOTP,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryEmerald,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
+                    child: _loading
+                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                        : const Text('Valider le code', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 20),
+                TextButton(
+                  onPressed: () => setState(() {
+                    _codeSent = false;
+                    _otpController.clear();
+                  }),
+                  child: const Text('Modifier le numéro', style: TextStyle(color: AppTheme.textMuted)),
+                ),
+              ],
             ],
           ),
         ),

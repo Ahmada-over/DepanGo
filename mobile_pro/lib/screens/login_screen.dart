@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_lucide/flutter_lucide.dart';
+import 'package:intl_phone_number_input/intl_phone_number_input.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:pinput/pinput.dart';
 import '../core/theme.dart';
 import '../core/app_toast.dart';
 import '../providers/pro_providers.dart';
@@ -13,314 +16,249 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  bool _isRegister = false;
-  final _phoneController = TextEditingController();
-  final _passController = TextEditingController();
-  final _nameController = TextEditingController();
   
-  final List<String> _selectedCategories = ['cat_plumbing'];
-  String _selectedTransport = 'moto';
   bool _loading = false;
+  bool _codeSent = false;
+  String _verificationId = '';
+  
+  final _phoneController = TextEditingController();
+  String _completePhoneNumber = '';
+  
+  final _otpController = TextEditingController();
 
-  final List<Map<String, String>> _availableCategories = [
-    {'id': 'cat_plumbing', 'name': 'Plomberie Express', 'icon': ''},
-    {'id': 'cat_hvac', 'name': 'Climatisation & Froid', 'icon': '️'},
-    {'id': 'cat_electrical', 'name': 'Électricité Générale', 'icon': ''},
-    {'id': 'cat_appliances', 'name': 'Électroménager', 'icon': ''},
-  ];
-
-  Future<void> _handleSubmit() async {
-    final phone = _phoneController.text.trim();
-    final pass = _passController.text.trim();
-
-    if (phone.isEmpty || pass.isEmpty) {
-      AppToast.show(context, title: 'Champs requis', message: 'Veuillez renseigner votre téléphone et mot de passe.', type: AppToastType.warning);
+  Future<void> _verifyPhone() async {
+    final phone = _completePhoneNumber.isNotEmpty ? _completePhoneNumber : _phoneController.text.trim();
+    if (phone.isEmpty) {
+      AppToast.show(context, title: 'Erreur', message: 'Veuillez entrer votre numéro.', type: AppToastType.error);
       return;
     }
-
+    
     setState(() => _loading = true);
 
-    if (_isRegister) {
-      final name = _nameController.text.trim();
-      if (name.isEmpty) {
-        AppToast.show(context, title: 'Nom requis', message: 'Veuillez saisir votre nom complet.', type: AppToastType.warning);
-        setState(() => _loading = false);
-        return;
+    // Format phone if needed (Firebase requires country code, e.g. +221)
+    String formattedPhone = phone;
+    if (!formattedPhone.startsWith('+')) {
+      // Default to Senegal if no plus sign
+      if (formattedPhone.startsWith('221')) {
+        formattedPhone = '+$formattedPhone';
+      } else {
+        formattedPhone = '+221$formattedPhone';
       }
-      final success = await ref.read(authProvider.notifier).register(
-        name: name,
-        phone: phone,
-        password: pass,
-        categories: _selectedCategories,
-        transportMode: _selectedTransport,
+    }
+
+    try {
+      await FirebaseAuth.instance.verifyPhoneNumber(
+        phoneNumber: formattedPhone,
+        verificationCompleted: (PhoneAuthCredential credential) async {
+          // Auto-resolution on Android
+          await _signInWithCredential(credential);
+        },
+        verificationFailed: (FirebaseAuthException e) {
+          setState(() => _loading = false);
+          AppToast.show(context, title: 'Échec', message: 'Erreur: ${e.message}', type: AppToastType.error);
+        },
+        codeSent: (String verificationId, int? resendToken) {
+          setState(() {
+            _loading = false;
+            _codeSent = true;
+            _verificationId = verificationId;
+          });
+          AppToast.show(context, title: 'Code envoyé', message: 'Vérifiez vos SMS.', type: AppToastType.success);
+        },
+        codeAutoRetrievalTimeout: (String verificationId) {
+          _verificationId = verificationId;
+        },
       );
-      if (mounted) {
-        setState(() => _loading = false);
-        if (!success) {
-          AppToast.show(context, title: 'Erreur d\'inscription', message: 'Impossible de créer le compte. Vérifiez les informations.', type: AppToastType.error);
+    } catch (e) {
+      setState(() => _loading = false);
+      AppToast.show(context, title: 'Erreur', message: 'Impossible d\'envoyer le code.', type: AppToastType.error);
+    }
+  }
+
+  Future<void> _verifyOTP() async {
+    final code = _otpController.text.trim();
+    if (code.length != 6) return;
+    
+    setState(() => _loading = true);
+    try {
+      final credential = PhoneAuthProvider.credential(
+        verificationId: _verificationId,
+        smsCode: code,
+      );
+      await _signInWithCredential(credential);
+    } catch (e) {
+      setState(() => _loading = false);
+      AppToast.show(context, title: 'Code invalide', message: 'Le code saisi est incorrect.', type: AppToastType.error);
+    }
+  }
+
+  Future<void> _signInWithCredential(PhoneAuthCredential credential) async {
+    try {
+      final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+      final idToken = await userCredential.user?.getIdToken();
+      
+      if (idToken != null) {
+        final success = await ref.read(authProvider.notifier).firebaseLogin(idToken, name: null);
+        if (!success && mounted) {
+          AppToast.show(context, title: 'Erreur', message: 'Connexion échouée.', type: AppToastType.error);
         }
       }
-    } else {
-      final success = await ref.read(authProvider.notifier).login(phone, pass);
-      if (mounted) {
-        setState(() => _loading = false);
-        if (!success) {
-          AppToast.show(context, title: 'Échec de connexion', message: 'Identifiants invalides ou compte inexistant.', type: AppToastType.error);
-        }
-      }
+    } catch (e) {
+      AppToast.show(context, title: 'Erreur', message: 'Authentification Firebase échouée.', type: AppToastType.error);
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final defaultPinTheme = PinTheme(
+      width: 56,
+      height: 56,
+      textStyle: const TextStyle(fontSize: 20, color: Colors.white, fontWeight: FontWeight.w600),
+      decoration: BoxDecoration(
+        border: Border.all(color: ProTheme.textMuted),
+        borderRadius: BorderRadius.circular(12),
+        color: ProTheme.darkSurface,
+      ),
+    );
+
     return Scaffold(
       backgroundColor: ProTheme.darkBg,
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Pro Badge & App Brand
-                Center(
-                  child: Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: ProTheme.primaryEmerald.withValues(alpha: 0.4), width: 2),
-                      boxShadow: [
-                        BoxShadow(
-                          color: ProTheme.primaryEmerald.withValues(alpha: 0.2),
-                          blurRadius: 15,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    child: ClipOval(
-                      child: Image.asset(
-                        'assets/images/logo.jpg',
-                        fit: BoxFit.contain,
-                      ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 40),
+              Center(
+                child: Hero(
+                  tag: 'pro_logo',
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Image.asset(
+                      'assets/images/logo.jpg',
+                      height: 100,
+                      width: 100,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Icon(LucideIcons.wrench, size: 80, color: ProTheme.primaryEmerald),
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
-                const Text(
-                  'TechConnect Pro',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w900,
-                    color: ProTheme.textWhite,
-                    letterSpacing: -0.5,
+              ),
+              const SizedBox(height: 30),
+              Text(_codeSent ? 'Vérification SMS' : 'Espace Artisan', textAlign: TextAlign.center, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: ProTheme.textWhite)),
+              const SizedBox(height: 8),
+              Text(
+                _codeSent 
+                  ? 'Entrez le code à 6 chiffres envoyé au ${_phoneController.text}'
+                  : 'Connectez-vous pour recevoir des missions.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 14, color: ProTheme.textMuted),
+              ),
+              const SizedBox(height: 40),
+
+              if (!_codeSent) ...[
+                const Text('Numéro de Téléphone', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: ProTheme.textWhite)),
+                const SizedBox(height: 6),
+                InternationalPhoneNumberInput(
+                  onInputChanged: (PhoneNumber number) {
+                    _completePhoneNumber = number.phoneNumber ?? '';
+                  },
+                  searchBoxDecoration: InputDecoration(
+                    hintText: 'Rechercher un pays',
+                    prefixIcon: const Icon(LucideIcons.search, color: Colors.grey),
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                  selectorConfig: const SelectorConfig(
+                    selectorType: PhoneInputSelectorType.BOTTOM_SHEET,
+                    useBottomSheetSafeArea: true,
+                    leadingPadding: 16,
+                  ),
+                  ignoreBlank: false,
+                  autoValidateMode: AutovalidateMode.disabled,
+                  selectorTextStyle: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600, letterSpacing: 1.5),
+                  initialValue: PhoneNumber(isoCode: 'SN'),
+                  textFieldController: _phoneController,
+                  formatInput: true,
+                  keyboardType: const TextInputType.numberWithOptions(signed: true, decimal: true),
+                  textStyle: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600, letterSpacing: 1.5),
+                  inputDecoration: InputDecoration(
+                    hintText: '77 000 00 00',
+                    hintStyle: const TextStyle(color: ProTheme.textMuted, fontSize: 16, fontWeight: FontWeight.normal, letterSpacing: 1.5),
+                    filled: true,
+                    fillColor: ProTheme.darkSurface,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(color: ProTheme.darkBorder, width: 1.5),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(color: ProTheme.primaryEmerald, width: 2),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Espace Techniciens & Artisans • Dakar',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 13, color: ProTheme.textMuted),
+                const SizedBox(height: 30),
+                SizedBox(
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: _loading ? null : _verifyPhone,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: ProTheme.primaryEmerald,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: _loading
+                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                        : const Text('Continuer', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                  ),
                 ),
-                const SizedBox(height: 32),
-
-                // Form Card
-                Container(
-                  padding: const EdgeInsets.all(22),
-                  decoration: BoxDecoration(
-                    color: ProTheme.darkCard,
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: ProTheme.darkBorder),
+                const SizedBox(height: 20),
+              ] else ...[
+                const SizedBox(height: 10),
+                Pinput(
+                  controller: _otpController,
+                  length: 6,
+                  defaultPinTheme: defaultPinTheme,
+                  focusedPinTheme: defaultPinTheme.copyDecorationWith(
+                    border: Border.all(color: ProTheme.primaryEmerald, width: 2),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Mode Selector (Connexion / Inscription)
-                      Row(
-                        children: [
-                          Expanded(
-                            child: InkWell(
-                              onTap: () => setState(() => _isRegister = false),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 10),
-                                decoration: BoxDecoration(
-                                  color: !_isRegister ? ProTheme.primaryEmerald : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  'Connexion',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: !_isRegister ? Colors.white : ProTheme.textMuted,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: InkWell(
-                              onTap: () => setState(() => _isRegister = true),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 10),
-                                decoration: BoxDecoration(
-                                  color: _isRegister ? ProTheme.primaryEmerald : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  'Rejoindre le Réseau',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: _isRegister ? Colors.white : ProTheme.textMuted,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-
-                      if (_isRegister) ...[
-                        const Text('Nom complet ou Raison sociale', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: ProTheme.textWhite)),
-                        const SizedBox(height: 6),
-                        TextField(
-                          controller: _nameController,
-                          style: const TextStyle(color: Colors.white, fontSize: 14),
-                          decoration: InputDecoration(
-                            hintText: 'Ex: Ibrahima Diallo',
-                            hintStyle: const TextStyle(color: ProTheme.textMuted, fontSize: 13),
-                            filled: true,
-                            fillColor: ProTheme.darkSurface,
-                            prefixIcon: const Icon(LucideIcons.user, color: ProTheme.primaryLight, size: 20),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: ProTheme.darkBorder)),
-                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: ProTheme.darkBorder)),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                      ],
-
-                      // Phone Field
-                      const Text('Numéro de Téléphone', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: ProTheme.textWhite)),
-                      const SizedBox(height: 6),
-                      TextField(
-                        controller: _phoneController,
-                        keyboardType: TextInputType.phone,
-                        style: const TextStyle(color: Colors.white, fontSize: 14),
-                        decoration: InputDecoration(
-                          hintText: '+221 77 000 00 00',
-                          hintStyle: const TextStyle(color: ProTheme.textMuted, fontSize: 13),
-                          filled: true,
-                          fillColor: ProTheme.darkSurface,
-                          prefixIcon: const Icon(LucideIcons.smartphone, color: ProTheme.primaryLight, size: 20),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: ProTheme.darkBorder)),
-                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: ProTheme.darkBorder)),
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-
-                      // Password Field
-                      const Text('Mot de Passe', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: ProTheme.textWhite)),
-                      const SizedBox(height: 6),
-                      TextField(
-                        controller: _passController,
-                        obscureText: true,
-                        style: const TextStyle(color: Colors.white, fontSize: 14),
-                        decoration: InputDecoration(
-                          hintText: '••••••••',
-                          hintStyle: const TextStyle(color: ProTheme.textMuted, fontSize: 13),
-                          filled: true,
-                          fillColor: ProTheme.darkSurface,
-                          prefixIcon: const Icon(LucideIcons.lock, color: ProTheme.primaryLight, size: 20),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: ProTheme.darkBorder)),
-                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: ProTheme.darkBorder)),
-                        ),
-                      ),
-
-                      if (_isRegister) ...[
-                        const SizedBox(height: 16),
-                        const Text('Spécialités de Dépannage', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: ProTheme.textWhite)),
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: _availableCategories.map((cat) {
-                            final isSel = _selectedCategories.contains(cat['id']);
-                            return FilterChip(
-                              label: Text('${cat['icon']} ${cat['name']}', style: TextStyle(fontSize: 11, color: isSel ? Colors.white : ProTheme.textMuted)),
-                              selected: isSel,
-                              selectedColor: ProTheme.primaryEmerald,
-                              backgroundColor: ProTheme.darkSurface,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10), side: BorderSide(color: isSel ? ProTheme.primaryLight : ProTheme.darkBorder)),
-                              onSelected: (selected) {
-                                setState(() {
-                                  if (selected) {
-                                    _selectedCategories.add(cat['id']!);
-                                  } else if (_selectedCategories.length > 1) {
-                                    _selectedCategories.remove(cat['id']);
-                                  }
-                                });
-                              },
-                            );
-                          }).toList(),
-                        ),
-                        const SizedBox(height: 14),
-                        const Text('Mode de Déplacement', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: ProTheme.textWhite)),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: ChoiceChip(
-                                label: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(LucideIcons.bike, size: 16), SizedBox(width: 6), Text('Moto')]),
-                                selected: _selectedTransport == 'moto',
-                                selectedColor: ProTheme.primaryEmerald,
-                                backgroundColor: ProTheme.darkSurface,
-                                onSelected: (_) => setState(() => _selectedTransport = 'moto'),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: ChoiceChip(
-                                label: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(LucideIcons.car, size: 16), SizedBox(width: 6), Text('Voiture')]),
-                                selected: _selectedTransport == 'voiture',
-                                selectedColor: const Color(0xFF1E40AF),
-                                backgroundColor: ProTheme.darkSurface,
-                                onSelected: (_) => setState(() => _selectedTransport = 'voiture'),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-
-                      const SizedBox(height: 24),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton(
-                          onPressed: _loading ? null : _handleSubmit,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: ProTheme.primaryEmerald,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          ),
-                          child: _loading
-                              ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                              : Text(
-                                  _isRegister ? 'Valider mon Inscription' : 'Se Connecter',
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                                ),
-                        ),
-                      ),
-                    ],
+                  onCompleted: (pin) {
+                    if (!_loading) _verifyOTP();
+                  },
+                ),
+                const SizedBox(height: 40),
+                SizedBox(
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: _loading ? null : _verifyOTP,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: ProTheme.primaryEmerald,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: _loading
+                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                        : const Text('Valider le code', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
                   ),
+                ),
+                const SizedBox(height: 20),
+                TextButton(
+                  onPressed: () => setState(() {
+                    _codeSent = false;
+                    _otpController.clear();
+                  }),
+                  child: const Text('Modifier le numéro', style: TextStyle(color: ProTheme.textMuted)),
                 ),
               ],
-            ),
+            ],
           ),
         ),
       ),

@@ -3,7 +3,7 @@ import '../../../core/theme.dart';
 
 class Step4Route extends StatefulWidget {
   final VoidCallback onNext;
-  const Step4Route({Key? key, required this.onNext}) : super(key: key);
+  const Step4Route({super.key, required this.onNext});
 
   @override
   State<Step4Route> createState() => _Step4RouteState();
@@ -59,9 +59,9 @@ class _Step4RouteState extends State<Step4Route> with SingleTickerProviderStateM
               color: AppTheme.bgLight,
               borderRadius: BorderRadius.circular(20),
             ),
-            child: Row(
+            child: const Row(
               mainAxisSize: MainAxisSize.min,
-              children: const [
+              children: [
                 Icon(Icons.timer, size: 16, color: AppTheme.textMuted),
                 SizedBox(width: 8),
                 Text(
@@ -126,7 +126,7 @@ class _Step4RouteState extends State<Step4Route> with SingleTickerProviderStateM
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 10,
                         )
                       ],
@@ -150,7 +150,7 @@ class _Step4RouteState extends State<Step4Route> with SingleTickerProviderStateM
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: AppTheme.primaryEmerald.withOpacity(0.4),
+                              color: AppTheme.primaryEmerald.withValues(alpha: 0.4),
                               blurRadius: 8,
                               offset: const Offset(0, 4),
                             )

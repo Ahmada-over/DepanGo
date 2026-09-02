@@ -114,10 +114,14 @@ class BookingsHistoryScreen extends ConsumerWidget {
     // Status color
     Color statusColor = Colors.grey;
     if (['matched', 'in_progress', 'on_site', 'arrived']
-        .contains(booking.status)) statusColor = AppTheme.primaryEmerald;
+        .contains(booking.status)) {
+      statusColor = AppTheme.primaryEmerald;
+    }
     if (booking.status == 'completed') statusColor = AppTheme.primaryEmerald;
     if (['cancelled', 'expired', 'no_technician_found']
-        .contains(booking.status)) statusColor = Colors.redAccent;
+        .contains(booking.status)) {
+      statusColor = Colors.redAccent;
+    }
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -197,10 +201,10 @@ class BookingsHistoryScreen extends ConsumerWidget {
                 ),
                 Row(
                   children: [
-                    CircleAvatar(
+                    const CircleAvatar(
                       radius: 16,
                       backgroundColor: AppTheme.primaryEmerald,
-                      child: const Icon(LucideIcons.user,
+                      child: Icon(LucideIcons.user,
                           size: 16, color: Colors.white),
                     ),
                     const SizedBox(width: 12),
@@ -209,11 +213,11 @@ class BookingsHistoryScreen extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(dynamicTechName,
-                              style: TextStyle(
+                              style: const TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
                                   color: AppTheme.primaryDark)),
-                          Text('Cliquez pour suivre',
+                          const Text('Cliquez pour suivre',
                               style:
                                   TextStyle(fontSize: 11, color: Colors.grey)),
                         ],

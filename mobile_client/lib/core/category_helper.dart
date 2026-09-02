@@ -65,14 +65,16 @@ class CategoryHelper {
   }
 
   static Color getCategoryColor(String? categoryId) {
-    if (categoryId == null || categoryId.isEmpty)
+    if (categoryId == null || categoryId.isEmpty) {
       return AppTheme.primaryEmerald;
+    }
     return _categories[categoryId]?['color'] ?? AppTheme.primaryEmerald;
   }
 
   static String getCategoryDescription(String? categoryId) {
-    if (categoryId == null || categoryId.isEmpty)
+    if (categoryId == null || categoryId.isEmpty) {
       return 'Intervention technique de dépannage.';
+    }
     return _categories[categoryId]?['description'] ??
         'Intervention technique de dépannage.';
   }

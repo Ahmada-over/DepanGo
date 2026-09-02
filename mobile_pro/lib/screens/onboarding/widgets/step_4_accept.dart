@@ -3,7 +3,7 @@ import '../../../core/theme.dart';
 
 class Step4Accept extends StatefulWidget {
   final VoidCallback onNext;
-  const Step4Accept({Key? key, required this.onNext}) : super(key: key);
+  const Step4Accept({super.key, required this.onNext});
 
   @override
   State<Step4Accept> createState() => _Step4AcceptState();
@@ -42,12 +42,12 @@ class _Step4AcceptState extends State<Step4Accept> with SingleTickerProviderStat
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Row(
+          const Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.check_circle, color: ProTheme.primaryEmerald, size: 30),
-              const SizedBox(width: 12),
-              const Text(
+              Icon(Icons.check_circle, color: ProTheme.primaryEmerald, size: 30),
+              SizedBox(width: 12),
+              Text(
                 "Mission acceptée",
                 style: TextStyle(
                   fontSize: 24,
@@ -77,7 +77,7 @@ class _Step4AcceptState extends State<Step4Accept> with SingleTickerProviderStat
                       width: 160,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: ProTheme.primaryEmerald.withOpacity(0.5),
+                        color: ProTheme.primaryEmerald.withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -115,9 +115,9 @@ class _Step4AcceptState extends State<Step4Accept> with SingleTickerProviderStat
           const SizedBox(height: 32),
           FadeTransition(
             opacity: _fadeController,
-            child: Column(
+            child: const Column(
               children: [
-                const Text(
+                Text(
                   "Direction client",
                   style: TextStyle(
                     fontSize: 18,
@@ -125,8 +125,8 @@ class _Step4AcceptState extends State<Step4Accept> with SingleTickerProviderStat
                     color: ProTheme.textWhite,
                   ),
                 ),
-                const SizedBox(height: 8),
-                const Text(
+                SizedBox(height: 8),
+                Text(
                   "2,4 km • 8 min",
                   style: TextStyle(
                     fontSize: 16,

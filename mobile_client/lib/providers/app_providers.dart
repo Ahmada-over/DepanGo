@@ -45,6 +45,38 @@ class AuthNotifier extends StateNotifier<UserModel?> {
   bool isLoading = false;
   String? errorMessage;
 
+  Future<bool> firebaseLogin(String idToken, {String? name}) async {
+    isLoading = true;
+    errorMessage = null;
+    state = state; // trigger rebuild if needed, though not strictly required
+    try {
+      final dio = ref.read(apiClientProvider);
+      final res = await dio.post('/auth/firebase-login', data: {
+        'id_token': idToken,
+        if (name != null) 'name': name,
+        'role': 'client',
+      });
+      if (res.statusCode == 200) {
+        final data = res.data;
+        final user = UserModel.fromJson(data['user'], token: data['access_token']);
+        state = user;
+        
+        final sessionData = data['user'];
+        sessionData['token'] = data['access_token'];
+        await prefs.setString('user_session', jsonEncode(sessionData));
+        
+        isLoading = false;
+        return true;
+      }
+    } catch (e) {
+      debugPrint('[Auth] Firebase Login error: $e');
+      errorMessage = e.toString();
+    }
+    isLoading = false;
+    state = state; // trigger rebuild
+    return false;
+  }
+
   Future<bool> login(String email, String password) async {
     isLoading = true;
     errorMessage = null;
@@ -160,6 +192,16 @@ class AuthNotifier extends StateNotifier<UserModel?> {
   }
 
   String? get token => state?.token;
+
+  
+  void updateUser(Map<String, dynamic> data) async {
+    final token = state?.token ?? '';
+    final user = UserModel.fromJson(data, token: token);
+    state = user;
+    final sessionData = data;
+    sessionData['token'] = token;
+    await prefs.setString('user_session', jsonEncode(sessionData));
+  }
 
   void logout() {
     state = null;

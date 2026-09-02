@@ -41,3 +41,8 @@ mobile_client/build/
 mobile_client/.flutter-plugins
 mobile_client/.flutter-plugins-dependencies
 firebase-credentials.json
+
+# ===== Firebase Secrets =====
+firebase_options.dart
+google-services.json
+GoogleService-Info.plist

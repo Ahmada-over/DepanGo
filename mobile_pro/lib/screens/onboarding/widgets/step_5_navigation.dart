@@ -3,7 +3,7 @@ import '../../../core/theme.dart';
 
 class Step5Navigation extends StatefulWidget {
   final VoidCallback onNext;
-  const Step5Navigation({Key? key, required this.onNext}) : super(key: key);
+  const Step5Navigation({super.key, required this.onNext});
 
   @override
   State<Step5Navigation> createState() => _Step5NavigationState();
@@ -142,7 +142,7 @@ class _Step5NavigationState extends State<Step5Navigation> with SingleTickerProv
                           border: Border.all(color: Colors.white, width: 2),
                           boxShadow: [
                             BoxShadow(
-                              color: ProTheme.primaryEmerald.withOpacity(0.4),
+                              color: ProTheme.primaryEmerald.withValues(alpha: 0.4),
                               blurRadius: 8,
                               offset: const Offset(0, 4),
                             )

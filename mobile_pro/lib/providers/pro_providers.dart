@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../services/biometric_service.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -12,6 +13,7 @@ import '../core/app_toast.dart';
 import '../core/config.dart';
 import '../models/models.dart';
 import 'connectivity_provider.dart';
+import '../services/local_notification_service.dart';
 
 // --- 1. Auth Provider ---
 final authProvider = StateNotifierProvider<AuthNotifier, UserModel?>((ref) {
@@ -90,6 +92,30 @@ class AuthNotifier extends StateNotifier<UserModel?> {
     return false;
   }
 
+  Future<bool> firebaseLogin(String idToken, {String? name}) async {
+    try {
+      final dio = _ref.read(apiClientProvider);
+      final res = await dio.post('/auth/firebase-login', data: {
+        'id_token': idToken,
+        if (name != null) 'name': name,
+        'role': 'technician',
+      });
+      if (res.statusCode == 200) {
+        final data = res.data;
+        token = data['access_token'];
+        state = UserModel.fromJson(data['user']);
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('tech_token', token!);
+        await prefs.setString('tech_user', jsonEncode(data['user']));
+        _ref.read(proWebSocketProvider).connect();
+        return true;
+      }
+    } catch (e) {
+      debugPrint('[Auth] Firebase Login error: $e');
+    }
+    return false;
+  }
+
   Future<void> logout() async {
     token = null;
     state = null;
@@ -153,12 +179,24 @@ class OnlineStatusNotifier extends StateNotifier<bool> {
     _startGpsBroadcast();
   }
 
-  void toggleOnline() {
-    state = !state;
-    if (state) {
+  Future<void> toggleOnline() async {
+    final newState = !state;
+    state = newState;
+    if (newState) {
       _startGpsBroadcast();
     } else {
       _gpsTimer?.cancel();
+    }
+    try {
+      final dio = _ref.read(apiClientProvider);
+      final pos = _ref.read(liveLocationProvider);
+      await dio.patch('/technicians/me/availability', data: {
+        'status': newState ? 'online' : 'offline',
+        'latitude': pos?.latitude ?? 0.0,
+        'longitude': pos?.longitude ?? 0.0,
+      });
+    } catch (e) {
+      debugPrint('[Availability] Error: $e');
     }
   }
 
@@ -243,6 +281,12 @@ class IncomingOfferNotifier extends StateNotifier<MatchOfferModel?> {
           '${offer.categoryName} • ${offer.addressText} (~${offer.distanceKm.toStringAsFixed(1)} km)',
       type: AppToastType.warning,
       duration: const Duration(seconds: 6),
+    );
+
+    LocalNotificationService.instance.showNotification(
+      title: '🚨 Demande d\'Intervention Reçue !',
+      body: '${offer.categoryName} • ${offer.addressText} (~${offer.distanceKm.toStringAsFixed(1)} km)',
+      payload: offer.bookingId,
     );
 
     _countdownTimer?.cancel();
@@ -364,6 +408,21 @@ class ActiveMissionNotifier extends StateNotifier<BookingModel?> {
     if (state == null) return false;
     final bookingId = state!.id;
 
+    // --- BIOMETRIC MIDDLEWARE (OFFLINE RESILIENCY) ---
+    // On exige une authentification locale avant toute action sensible.
+    bool canProceed = await biometricService.authenticateAction(
+        'Veuillez vous authentifier pour valider cette étape d\'itinéraire.');
+    if (!canProceed) {
+      AppToast.show(
+        null,
+        title: 'Action refusée',
+        message: 'Authentification biométrique requise pour valider cette étape.',
+        type: AppToastType.error,
+      );
+      return false;
+    }
+    // --- FIN BIOMETRIC MIDDLEWARE ---
+
     try {
       final user = _ref.read(authProvider);
       final dio = _ref.read(apiClientProvider);
@@ -382,6 +441,9 @@ class ActiveMissionNotifier extends StateNotifier<BookingModel?> {
       }
     } catch (e) {
       debugPrint('[ActiveMission] Update status error: $e');
+      // If we are offline, we could queue the status update here!
+      // But for now, we just return false. (Offline resilience means they could pass the biometric check 
+      // even if network is down, and we queue the request for later).
     }
     return false;
   }
@@ -465,6 +527,10 @@ class ProWebSocketService {
                 title: 'Mise à jour d\'intervention',
                 message: 'Le statut de la mission a changé.',
                 type: AppToastType.info,
+              );
+              LocalNotificationService.instance.showNotification(
+                title: 'Mise à jour d\'intervention',
+                body: 'Le statut de la mission a changé.',
               );
             }
           } catch (e) {

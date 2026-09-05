@@ -3,7 +3,7 @@ import '../../../core/theme.dart';
 
 class Step1Join extends StatefulWidget {
   final VoidCallback onNext;
-  const Step1Join({Key? key, required this.onNext}) : super(key: key);
+  const Step1Join({super.key, required this.onNext});
 
   @override
   State<Step1Join> createState() => _Step1JoinState();

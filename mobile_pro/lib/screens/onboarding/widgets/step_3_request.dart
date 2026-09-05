@@ -3,7 +3,7 @@ import '../../../core/theme.dart';
 
 class Step3Request extends StatefulWidget {
   final VoidCallback onNext;
-  const Step3Request({Key? key, required this.onNext}) : super(key: key);
+  const Step3Request({super.key, required this.onNext});
 
   @override
   State<Step3Request> createState() => _Step3RequestState();
@@ -63,10 +63,10 @@ class _Step3RequestState extends State<Step3Request> with SingleTickerProviderSt
               decoration: BoxDecoration(
                 color: ProTheme.darkCard,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: ProTheme.primaryEmerald.withOpacity(0.5)),
+                border: Border.all(color: ProTheme.primaryEmerald.withValues(alpha: 0.5)),
                 boxShadow: [
                   BoxShadow(
-                    color: ProTheme.primaryEmerald.withOpacity(0.1),
+                    color: ProTheme.primaryEmerald.withValues(alpha: 0.1),
                     blurRadius: 20,
                     spreadRadius: 2,
                   ),
@@ -81,7 +81,7 @@ class _Step3RequestState extends State<Step3Request> with SingleTickerProviderSt
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: ProTheme.primaryEmerald.withOpacity(0.2),
+                          color: ProTheme.primaryEmerald.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Text(

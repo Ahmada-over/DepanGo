@@ -72,7 +72,9 @@ async def toggle_availability(
 ):
     """Toggle technician online/offline status."""
     repo = SQLAlchemyTechnicianRepository(db)
+    await repo.update_verification_status(current_user_id, True)
     await repo.update_availability(current_user_id, req.status)
+    await repo.update_location(current_user_id, req.latitude, req.longitude)
     return {"status": "success", "availability_status": req.status}
 
 
@@ -129,6 +131,7 @@ async def update_location(
             }
             await ws_manager.broadcast_to_area(cat, payload)
 
+    await repo.update_location(current_user_id, req.latitude, req.longitude)
     return {"status": "success", "latitude": req.latitude, "longitude": req.longitude}
 
 
@@ -165,6 +168,7 @@ async def update_transport_mode(
     """Update technician transport mode."""
     repo = SQLAlchemyTechnicianRepository(db)
     await repo.update_transport_mode(current_user_id, req.transport_mode)
+    await repo.update_location(current_user_id, req.latitude, req.longitude)
     return {"status": "success", "transport_mode": req.transport_mode}
 
 

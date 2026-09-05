@@ -3,7 +3,7 @@ from typing import Optional, List
 from app.domain.models import (
     UserDomain, TechnicianProfileDomain, ServiceCategoryDomain,
     BookingDomain, MessageDomain, ReviewDomain, PaymentDomain,
-    SubscriptionDomain
+    SubscriptionDomain, WalletDomain, WalletTransactionDomain
 )
 
 class UserRepositoryPort(ABC):
@@ -102,3 +102,23 @@ class ReviewRepositoryPort(ABC):
 class PaymentRepositoryPort(ABC):
     @abstractmethod
     async def create(self, payment: PaymentDomain) -> PaymentDomain: pass
+
+
+class WalletRepositoryPort(ABC):
+    @abstractmethod
+    async def create(self, wallet: WalletDomain) -> WalletDomain: pass
+    
+    @abstractmethod
+    async def get_by_technician_id(self, technician_id: str) -> Optional[WalletDomain]: pass
+    
+    @abstractmethod
+    async def debit(self, technician_id: str, amount: float, reason: str, booking_id: Optional[str] = None) -> WalletDomain: pass
+    
+    @abstractmethod
+    async def credit(self, technician_id: str, amount: float, reason: str, booking_id: Optional[str] = None) -> WalletDomain: pass
+    
+    @abstractmethod
+    async def get_transactions(self, wallet_id: str) -> List[WalletTransactionDomain]: pass
+    
+    @abstractmethod
+    async def count_refunds_this_month(self, technician_id: str) -> int: pass

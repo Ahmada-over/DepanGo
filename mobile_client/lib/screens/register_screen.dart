@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/theme.dart';
 import '../core/app_toast.dart';
@@ -96,7 +97,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
+          icon: const Icon(LucideIcons.chevron_left,
               color: AppTheme.textDark),
           onPressed: () => Navigator.of(context).pop(),
         ),
@@ -138,7 +139,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.error_outline,
+                      const Icon(LucideIcons.circle_alert,
                           color: Colors.red, size: 20),
                       const SizedBox(width: 10),
                       Expanded(
@@ -159,7 +160,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 controller: _nameController,
                 decoration: InputDecoration(
                   labelText: 'Nom Complet',
-                  prefixIcon: const Icon(Icons.person_outline,
+                  prefixIcon: const Icon(LucideIcons.user,
                       color: AppTheme.primaryEmerald),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
@@ -184,7 +185,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 keyboardType: TextInputType.emailAddress,
                 decoration: InputDecoration(
                   labelText: 'Adresse Email',
-                  prefixIcon: const Icon(Icons.email_outlined,
+                  prefixIcon: const Icon(LucideIcons.mail,
                       color: AppTheme.primaryEmerald),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
@@ -209,7 +210,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 keyboardType: TextInputType.phone,
                 decoration: InputDecoration(
                   labelText: 'Numéro de Téléphone',
-                  prefixIcon: const Icon(Icons.phone_outlined,
+                  prefixIcon: const Icon(LucideIcons.phone,
                       color: AppTheme.primaryEmerald),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
@@ -234,7 +235,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 obscureText: true,
                 decoration: InputDecoration(
                   labelText: 'Mot de passe',
-                  prefixIcon: const Icon(Icons.lock_outline,
+                  prefixIcon: const Icon(LucideIcons.lock,
                       color: AppTheme.primaryEmerald),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),

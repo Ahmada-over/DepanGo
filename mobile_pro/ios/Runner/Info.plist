@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Techconnect Pro</string>
+	<string>depango pro</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -15,7 +15,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>techconnect_pro</string>
+	<string>depango pro</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -43,7 +43,9 @@
 					<string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
 					<key>UISceneStoryboardFile</key>
 					<string>Main</string>
-				</dict>
+					<key>NSFaceIDUsageDescription</key>
+	<string>Cette application a besoin de Face ID pour confirmer de manière sécurisée votre identité lors des interventions sur le terrain.</string>
+</dict>
 			</array>
 		</dict>
 	</dict>
@@ -74,5 +76,16 @@
 	<string>Prenez votre photo de profil artisan et vos justificatifs professionnels.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Accédez à votre galerie pour choisir votre photo de profil artisan.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.554023519932-2kt0pudcs4ek3d3i1bn0drmdngmm1rce</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

@@ -1,4 +1,5 @@
 import 'dart:ui' as ui;
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,6 +17,7 @@ import '../core/config.dart';
 import '../core/category_helper.dart';
 import '../models/models.dart';
 import '../providers/app_providers.dart';
+import 'quote_review_screen.dart';
 
 class TrackingChatScreen extends ConsumerStatefulWidget {
   final String? preferredTechnicianName;
@@ -123,17 +125,17 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
     if (!mounted) return;
     try {
       final moto = await _createCustomMarkerBitmap(
-        icon: Icons.two_wheeler_rounded,
+        icon: LucideIcons.bike,
         primaryColor: AppTheme.primaryEmerald, // Emerald
         iconColor: Colors.white,
       );
       final car = await _createCustomMarkerBitmap(
-        icon: Icons.directions_car_rounded,
+        icon: LucideIcons.car,
         primaryColor: AppTheme.primaryDark, // Deep Blue
         iconColor: Colors.white,
       );
       final dest = await _createCustomMarkerBitmap(
-        icon: Icons.person_pin_circle_rounded,
+        icon: LucideIcons.map_pin,
         primaryColor: Colors.redAccent, // Red
         iconColor: Colors.white,
       );
@@ -336,8 +338,9 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
   }
 
   void _resolveBookingAddress(BookingModel booking) async {
-    if (_lastGeocodedBookingId == booking.id && _resolvedAddress != null)
+    if (_lastGeocodedBookingId == booking.id && _resolvedAddress != null) {
       return;
+    }
     _lastGeocodedBookingId = booking.id;
 
     if (booking.addressText.isNotEmpty &&
@@ -354,14 +357,19 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
       if (placemarks.isNotEmpty && mounted) {
         final p = placemarks.first;
         final parts = <String>[];
-        if (p.subLocality != null && p.subLocality!.isNotEmpty)
+        if (p.subLocality != null && p.subLocality!.isNotEmpty) {
           parts.add(p.subLocality!);
+        }
         if (p.street != null &&
             p.street!.isNotEmpty &&
-            p.street != p.subLocality) parts.add(p.street!);
+            p.street != p.subLocality) {
+          parts.add(p.street!);
+        }
         if (p.locality != null &&
             p.locality!.isNotEmpty &&
-            !parts.contains(p.locality)) parts.add(p.locality!);
+            !parts.contains(p.locality)) {
+          parts.add(p.locality!);
+        }
 
         final dynamicAddress = parts.isNotEmpty
             ? parts.join(', ')
@@ -392,8 +400,9 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
   String _getStatusTitle(String status) {
     if (status == 'matched') return 'Technicien Assigné';
     if (status == 'in_progress') return 'Technicien En Route';
-    if (status == 'on_site' || status == 'arrived')
+    if (status == 'on_site' || status == 'arrived') {
       return 'Technicien Sur Place';
+    }
     if (status == 'completed') return 'Intervention Clôturée';
     if (status == 'no_technician_found') return 'Aucun technicien';
     if (status == 'expired') return 'Demande Expirée';
@@ -669,7 +678,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
             child: Row(
               children: [
                 MapFloatingButton(
-                  icon: Icons.arrow_back_rounded,
+                  icon: LucideIcons.arrow_left,
                   onPressed: () => Navigator.pop(context),
                 ),
                 const SizedBox(width: 10),
@@ -677,9 +686,9 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                   child: MapInfoChip(
                     icon: status == 'in_progress'
                         ? (techTransport == 'voiture'
-                            ? Icons.directions_car_rounded
-                            : Icons.two_wheeler_rounded)
-                        : Icons.info_outline_rounded,
+                            ? LucideIcons.car
+                            : LucideIcons.bike)
+                        : LucideIcons.info,
                     title: _getStatusTitle(status),
                     subtitle: _getStatusDescription(
                         status, dynamicEtaText, dynamicDistanceText),
@@ -801,7 +810,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                                               overflow: TextOverflow.ellipsis),
                                         ),
                                         const SizedBox(width: 4),
-                                        const Icon(Icons.verified,
+                                        const Icon(LucideIcons.badge_check,
                                             size: 16,
                                             color: AppTheme.primaryEmerald),
                                       ],
@@ -824,7 +833,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                                                 techTransport == 'voiture'
                                                     ? Icons
                                                         .directions_car_rounded
-                                                    : Icons.two_wheeler_rounded,
+                                                    : LucideIcons.bike,
                                                 size: 13,
                                                 color: techTransport ==
                                                         'voiture'
@@ -849,7 +858,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                                           ),
                                         ),
                                         const SizedBox(width: 8),
-                                        const Icon(Icons.star,
+                                        const Icon(LucideIcons.star,
                                             size: 13, color: Colors.amber),
                                         Text(
                                             ' ${techRating.toStringAsFixed(1)}',
@@ -899,7 +908,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                             height: 46,
                             child: ElevatedButton.icon(
                               onPressed: () => _makePhoneCall(techPhone),
-                              icon: const Icon(Icons.phone_in_talk_rounded,
+                              icon: const Icon(LucideIcons.phone_call,
                                   color: Colors.white, size: 20),
                               label: Text(
                                 'Appeler le Technicien ($techPhone)',
@@ -916,6 +925,37 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                               ),
                             ),
                           ),
+                          if (activeBooking != null) ...[
+                            const SizedBox(height: 10),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 46,
+                              child: OutlinedButton.icon(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => QuoteReviewScreen(bookingId: activeBooking.id),
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(LucideIcons.file_text,
+                                    color: AppTheme.primaryEmerald, size: 18),
+                                label: const Text(
+                                  'Consulter / Valider le Devis',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                      color: AppTheme.primaryDark),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  side: const BorderSide(color: AppTheme.primaryEmerald, width: 1.5),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12)),
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -1090,7 +1130,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                 children: List.generate(5, (idx) {
                   return IconButton(
                     icon: Icon(
-                      idx < selectedStars ? Icons.star : Icons.star_border,
+                      idx < selectedStars ? LucideIcons.star : LucideIcons.star,
                       color: Colors.amber,
                       size: 32,
                     ),
@@ -1167,7 +1207,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                 decoration: const InputDecoration(
                     border: OutlineInputBorder(), isDense: true),
                 hint: const Text('Sélectionner un motif'),
-                value: selectedReason,
+                initialValue: selectedReason,
                 items: reasons
                     .map((r) => DropdownMenuItem(
                         value: r,
@@ -1374,7 +1414,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                         height: 54,
                         fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) => const Icon(
-                            Icons.broken_image_rounded,
+                            LucideIcons.image_off,
                             size: 40,
                             color: Colors.grey),
                       ),
@@ -1422,7 +1462,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Icon(
-                            Icons.location_on_rounded,
+                            LucideIcons.map_pin,
                             size: 16,
                             color: AppTheme.primaryEmerald,
                           ),
@@ -1449,7 +1489,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.near_me_rounded,
+                            const Icon(LucideIcons.navigation,
                                 size: 12, color: Colors.deepOrange),
                             const SizedBox(width: 4),
                             Text(
@@ -1509,7 +1549,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                           child: const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.center_focus_strong_rounded,
+                              Icon(LucideIcons.crosshair,
                                   size: 14, color: AppTheme.primaryEmerald),
                               SizedBox(width: 6),
                               Text(
@@ -1548,7 +1588,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                         ),
                         child: const Row(
                           children: [
-                            Icon(Icons.copy_rounded,
+                            Icon(LucideIcons.copy,
                                 size: 14, color: AppTheme.textMuted),
                             SizedBox(width: 4),
                             Text(
@@ -1579,7 +1619,7 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
               const Row(
                 children: [
                   Icon(
-                    Icons.payments_outlined,
+                    LucideIcons.banknote,
                     size: 15,
                     color: AppTheme.textMuted,
                   ),
@@ -1597,11 +1637,11 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
               Row(
                 children: [
                   const Icon(
-                    Icons.access_time_rounded,
+                    LucideIcons.clock,
                     size: 14,
                     color: AppTheme.textMuted,
                   ),
-                  SizedBox(width: 4),
+                  const SizedBox(width: 4),
                   Text(
                     dateStr,
                     style: const TextStyle(

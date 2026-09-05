@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/technician_providers.dart';
 import '../providers/app_providers.dart';
@@ -98,7 +99,7 @@ class _TechniciansSearchScreenState
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Text(r.toString()),
-                                  const Icon(Icons.star,
+                                  const Icon(LucideIcons.star,
                                       size: 14, color: Colors.amber),
                                 ],
                               ),
@@ -152,7 +153,7 @@ class _TechniciansSearchScreenState
                               const SizedBox(height: 4),
                               Row(
                                 children: [
-                                  const Icon(Icons.star,
+                                  const Icon(LucideIcons.star,
                                       color: Colors.amber, size: 16),
                                   const SizedBox(width: 4),
                                   Text(tech.averageRating.toStringAsFixed(1),
@@ -161,15 +162,15 @@ class _TechniciansSearchScreenState
                                   const SizedBox(width: 12),
                                   Icon(
                                       tech.transportMode == 'voiture'
-                                          ? Icons.directions_car
-                                          : Icons.two_wheeler,
+                                          ? LucideIcons.car
+                                          : LucideIcons.bike,
                                       size: 16,
                                       color: Colors.grey),
                                 ],
                               ),
                             ],
                           ),
-                          trailing: const Icon(Icons.chevron_right,
+                          trailing: const Icon(LucideIcons.chevron_right,
                               color: Colors.grey),
                           onTap: () {
                             Navigator.push(

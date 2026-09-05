@@ -3,7 +3,7 @@ import '../../../core/theme.dart';
 
 class Step3Match extends StatefulWidget {
   final VoidCallback onNext;
-  const Step3Match({Key? key, required this.onNext}) : super(key: key);
+  const Step3Match({super.key, required this.onNext});
 
   @override
   State<Step3Match> createState() => _Step3MatchState();
@@ -70,7 +70,7 @@ class _Step3MatchState extends State<Step3Match> with SingleTickerProviderStateM
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: AppTheme.primaryEmerald.withOpacity(1 - _pulseController.value),
+                            color: AppTheme.primaryEmerald.withValues(alpha: 1 - _pulseController.value),
                             width: 2,
                           ),
                         ),
@@ -116,7 +116,7 @@ class _Step3MatchState extends State<Step3Match> with SingleTickerProviderStateM
                             boxShadow: isSelected
                                 ? [
                                     BoxShadow(
-                                      color: AppTheme.primaryEmerald.withOpacity(0.4),
+                                      color: AppTheme.primaryEmerald.withValues(alpha: 0.4),
                                       blurRadius: 10,
                                       spreadRadius: 2,
                                     )

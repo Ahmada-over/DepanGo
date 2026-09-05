@@ -105,3 +105,74 @@ class SubscriptionResponse(BaseModel):
 
 class SubscriptionCreateRequest(BaseModel):
     plan_name: str
+
+
+class FirebaseLoginRequest(BaseModel):
+    id_token: str
+    name: Optional[str] = None
+    role: Optional[str] = "technician"
+
+
+# --- Quote Schemas ---
+class QuoteItemBase(BaseModel):
+    description: str
+    category: str # labor | material | travel
+    quantity: int = 1
+    unit_price: float
+    total_price: float
+
+class QuoteItemCreate(QuoteItemBase):
+    pass
+
+class QuoteItemResponse(QuoteItemBase):
+    id: str
+    quote_id: str
+
+    model_config = {"from_attributes": True}
+
+class QuoteBase(BaseModel):
+    booking_id: str
+    quote_type: str # remote_estimate | on_site_quote
+    total_labor: float = 0.0
+    total_materials: float = 0.0
+    total_travel: float = 0.0
+    grand_total: float = 0.0
+    estimated_duration: Optional[str] = None
+    notes: Optional[str] = None
+
+class QuoteCreate(QuoteBase):
+    items: List[QuoteItemCreate]
+
+class QuoteResponse(QuoteBase):
+    id: str
+    technician_id: str
+    client_id: str
+    status: str
+    created_at: datetime
+    updated_at: datetime
+    items: List[QuoteItemResponse] = []
+
+    model_config = {"from_attributes": True}
+
+class QuoteStatusUpdate(BaseModel):
+    status: str # pending_client_approval | accepted | rejected
+
+# --- Wallet Schemas ---
+class WalletResponse(BaseModel):
+    id: str
+    technician_id: str
+    balance: float
+
+class WalletTopUpRequest(BaseModel):
+    amount: float
+
+class WalletRefundRequest(BaseModel):
+    booking_id: str
+
+class WalletTransactionResponse(BaseModel):
+    id: str
+    amount: float
+    type: str
+    reason: str
+    booking_id: Optional[str] = None
+    created_at: Optional[str] = None

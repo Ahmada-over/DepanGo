@@ -1,0 +1,94 @@
+{
+  "operation": "POST /api/v1/bookings/{booking_id}/payment",
+  "method": "POST",
+  "path_template": "/api/v1/bookings/{booking_id}/payment",
+  "fingerprint": "6dfdcf9a",
+  "case_id": "j4XYuI",
+  "code_sample": "curl -X POST -H 'Content-Type: application/json' -d '{\"amount\": false, \"method\": \"direct_cash\"}' http://localhost:8001/api/v1/bookings/0/payment",
+  "sequence": [
+    {
+      "method": "POST",
+      "url": "http://localhost:8001/api/v1/bookings/0/payment",
+      "url_template": "http://localhost:8001/api/v1/bookings/{booking_id}/payment",
+      "headers": {
+        "User-Agent": "schemathesis/4.25.2",
+        "Accept-Encoding": "gzip, deflate",
+        "Accept": "*/*",
+        "Connection": "keep-alive",
+        "X-Schemathesis-TestCaseId": "j4XYuI",
+        "Content-Type": "application/json",
+        "Content-Length": "42"
+      },
+      "response": {
+        "status_code": 500,
+        "headers": {
+          "date": "Wed, 02 Sep 2026 11:04:40 GMT",
+          "server": "uvicorn",
+          "content-length": "21",
+          "content-type": "text/plain; charset=utf-8"
+        },
+        "body": "Internal Server Error"
+      },
+      "link": null,
+      "checks": [
+        {
+          "name": "status_code_conformance",
+          "status": "failure",
+          "message": "Undocumented HTTP status code\n\nReceived: 500\nDocumented: 200, 422"
+        }
+      ],
+      "meta": {
+        "generation": {
+          "time": 0.00012087500363122672,
+          "mode": "negative"
+        },
+        "components": {
+          "PATH": "positive",
+          "BODY": "negative"
+        },
+        "phase": {
+          "name": "coverage",
+          "data": {
+            "type": "CoveragePhaseData",
+            "description": "amount: Incorrect type",
+            "location": "/properties/amount/type",
+            "parameter": "application/json",
+            "parameter_location": "BODY",
+            "scenario": "incorrect_type"
+          }
+        },
+        "pool_draws": [],
+        "pool_misses": [
+          [
+            "path",
+            "booking_id"
+          ]
+        ],
+        "semantic_draws": [],
+        "dictionary_draws": [],
+        "constants_draws": [],
+        "raw_containers": {
+          "PATH": {
+            "booking_id": "0"
+          }
+        }
+      },
+      "path": "/api/v1/bookings/{booking_id}/payment",
+      "path_parameters": {
+        "booking_id": "0"
+      },
+      "query": {},
+      "case_headers": {},
+      "cookies": {},
+      "case_body": {
+        "encoding": "json",
+        "value": {
+          "amount": false,
+          "method": "direct_cash"
+        }
+      },
+      "media_type": "application/json",
+      "parent_index": null
+    }
+  ]
+}

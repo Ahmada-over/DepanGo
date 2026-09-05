@@ -1,5 +1,5 @@
 import 'dart:io' show Platform;
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
 
 class AppConfig {
   // =========================================================================
@@ -8,7 +8,7 @@ class AppConfig {
   // true  -> Mode PRODUCTION (Cloud Run: backend-depango-...run.app)
   // false -> Mode LOCAL      (http://localhost:8001 ou 10.0.2.2:8001 sur Android)
   // =========================================================================
-  static const bool isProduction = false;
+  static const bool isProduction = kReleaseMode;
 
   // Configuration des hôtes
   static const String _cloudHost = 'backend-depango-346078879462.europe-west1.run.app';

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -9,7 +10,7 @@ import '../providers/app_providers.dart';
 import '../core/map_style.dart';
 
 class LocationPickerScreen extends ConsumerStatefulWidget {
-  const LocationPickerScreen({Key? key}) : super(key: key);
+  const LocationPickerScreen({super.key});
 
   @override
   ConsumerState<LocationPickerScreen> createState() => _LocationPickerScreenState();
@@ -136,12 +137,12 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
               child: Padding(
                 padding: const EdgeInsets.only(bottom: 40.0), // Adjust for pin tip
                 child: Icon(
-                  Icons.location_on,
+                  LucideIcons.map_pin,
                   size: 40,
                   color: AppTheme.primaryEmerald,
                   shadows: [
                     Shadow(
-                      color: Colors.black.withOpacity(0.3),
+                      color: Colors.black.withValues(alpha: 0.3),
                       blurRadius: 10,
                       offset: const Offset(0, 5),
                     )
@@ -165,7 +166,7 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
                     BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 2))
                   ]
                 ),
-                child: const Icon(Icons.arrow_back, color: AppTheme.textDark),
+                child: const Icon(LucideIcons.arrow_left, color: AppTheme.textDark),
               ),
             ),
           ),
@@ -201,7 +202,7 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        const Icon(Icons.location_on, color: AppTheme.primaryEmerald, size: 24),
+                        const Icon(LucideIcons.map_pin, color: AppTheme.primaryEmerald, size: 24),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(

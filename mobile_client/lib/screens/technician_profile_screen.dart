@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/models.dart';
 import '../providers/technician_providers.dart';
@@ -55,7 +56,7 @@ class TechnicianProfileScreen extends ConsumerWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.star, color: Colors.amber, size: 20),
+                      const Icon(LucideIcons.star, color: Colors.amber, size: 20),
                       const SizedBox(width: 4),
                       Text(
                           '${technician.averageRating.toStringAsFixed(1)} (Note)',
@@ -64,8 +65,8 @@ class TechnicianProfileScreen extends ConsumerWidget {
                       const SizedBox(width: 16),
                       Icon(
                           technician.verified
-                              ? Icons.verified
-                              : Icons.error_outline,
+                              ? LucideIcons.badge_check
+                              : LucideIcons.circle_alert,
                           color: technician.verified
                               ? AppTheme.primaryEmerald
                               : Colors.grey,
@@ -116,11 +117,11 @@ class TechnicianProfileScreen extends ConsumerWidget {
                         leading: CircleAvatar(
                           backgroundColor:
                               AppTheme.primaryEmerald.withValues(alpha: 0.1),
-                          child: const Icon(Icons.check_circle,
+                          child: const Icon(LucideIcons.circle_check,
                               color: AppTheme.primaryEmerald),
                         ),
-                        title: Text('Intervention Terminée',
-                            style: const TextStyle(
+                        title: const Text('Intervention Terminée',
+                            style: TextStyle(
                                 fontWeight: FontWeight.bold, fontSize: 14)),
                         subtitle: Text(
                             DateFormat('dd/MM/yyyy HH:mm').format(b.createdAt)),

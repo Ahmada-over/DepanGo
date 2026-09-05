@@ -4,7 +4,7 @@ const String kProMapStyle = '''
     "elementType": "geometry",
     "stylers": [
       {
-        "color": "#1d2c4d"
+        "color": "#1d2330"
       }
     ]
   },
@@ -20,25 +20,34 @@ const String kProMapStyle = '''
     "elementType": "labels.text.stroke",
     "stylers": [
       {
-        "color": "#1a3646"
+        "color": "#101827"
       }
     ]
   },
   {
-    "featureType": "administrative.country",
+    "featureType": "administrative",
     "elementType": "geometry.stroke",
     "stylers": [
       {
-        "color": "#4b6878"
+        "visibility": "off"
       }
     ]
   },
   {
-    "featureType": "landscape.man_made",
+    "featureType": "administrative.land_parcel",
+    "elementType": "labels",
+    "stylers": [
+      {
+        "visibility": "off"
+      }
+    ]
+  },
+  {
+    "featureType": "landscape",
     "elementType": "geometry.stroke",
     "stylers": [
       {
-        "color": "#334e87"
+        "visibility": "off"
       }
     ]
   },
@@ -47,25 +56,23 @@ const String kProMapStyle = '''
     "elementType": "geometry",
     "stylers": [
       {
-        "color": "#021019"
+        "color": "#151b26"
       }
     ]
   },
   {
     "featureType": "poi",
-    "elementType": "geometry",
     "stylers": [
       {
-        "color": "#283d6a"
+        "visibility": "off"
       }
     ]
   },
   {
-    "featureType": "poi",
-    "elementType": "labels.text.fill",
+    "featureType": "transit",
     "stylers": [
       {
-        "color": "#6f9ba5"
+        "visibility": "off"
       }
     ]
   },
@@ -74,7 +81,25 @@ const String kProMapStyle = '''
     "elementType": "geometry",
     "stylers": [
       {
-        "color": "#304a7d"
+        "color": "#283344"
+      }
+    ]
+  },
+  {
+    "featureType": "road",
+    "elementType": "geometry.stroke",
+    "stylers": [
+      {
+        "visibility": "off"
+      }
+    ]
+  },
+  {
+    "featureType": "road",
+    "elementType": "labels.icon",
+    "stylers": [
+      {
+        "visibility": "off"
       }
     ]
   },
@@ -83,7 +108,7 @@ const String kProMapStyle = '''
     "elementType": "labels.text.fill",
     "stylers": [
       {
-        "color": "#98a5be"
+        "color": "#9ca3af"
       }
     ]
   },
@@ -92,16 +117,16 @@ const String kProMapStyle = '''
     "elementType": "geometry",
     "stylers": [
       {
-        "color": "#2c6675"
+        "color": "#334155"
       }
     ]
   },
   {
-    "featureType": "transit",
-    "elementType": "labels.text.fill",
+    "featureType": "road.highway",
+    "elementType": "geometry.stroke",
     "stylers": [
       {
-        "color": "#98a5be"
+        "visibility": "off"
       }
     ]
   },
@@ -110,7 +135,7 @@ const String kProMapStyle = '''
     "elementType": "geometry",
     "stylers": [
       {
-        "color": "#0e1626"
+        "color": "#0b121e"
       }
     ]
   },

@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.infrastructure.database.session import get_db
 from app.infrastructure.repositories.sqlalchemy_repositories import SQLAlchemyUserRepository, SQLAlchemyTechnicianRepository
 from app.application.use_cases import AuthUseCases
-from app.presentation.api.v1.schemas import RegisterRequest, LoginRequest, TokenResponse
+from app.presentation.api.v1.schemas import RegisterRequest, LoginRequest, TokenResponse, FirebaseLoginRequest
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -50,6 +50,17 @@ async def login(request: Request, req: LoginRequest, db: AsyncSession = Depends(
     use_case = AuthUseCases(user_repo, tech_repo)
     try:
         res = await use_case.login(password=req.password, email=req.email, phone=req.phone)
+        return res
+    except ValueError as e:
+        raise HTTPException(status_code=401, detail=str(e))
+
+@router.post("/firebase-login", response_model=TokenResponse)
+async def firebase_login(req: FirebaseLoginRequest, db: AsyncSession = Depends(get_db)):
+    user_repo = SQLAlchemyUserRepository(db)
+    tech_repo = SQLAlchemyTechnicianRepository(db)
+    use_case = AuthUseCases(user_repo, tech_repo)
+    try:
+        res = await use_case.firebase_login(id_token=req.id_token, name=req.name, role=req.role)
         return res
     except ValueError as e:
         raise HTTPException(status_code=401, detail=str(e))

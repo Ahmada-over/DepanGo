@@ -15,7 +15,9 @@ class UserModel(Base):
     name = Column(String, nullable=False)
     phone = Column(String, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
-    password_hash = Column(String, nullable=False)
+    password_hash = Column(String, nullable=True) # Now nullable for passwordless
+    otp_code = Column(String, nullable=True)
+    otp_expires_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     technician_profile = relationship("TechnicianProfileModel", back_populates="user", uselist=False)
@@ -115,3 +117,62 @@ class MatchingLogModel(Base):
     status = Column(String, nullable=False) # offered | accepted | rejected | timeout
     created_at = Column(DateTime, default=datetime.utcnow)
 
+
+
+class QuoteModel(Base):
+    __tablename__ = "quotes"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    booking_id = Column(String, ForeignKey("bookings.id"), nullable=False)
+    technician_id = Column(String, ForeignKey("users.id"), nullable=False)
+    client_id = Column(String, ForeignKey("users.id"), nullable=False)
+    quote_type = Column(String, nullable=False) # remote_estimate | on_site_quote
+    status = Column(String, default="draft") # draft | pending_client_approval | accepted | rejected
+    total_labor = Column(Float, default=0.0)
+    total_materials = Column(Float, default=0.0)
+    total_travel = Column(Float, default=0.0)
+    grand_total = Column(Float, default=0.0)
+    estimated_duration = Column(String, nullable=True)
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    items = relationship("QuoteItemModel", back_populates="quote", cascade="all, delete-orphan")
+
+class QuoteItemModel(Base):
+    __tablename__ = "quote_items"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    quote_id = Column(String, ForeignKey("quotes.id"), nullable=False)
+    description = Column(String, nullable=False)
+    category = Column(String, nullable=False) # labor | material | travel
+    quantity = Column(Integer, default=1)
+    unit_price = Column(Float, default=0.0)
+    total_price = Column(Float, default=0.0)
+
+    quote = relationship("QuoteModel", back_populates="items")
+
+class WalletModel(Base):
+    __tablename__ = "wallets"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    technician_id = Column(String, ForeignKey("users.id"), nullable=False, unique=True)
+    balance = Column(Float, default=0.0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    technician = relationship("UserModel", backref="wallet")
+    transactions = relationship("WalletTransactionModel", back_populates="wallet", cascade="all, delete-orphan")
+
+class WalletTransactionModel(Base):
+    __tablename__ = "wallet_transactions"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    wallet_id = Column(String, ForeignKey("wallets.id"), nullable=False)
+    amount = Column(Float, nullable=False)
+    transaction_type = Column(String, nullable=False) # credit | debit
+    reason = Column(String, nullable=False) # welcome_bonus | lead_purchase | refund | top_up
+    booking_id = Column(String, ForeignKey("bookings.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    wallet = relationship("WalletModel", back_populates="transactions")

@@ -1,0 +1,104 @@
+{
+  "operation": "PATCH /api/v1/bookings/{booking_id}/status",
+  "method": "PATCH",
+  "path_template": "/api/v1/bookings/{booking_id}/status",
+  "fingerprint": "c6d88252",
+  "case_id": "J9oNEq",
+  "code_sample": "curl -X PATCH -H 'Content-Type: application/json' -d '{\"technician_id\": null, \"cancellation_reason\": null}' http://localhost:8001/api/v1/bookings/0/status",
+  "sequence": [
+    {
+      "method": "PATCH",
+      "url": "http://localhost:8001/api/v1/bookings/0/status",
+      "url_template": "http://localhost:8001/api/v1/bookings/{booking_id}/status",
+      "headers": {
+        "User-Agent": "schemathesis/4.25.2",
+        "Accept-Encoding": "gzip, deflate",
+        "Accept": "*/*",
+        "Connection": "keep-alive",
+        "X-Schemathesis-TestCaseId": "J9oNEq",
+        "Content-Type": "application/json",
+        "Content-Length": "52"
+      },
+      "response": {
+        "status_code": 401,
+        "headers": {
+          "date": "Wed, 02 Sep 2026 11:04:40 GMT",
+          "server": "uvicorn",
+          "www-authenticate": "[Filtered]",
+          "content-length": "30",
+          "content-type": "application/json"
+        },
+        "body": "{\"detail\":\"Not authenticated\"}"
+      },
+      "link": null,
+      "checks": [
+        {
+          "name": "status_code_conformance",
+          "status": "failure",
+          "message": "Undocumented HTTP status code\n\nReceived: 401\nDocumented: 200, 422"
+        }
+      ],
+      "meta": {
+        "generation": {
+          "time": 1.4208999346010387e-05,
+          "mode": "negative"
+        },
+        "components": {
+          "PATH": "positive",
+          "BODY": "negative"
+        },
+        "phase": {
+          "name": "coverage",
+          "data": {
+            "type": "CoveragePhaseData",
+            "description": "Missing required property: status",
+            "location": "/required",
+            "parameter": "application/json",
+            "parameter_location": "BODY",
+            "scenario": "object_missing_required_property"
+          }
+        },
+        "pool_draws": [
+          {
+            "location": "path",
+            "parameter_name": "booking_id",
+            "resource_name": "BookingResponse",
+            "resource_field": "id",
+            "source_operation": "GET /api/v1/bookings/{booking_id}/messages",
+            "source_status": 200
+          }
+        ],
+        "pool_misses": [
+          [
+            "body",
+            "technician_id"
+          ]
+        ],
+        "semantic_draws": [],
+        "dictionary_draws": [],
+        "constants_draws": [],
+        "raw_containers": {
+          "PATH": {
+            "booking_id": "0"
+          }
+        }
+      },
+      "path": "/api/v1/bookings/{booking_id}/status",
+      "path_parameters": {
+        "booking_id": "0"
+      },
+      "query": {},
+      "case_headers": {},
+      "cookies": {},
+      "case_body": {
+        "encoding": "json",
+        "value": {
+          "technician_id": null,
+          "cancellation_reason": null
+        }
+      },
+      "media_type": "application/json",
+      "parent_index": null
+    }
+  ]
+}

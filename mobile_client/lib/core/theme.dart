@@ -41,6 +41,18 @@ class AppTheme {
           textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
         ),
       ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 0,
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        elevation: 0,
+      ),
     );
   }
 }

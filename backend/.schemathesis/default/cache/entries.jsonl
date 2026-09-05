@@ -1,0 +1,1 @@
+{"id": 1, "kind": "error_feedback", "operation": "POST /api/v1/bookings/upload_photo", "observation_keys": ["(('POST /api/v1/bookings/upload_photo', 'body'), ('file',), 'must_not_be_blank', None)"], "last_replayed_run": 0, "request": {"method": "POST", "path_parameters": {}, "query": {}, "headers": {}, "cookies": {}, "body": {"file": ""}}}

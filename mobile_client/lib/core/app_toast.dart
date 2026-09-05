@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'theme.dart';
 
 enum AppToastType { success, info, warning, error }
@@ -30,25 +31,25 @@ class AppToast {
       case AppToastType.success:
         bgGradientStart = const Color(0xFF064E3B);
         bgGradientEnd = const Color(0xFF059669);
-        icon = Icons.check_circle_rounded;
+        icon = LucideIcons.circle_check;
         iconColor = const Color(0xFF34D399);
         break;
       case AppToastType.info:
         bgGradientStart = const Color(0xFF1E3A8A);
         bgGradientEnd = const Color(0xFF2563EB);
-        icon = Icons.info_rounded;
+        icon = LucideIcons.info;
         iconColor = const Color(0xFF60A5FA);
         break;
       case AppToastType.warning:
         bgGradientStart = const Color(0xFF78350F);
         bgGradientEnd = const Color(0xFFD97706);
-        icon = Icons.warning_amber_rounded;
+        icon = LucideIcons.triangle_alert;
         iconColor = const Color(0xFFFBBF24);
         break;
       case AppToastType.error:
         bgGradientStart = const Color(0xFF881337);
         bgGradientEnd = const Color(0xFFE11D48);
-        icon = Icons.error_outline_rounded;
+        icon = LucideIcons.circle_alert;
         iconColor = const Color(0xFFFB7185);
         break;
     }
@@ -73,18 +74,18 @@ class AppToast {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: bgGradientEnd.withOpacity(0.3),
+                  color: bgGradientEnd.withValues(alpha: 0.3),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
+                  color: Colors.black.withValues(alpha: 0.15),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
               ],
               border: Border.all(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 width: 1.5,
               ),
             ),
@@ -93,7 +94,7 @@ class AppToast {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
+                    color: Colors.white.withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(icon, color: iconColor, size: 22),
@@ -118,7 +119,7 @@ class AppToast {
                         Text(
                           message,
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha: 0.9),
                             fontSize: 12,
                             fontWeight: FontWeight.w400,
                           ),

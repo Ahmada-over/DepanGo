@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme.dart';
 import 'core/app_toast.dart';
@@ -7,11 +9,20 @@ import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'services/local_notification_service.dart';
 
 final sharedPreferencesProvider = Provider<SharedPreferences>((ref) => throw UnimplementedError());
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } catch (e) {
+    debugPrint("Firebase init error: $e");
+  }
+  await LocalNotificationService.instance.initialize();
   final prefs = await SharedPreferences.getInstance();
   
   runApp(
@@ -35,7 +46,22 @@ class TechConnectProApp extends ConsumerWidget {
       scaffoldMessengerKey: rootScaffoldMessengerKey,
       title: 'depanGo Pro',
       debugShowCheckedModeBanner: false,
-      theme: ProTheme.darkTheme,
+            theme: ProTheme.darkTheme,
+      onGenerateRoute: (settings) {
+        if (settings.name != null && (settings.name!.startsWith('/link') || settings.name!.startsWith('/__'))) {
+          return MaterialPageRoute(
+            builder: (context) {
+              Future.microtask(() {
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
+                }
+              });
+              return const Scaffold(backgroundColor: Colors.transparent);
+            }
+          );
+        }
+        return null;
+      },
       home: ref.watch(sharedPreferencesProvider).getBool('has_seen_onboarding') == true
           ? (user != null ? const HomeScreen() : const LoginScreen())
           : const OnboardingScreen(),

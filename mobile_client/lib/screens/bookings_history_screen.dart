@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/app_providers.dart';
 import '../models/models.dart';
@@ -36,7 +37,7 @@ class BookingsHistoryScreen extends ConsumerWidget {
           ),
           actions: [
             IconButton(
-              icon: const Icon(Icons.refresh, color: AppTheme.primaryDark),
+              icon: const Icon(LucideIcons.refresh_ccw, color: AppTheme.primaryDark),
               onPressed: () => ref.refresh(userBookingsProvider),
             ),
           ],
@@ -113,10 +114,14 @@ class BookingsHistoryScreen extends ConsumerWidget {
     // Status color
     Color statusColor = Colors.grey;
     if (['matched', 'in_progress', 'on_site', 'arrived']
-        .contains(booking.status)) statusColor = AppTheme.primaryEmerald;
+        .contains(booking.status)) {
+      statusColor = AppTheme.primaryEmerald;
+    }
     if (booking.status == 'completed') statusColor = AppTheme.primaryEmerald;
     if (['cancelled', 'expired', 'no_technician_found']
-        .contains(booking.status)) statusColor = Colors.redAccent;
+        .contains(booking.status)) {
+      statusColor = Colors.redAccent;
+    }
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -170,7 +175,7 @@ class BookingsHistoryScreen extends ConsumerWidget {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  const Icon(Icons.location_on, size: 14, color: Colors.grey),
+                  const Icon(LucideIcons.map_pin, size: 14, color: Colors.grey),
                   const SizedBox(width: 4),
                   Expanded(
                       child: Text(booking.addressText,
@@ -183,7 +188,7 @@ class BookingsHistoryScreen extends ConsumerWidget {
               const SizedBox(height: 4),
               Row(
                 children: [
-                  const Icon(Icons.access_time, size: 14, color: Colors.grey),
+                  const Icon(LucideIcons.clock, size: 14, color: Colors.grey),
                   const SizedBox(width: 4),
                   Text(formattedDate,
                       style: const TextStyle(fontSize: 12, color: Colors.grey)),
@@ -196,10 +201,10 @@ class BookingsHistoryScreen extends ConsumerWidget {
                 ),
                 Row(
                   children: [
-                    CircleAvatar(
+                    const CircleAvatar(
                       radius: 16,
                       backgroundColor: AppTheme.primaryEmerald,
-                      child: const Icon(Icons.person,
+                      child: Icon(LucideIcons.user,
                           size: 16, color: Colors.white),
                     ),
                     const SizedBox(width: 12),
@@ -208,11 +213,11 @@ class BookingsHistoryScreen extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(dynamicTechName,
-                              style: TextStyle(
+                              style: const TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
                                   color: AppTheme.primaryDark)),
-                          Text('Cliquez pour suivre',
+                          const Text('Cliquez pour suivre',
                               style:
                                   TextStyle(fontSize: 11, color: Colors.grey)),
                         ],

@@ -1,13 +1,18 @@
 import 'dart:io';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:dio/dio.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 import '../core/api_client.dart';
 import '../core/theme.dart';
 import '../core/app_toast.dart';
 import '../core/category_helper.dart';
 import '../providers/pro_providers.dart';
+import '../providers/wallet_provider.dart';
+import 'wallet_screen.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -26,26 +31,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   String _transportMode = 'moto';
   List<String> _selectedCategories = [];
-  String _selectedZone = 'Tout Dakar';
   String? _profilePhotoUrl;
   File? _localImageFile;
   bool _isUploadingImage = false;
   bool _isSaving = false;
+  bool _isRefreshingLocation = false;
+  bool _isResolvingCommune = false;
+  String? _communeName;
   bool _initialized = false;
 
   final ImagePicker _picker = ImagePicker();
-
-  final List<String> _dakarZones = [
-    'Tout Dakar',
-    'Dakar Plateau & Médina',
-    'Almadies & Ngor',
-    'Ouakam & Mermoz / Sacré-Cœur',
-    'Fann, Point E & Amitié',
-    'Grand Yoff & HLM',
-    'Parcelles Assainies',
-    'Pikine & Guédiawaye',
-    'Rufisque & Keur Massar',
-  ];
 
   @override
   void didChangeDependencies() {
@@ -63,6 +58,102 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       _transportMode = profile?.transportMode ?? 'moto';
       _selectedCategories = List.from(profile?.categoryIds ?? ['cat_plumbing']);
       _initialized = true;
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final currentPos = ref.read(liveLocationProvider);
+        if (currentPos == null) {
+          _refreshCurrentLocation();
+        } else if (_communeName == null) {
+          _resolveCommune(currentPos.latitude, currentPos.longitude);
+        }
+      });
+    }
+  }
+
+  Future<void> _resolveCommune(double lat, double lng) async {
+    if (_isResolvingCommune) return;
+    setState(() => _isResolvingCommune = true);
+    try {
+      final placemarks = await placemarkFromCoordinates(lat, lng);
+      if (placemarks.isNotEmpty) {
+        final p = placemarks.first;
+        final subLoc = p.subLocality?.trim();
+        final loc = p.locality?.trim();
+        final thoroughfare = p.thoroughfare?.trim();
+        final name = p.name?.trim();
+
+        String zone = '';
+        if (subLoc != null && subLoc.isNotEmpty && !subLoc.contains('+')) {
+          zone = subLoc;
+          if (loc != null && loc.isNotEmpty && loc.toLowerCase() != subLoc.toLowerCase()) {
+            zone += ', $loc';
+          }
+        } else if (thoroughfare != null && thoroughfare.isNotEmpty && !thoroughfare.contains('+')) {
+          zone = thoroughfare;
+          if (loc != null && loc.isNotEmpty) zone += ', $loc';
+        } else if (loc != null && loc.isNotEmpty) {
+          zone = loc;
+        } else if (name != null && name.isNotEmpty && !name.contains('+')) {
+          zone = name;
+        }
+
+        if (zone.isNotEmpty && mounted) {
+          setState(() => _communeName = zone);
+        }
+      }
+    } catch (e) {
+      debugPrint('[Profile] Error resolving commune name: $e');
+    } finally {
+      if (mounted) setState(() => _isResolvingCommune = false);
+    }
+  }
+
+  Future<void> _refreshCurrentLocation() async {
+    if (_isRefreshingLocation) return;
+    setState(() => _isRefreshingLocation = true);
+    try {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.deniedForever ||
+          permission == LocationPermission.denied) {
+        if (mounted) {
+          AppToast.show(
+            context,
+            title: 'Permission requise',
+            message: 'Veuillez autoriser l\'accès à la localisation pour être visible.',
+            type: AppToastType.warning,
+          );
+        }
+        return;
+      }
+
+      final pos = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+      ref.read(liveLocationProvider.notifier).state = pos;
+      await _resolveCommune(pos.latitude, pos.longitude);
+
+      if (mounted) {
+        AppToast.show(
+          context,
+          title: 'Position actualisée',
+          message: 'Votre géolocalisation en direct est synchronisée.',
+          type: AppToastType.success,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        AppToast.show(
+          context,
+          title: 'Erreur GPS',
+          message: 'Impossible d\'obtenir la position : $e',
+          type: AppToastType.error,
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isRefreshingLocation = false);
     }
   }
 
@@ -156,6 +247,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider);
     final profile = ref.watch(technicianProfileProvider);
+    final livePos = ref.watch(liveLocationProvider);
     final isVerified = profile?.verified ?? false;
 
     return Scaffold(
@@ -164,7 +256,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         title: const Text('Fiche Profil & Spécialités Pro'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.check_circle_rounded, color: ProTheme.primaryLight),
+            icon: const Icon(LucideIcons.circle_check, color: ProTheme.primaryLight),
             onPressed: _isSaving ? null : _saveProfileChanges,
             tooltip: 'Enregistrer',
           ),
@@ -209,7 +301,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             ),
                             child: _isUploadingImage
                                 ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
-                                : const Icon(Icons.camera_alt_rounded, color: Colors.black, size: 16),
+                                : const Icon(LucideIcons.camera, color: Colors.black, size: 16),
                           ),
                         ),
                       ],
@@ -224,7 +316,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         ),
                         const SizedBox(width: 6),
                         Icon(
-                          isVerified ? Icons.verified_rounded : Icons.pending_rounded,
+                          isVerified ? Icons.verified_rounded : LucideIcons.clock,
                           color: isVerified ? ProTheme.primaryLight : Colors.amber,
                           size: 20,
                         ),
@@ -250,6 +342,116 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ],
                 ),
               ),
+              const SizedBox(height: 20),
+
+              // Carte Portefeuille Pro
+              Builder(
+                builder: (ctx) {
+                  final wallet = ref.watch(walletProvider);
+                  return InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const WalletScreen()),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF0F766E), Color(0xFF134E4A)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          width: 1,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color:
+                                const Color(0xFF0F766E).withValues(alpha: 0.25),
+                            blurRadius: 16,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: const Icon(LucideIcons.wallet,
+                                color: Colors.white, size: 24),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Portefeuille DepanGo',
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${wallet.balance.toStringAsFixed(0)} FCFA',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  '${wallet.availableLeads} mission(s) disponible(s)',
+                                  style: const TextStyle(
+                                    color: Color(0xFFA7F3D0),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: ProTheme.primaryLight,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Row(
+                              children: [
+                                Text(
+                                  'Gérer',
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                SizedBox(width: 4),
+                                Icon(LucideIcons.chevron_right,
+                                    color: Colors.black, size: 14),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
               const SizedBox(height: 24),
 
               // 1. INFORMATIONS PERSONNELLES
@@ -270,7 +472,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       decoration: const InputDecoration(
                         labelText: 'Nom et Prénom',
                         labelStyle: TextStyle(color: ProTheme.textMuted, fontSize: 13),
-                        prefixIcon: Icon(Icons.person_rounded, color: ProTheme.primaryLight, size: 20),
+                        prefixIcon: Icon(LucideIcons.user, color: ProTheme.primaryLight, size: 20),
                         enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: ProTheme.darkBorder)),
                       ),
                       validator: (v) => v?.trim().isEmpty == true ? 'Nom requis' : null,
@@ -282,7 +484,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       decoration: const InputDecoration(
                         labelText: 'Numéro de Téléphone (Joignable par le client)',
                         labelStyle: TextStyle(color: ProTheme.textMuted, fontSize: 13),
-                        prefixIcon: Icon(Icons.phone_rounded, color: ProTheme.primaryLight, size: 20),
+                        prefixIcon: Icon(LucideIcons.phone, color: ProTheme.primaryLight, size: 20),
                         enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: ProTheme.darkBorder)),
                       ),
                       validator: (v) => v?.trim().isEmpty == true ? 'Téléphone requis' : null,
@@ -294,7 +496,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       decoration: const InputDecoration(
                         labelText: 'Adresse Email (Optionnelle)',
                         labelStyle: TextStyle(color: ProTheme.textMuted, fontSize: 13),
-                        prefixIcon: Icon(Icons.email_rounded, color: ProTheme.primaryLight, size: 20),
+                        prefixIcon: Icon(LucideIcons.mail, color: ProTheme.primaryLight, size: 20),
                         border: InputBorder.none,
                       ),
                     ),
@@ -325,7 +527,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.two_wheeler_rounded, color: ProTheme.primaryLight, size: 22),
+                            Icon(LucideIcons.bike, color: ProTheme.primaryLight, size: 22),
                             SizedBox(width: 8),
                             Flexible(child: Text('Moto Express', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13), overflow: TextOverflow.ellipsis)),
                           ],
@@ -351,7 +553,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.directions_car_rounded, color: Colors.blue, size: 22),
+                            Icon(LucideIcons.car, color: Colors.blue, size: 22),
                             SizedBox(width: 8),
                             Flexible(child: Text('Voiture / Fourgon', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13), overflow: TextOverflow.ellipsis)),
                           ],
@@ -430,40 +632,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
               const SizedBox(height: 24),
 
-              // 4. ZONE D'INTERVENTION À DAKAR
-              const Text('ZONE D\'INTERVENTION PRINCIPALE', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: ProTheme.textMuted, letterSpacing: 0.5)),
+              // 4. LOCALISATION EN TEMPS RÉEL (MODÈLE UBER / YANGO)
+              const Text('LOCALISATION EN DIRECT & PROXIMITÉ', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: ProTheme.textMuted, letterSpacing: 0.5)),
               const SizedBox(height: 10),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                decoration: BoxDecoration(
-                  color: ProTheme.darkCard,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: ProTheme.darkBorder),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: _selectedZone,
-                    dropdownColor: ProTheme.darkSurface,
-                    isExpanded: true,
-                    icon: const Icon(Icons.arrow_drop_down_rounded, color: ProTheme.primaryLight),
-                    items: _dakarZones.map((z) {
-                      return DropdownMenuItem(
-                        value: z,
-                        child: Row(
-                          children: [
-                            const Icon(Icons.location_city_rounded, color: ProTheme.primaryLight, size: 18),
-                            const SizedBox(width: 10),
-                            Text(z, style: const TextStyle(color: Colors.white, fontSize: 13)),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                    onChanged: (val) {
-                      if (val != null) setState(() => _selectedZone = val);
-                    },
-                  ),
-                ),
-              ),
+              _buildLocationCard(livePos),
               const SizedBox(height: 32),
 
               // 5. BOUTON ENREGISTRER
@@ -474,7 +646,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   onPressed: _isSaving ? null : _saveProfileChanges,
                   icon: _isSaving
                       ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
-                      : const Icon(Icons.save_rounded, color: Colors.black, size: 20),
+                      : const Icon(LucideIcons.save, color: Colors.black, size: 20),
                   label: Text(
                     _isSaving ? 'ENREGISTREMENT...' : 'ENREGISTRER LES MODIFICATIONS',
                     style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: Colors.black, letterSpacing: 0.3),
@@ -490,8 +662,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               // Déconnexion
               Center(
                 child: TextButton.icon(
-                  onPressed: () => ref.read(authProvider.notifier).logout(),
-                  icon: const Icon(Icons.power_settings_new_rounded, color: Colors.redAccent, size: 18),
+                  onPressed: () async {
+                    await ref.read(authProvider.notifier).logout();
+                    if (context.mounted) {
+                      Navigator.of(context).popUntil((route) => route.isFirst);
+                    }
+                  },
+                  icon: const Icon(LucideIcons.power, color: Colors.redAccent, size: 18),
                   label: const Text('Se Déconnecter', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 13)),
                 ),
               ),
@@ -499,6 +676,134 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildLocationCard(Position? livePos) {
+    final hasPos = livePos != null;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: ProTheme.darkCard,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: hasPos
+              ? ProTheme.primaryEmerald.withValues(alpha: 0.4)
+              : ProTheme.darkBorder,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: hasPos
+                      ? ProTheme.primaryEmerald.withValues(alpha: 0.2)
+                      : Colors.amber.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  hasPos ? LucideIcons.map_pin : LucideIcons.map_pin_off,
+                  color: hasPos ? ProTheme.primaryLight : Colors.amber,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            hasPos
+                                ? (_communeName ?? 'Position GPS Détectée')
+                                : 'Signal GPS en attente',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: hasPos ? ProTheme.primaryLight : Colors.amber,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      hasPos
+                          ? (_isResolvingCommune
+                              ? 'Identification de la commune...'
+                              : 'Zone d\'intervention active • En direct')
+                          : 'Position requise pour recevoir des missions',
+                      style: TextStyle(
+                        color: hasPos ? ProTheme.primaryLight : ProTheme.textMuted,
+                        fontSize: 12,
+                        fontWeight: hasPos ? FontWeight.w500 : FontWeight.normal,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: _isRefreshingLocation
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: ProTheme.primaryLight,
+                        ),
+                      )
+                    : const Icon(LucideIcons.locate_fixed,
+                        color: ProTheme.primaryLight, size: 22),
+                tooltip: 'Actualiser ma position',
+                onPressed: _isRefreshingLocation ? null : _refreshCurrentLocation,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: ProTheme.darkSurface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.05),
+              ),
+            ),
+            child: const Row(
+              children: [
+                Icon(LucideIcons.radar, color: ProTheme.primaryLight, size: 16),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Attribution dynamique : Vous recevez automatiquement les demandes des clients proches selon votre position GPS en temps réel.',
+                    style: TextStyle(
+                      color: ProTheme.textMuted,
+                      fontSize: 11,
+                      height: 1.35,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

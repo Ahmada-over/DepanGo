@@ -4,15 +4,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import update
 from app.application.ports import (
+    WalletRepositoryPort,
     UserRepositoryPort, TechnicianRepositoryPort, CategoryRepositoryPort,
     BookingRepositoryPort, MessageRepositoryPort, ReviewRepositoryPort, PaymentRepositoryPort, SubscriptionRepositoryPort
 )
 from app.domain.models import (
+    WalletDomain, WalletTransactionDomain, TransactionType, TransactionReason,
     UserDomain, UserRole, TechnicianProfileDomain, AvailabilityStatus,
     ServiceCategoryDomain, BookingDomain, BookingStatus, MessageDomain,
     ReviewDomain, PaymentDomain, PaymentStatus, PaymentMethod, SubscriptionDomain
 )
 from app.infrastructure.database.models import (
+    WalletModel, WalletTransactionModel,
     UserModel, TechnicianProfileModel, ServiceCategoryModel,
     BookingModel, MessageModel, ReviewModel, PaymentModel, SubscriptionModel, MatchingLogModel
 )
@@ -574,3 +577,141 @@ class SQLAlchemySubscriptionRepository(SubscriptionRepositoryPort):
             start_date=model.start_date,
             end_date=model.end_date
         )
+
+
+class SQLAlchemyWalletRepository(WalletRepositoryPort):
+    def __init__(self, db: AsyncSession):
+        self.db = db
+
+    async def create(self, wallet: WalletDomain) -> WalletDomain:
+        model = WalletModel(
+            id=wallet.id,
+            technician_id=wallet.technician_id,
+            balance=wallet.balance
+        )
+        self.db.add(model)
+        await self.db.commit()
+        await self.db.refresh(model)
+        return wallet
+
+    async def get_by_technician_id(self, technician_id: str) -> Optional[WalletDomain]:
+        result = await self.db.execute(
+            select(WalletModel).where(WalletModel.technician_id == technician_id)
+        )
+        model = result.scalars().first()
+        if not model:
+            return None
+        return WalletDomain(
+            id=model.id,
+            technician_id=model.technician_id,
+            balance=model.balance,
+            created_at=model.created_at,
+            updated_at=model.updated_at
+        )
+
+    async def debit(self, technician_id: str, amount: float, reason: str, booking_id: Optional[str] = None) -> WalletDomain:
+        result = await self.db.execute(
+            select(WalletModel).where(WalletModel.technician_id == technician_id)
+        )
+        wallet = result.scalars().first()
+        if not wallet:
+            raise ValueError("Wallet introuvable pour ce technicien.")
+        if wallet.balance < amount:
+            raise ValueError(f"Solde insuffisant. Solde actuel : {wallet.balance} FCFA.")
+        
+        wallet.balance -= amount
+        wallet.updated_at = datetime.utcnow()
+        
+        from app.infrastructure.database.models import generate_uuid
+        tx = WalletTransactionModel(
+            id=generate_uuid(),
+            wallet_id=wallet.id,
+            amount=amount,
+            transaction_type="debit",
+            reason=reason,
+            booking_id=booking_id
+        )
+        self.db.add(tx)
+        await self.db.commit()
+        await self.db.refresh(wallet)
+        
+        return WalletDomain(
+            id=wallet.id,
+            technician_id=wallet.technician_id,
+            balance=wallet.balance,
+            created_at=wallet.created_at,
+            updated_at=wallet.updated_at
+        )
+
+    async def credit(self, technician_id: str, amount: float, reason: str, booking_id: Optional[str] = None) -> WalletDomain:
+        result = await self.db.execute(
+            select(WalletModel).where(WalletModel.technician_id == technician_id)
+        )
+        wallet = result.scalars().first()
+        if not wallet:
+            raise ValueError("Wallet introuvable pour ce technicien.")
+        
+        wallet.balance += amount
+        wallet.updated_at = datetime.utcnow()
+        
+        from app.infrastructure.database.models import generate_uuid
+        tx = WalletTransactionModel(
+            id=generate_uuid(),
+            wallet_id=wallet.id,
+            amount=amount,
+            transaction_type="credit",
+            reason=reason,
+            booking_id=booking_id
+        )
+        self.db.add(tx)
+        await self.db.commit()
+        await self.db.refresh(wallet)
+        
+        return WalletDomain(
+            id=wallet.id,
+            technician_id=wallet.technician_id,
+            balance=wallet.balance,
+            created_at=wallet.created_at,
+            updated_at=wallet.updated_at
+        )
+
+    async def get_transactions(self, wallet_id: str) -> List[WalletTransactionDomain]:
+        result = await self.db.execute(
+            select(WalletTransactionModel)
+            .where(WalletTransactionModel.wallet_id == wallet_id)
+            .order_by(WalletTransactionModel.created_at.desc())
+        )
+        models = result.scalars().all()
+        return [
+            WalletTransactionDomain(
+                id=m.id,
+                wallet_id=m.wallet_id,
+                amount=m.amount,
+                transaction_type=TransactionType(m.transaction_type),
+                reason=TransactionReason(m.reason),
+                booking_id=m.booking_id,
+                created_at=m.created_at
+            ) for m in models
+        ]
+
+    async def count_refunds_this_month(self, technician_id: str) -> int:
+        from datetime import datetime
+        now = datetime.utcnow()
+        first_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        
+        result = await self.db.execute(
+            select(WalletModel).where(WalletModel.technician_id == technician_id)
+        )
+        wallet = result.scalars().first()
+        if not wallet:
+            return 0
+        
+        from sqlalchemy import func
+        count_result = await self.db.execute(
+            select(func.count(WalletTransactionModel.id)).where(
+                WalletTransactionModel.wallet_id == wallet.id,
+                WalletTransactionModel.reason == "refund",
+                WalletTransactionModel.created_at >= first_of_month
+            )
+        )
+        return count_result.scalar() or 0

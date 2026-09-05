@@ -9,7 +9,7 @@ import 'widgets/step_4_route.dart';
 import 'widgets/step_5_conclusion.dart';
 
 class OnboardingScreen extends StatefulWidget {
-  const OnboardingScreen({Key? key}) : super(key: key);
+  const OnboardingScreen({super.key});
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();

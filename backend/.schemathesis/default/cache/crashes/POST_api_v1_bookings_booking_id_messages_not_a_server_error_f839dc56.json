@@ -1,0 +1,94 @@
+{
+  "operation": "POST /api/v1/bookings/{booking_id}/messages",
+  "method": "POST",
+  "path_template": "/api/v1/bookings/{booking_id}/messages",
+  "fingerprint": "f839dc56",
+  "case_id": "4rO1DA",
+  "code_sample": "curl -X POST -H 'Content-Type: application/json' -d '{\"content\": \"\"}' http://localhost:8001/api/v1/bookings/0/messages",
+  "sequence": [
+    {
+      "method": "POST",
+      "url": "http://localhost:8001/api/v1/bookings/0/messages",
+      "url_template": "http://localhost:8001/api/v1/bookings/{booking_id}/messages",
+      "headers": {
+        "User-Agent": "schemathesis/4.25.2",
+        "Accept-Encoding": "gzip, deflate",
+        "Accept": "*/*",
+        "Connection": "keep-alive",
+        "X-Schemathesis-TestCaseId": "4rO1DA",
+        "Content-Type": "application/json",
+        "Content-Length": "15"
+      },
+      "response": {
+        "status_code": 500,
+        "headers": {
+          "date": "Wed, 02 Sep 2026 11:04:42 GMT",
+          "server": "uvicorn",
+          "content-length": "21",
+          "content-type": "text/plain; charset=utf-8"
+        },
+        "body": "Internal Server Error"
+      },
+      "link": null,
+      "checks": [
+        {
+          "name": "not_a_server_error",
+          "status": "failure",
+          "message": "Server error"
+        }
+      ],
+      "meta": {
+        "generation": {
+          "time": 0.0038181249983608723,
+          "mode": "positive"
+        },
+        "components": {
+          "QUERY": "positive",
+          "PATH": "positive",
+          "BODY": "positive"
+        },
+        "phase": {
+          "name": "fuzzing",
+          "data": {
+            "type": "FuzzingPhaseData",
+            "description": "Positive test case",
+            "location": null,
+            "parameter": null,
+            "parameter_location": null,
+            "mutations": []
+          }
+        },
+        "pool_draws": [
+          {
+            "location": "path",
+            "parameter_name": "booking_id",
+            "resource_name": "BookingResponse",
+            "resource_field": "id",
+            "source_operation": "GET /api/v1/bookings/{booking_id}/messages",
+            "source_status": 200
+          }
+        ],
+        "pool_misses": [],
+        "semantic_draws": [],
+        "dictionary_draws": [],
+        "constants_draws": [],
+        "raw_containers": {}
+      },
+      "path": "/api/v1/bookings/{booking_id}/messages",
+      "path_parameters": {
+        "booking_id": "0"
+      },
+      "query": {},
+      "case_headers": {},
+      "cookies": {},
+      "case_body": {
+        "encoding": "json",
+        "value": {
+          "content": ""
+        }
+      },
+      "media_type": "application/json",
+      "parent_index": null
+    }
+  ]
+}

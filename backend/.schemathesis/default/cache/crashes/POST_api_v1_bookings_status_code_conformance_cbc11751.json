@@ -1,0 +1,96 @@
+{
+  "operation": "POST /api/v1/bookings",
+  "method": "POST",
+  "path_template": "/api/v1/bookings",
+  "fingerprint": "cbc11751",
+  "case_id": "7ES0e3",
+  "code_sample": "curl -X POST -H 'Content-Type: application/json' -d '{\"category_id\": \"\", \"description\": \"\", \"latitude\": 0, \"longitude\": 0, \"photo_url\": null, \"preferred_technician_id\": null}' http://localhost:8001/api/v1/bookings",
+  "sequence": [
+    {
+      "method": "POST",
+      "url": "http://localhost:8001/api/v1/bookings",
+      "url_template": "http://localhost:8001/api/v1/bookings",
+      "headers": {
+        "User-Agent": "schemathesis/4.25.2",
+        "Accept-Encoding": "gzip, deflate",
+        "Accept": "*/*",
+        "Connection": "keep-alive",
+        "X-Schemathesis-TestCaseId": "7ES0e3",
+        "Content-Type": "application/json",
+        "Content-Length": "121"
+      },
+      "response": {
+        "status_code": 401,
+        "headers": {
+          "date": "Wed, 02 Sep 2026 11:04:40 GMT",
+          "server": "uvicorn",
+          "www-authenticate": "[Filtered]",
+          "content-length": "30",
+          "content-type": "application/json"
+        },
+        "body": "{\"detail\":\"Not authenticated\"}"
+      },
+      "link": null,
+      "checks": [
+        {
+          "name": "status_code_conformance",
+          "status": "failure",
+          "message": "Undocumented HTTP status code\n\nReceived: 401\nDocumented: 200, 422"
+        }
+      ],
+      "meta": {
+        "generation": {
+          "time": 4.999994416721165e-06,
+          "mode": "negative"
+        },
+        "components": {
+          "BODY": "negative"
+        },
+        "phase": {
+          "name": "coverage",
+          "data": {
+            "type": "CoveragePhaseData",
+            "description": "Missing required property: address_text",
+            "location": "/required",
+            "parameter": "application/json",
+            "parameter_location": "BODY",
+            "scenario": "object_missing_required_property"
+          }
+        },
+        "pool_draws": [],
+        "pool_misses": [
+          [
+            "body",
+            "category_id"
+          ],
+          [
+            "body",
+            "preferred_technician_id"
+          ]
+        ],
+        "semantic_draws": [],
+        "dictionary_draws": [],
+        "constants_draws": [],
+        "raw_containers": {}
+      },
+      "path": "/api/v1/bookings",
+      "path_parameters": {},
+      "query": {},
+      "case_headers": {},
+      "cookies": {},
+      "case_body": {
+        "encoding": "json",
+        "value": {
+          "category_id": "",
+          "description": "",
+          "latitude": 0,
+          "longitude": 0,
+          "photo_url": null,
+          "preferred_technician_id": null
+        }
+      },
+      "media_type": "application/json",
+      "parent_index": null
+    }
+  ]
+}

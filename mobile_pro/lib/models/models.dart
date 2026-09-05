@@ -235,3 +235,52 @@ class MatchOfferModel {
     );
   }
 }
+
+class WalletTransactionModel {
+  final String id;
+  final double amount;
+  final String type;
+  final String reason;
+  final String? bookingId;
+  final DateTime? createdAt;
+
+  WalletTransactionModel({
+    required this.id,
+    required this.amount,
+    required this.type,
+    required this.reason,
+    this.bookingId,
+    this.createdAt,
+  });
+
+  factory WalletTransactionModel.fromJson(Map<String, dynamic> json) {
+    return WalletTransactionModel(
+      id: json['id'] ?? '',
+      amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
+      type: json['type'] ?? '',
+      reason: json['reason'] ?? '',
+      bookingId: json['booking_id'],
+      createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at']) : null,
+    );
+  }
+}
+
+class WalletInfoModel {
+  final String id;
+  final String technicianId;
+  final double balance;
+
+  WalletInfoModel({
+    required this.id,
+    required this.technicianId,
+    required this.balance,
+  });
+
+  factory WalletInfoModel.fromJson(Map<String, dynamic> json) {
+    return WalletInfoModel(
+      id: json['id'] ?? '',
+      technicianId: json['technician_id'] ?? '',
+      balance: (json['balance'] as num?)?.toDouble() ?? 0.0,
+    );
+  }
+}

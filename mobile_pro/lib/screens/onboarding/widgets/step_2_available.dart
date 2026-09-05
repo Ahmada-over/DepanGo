@@ -3,7 +3,7 @@ import '../../../core/theme.dart';
 
 class Step2Available extends StatefulWidget {
   final VoidCallback onNext;
-  const Step2Available({Key? key, required this.onNext}) : super(key: key);
+  const Step2Available({super.key, required this.onNext});
 
   @override
   State<Step2Available> createState() => _Step2AvailableState();
@@ -62,7 +62,7 @@ class _Step2AvailableState extends State<Step2Available> with SingleTickerProvid
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: ProTheme.primaryEmerald.withOpacity(1 - _pulseController.value),
+                            color: ProTheme.primaryEmerald.withValues(alpha: 1 - _pulseController.value),
                             width: 2,
                           ),
                         ),
@@ -83,7 +83,7 @@ class _Step2AvailableState extends State<Step2Available> with SingleTickerProvid
                     boxShadow: _isAvailable
                         ? [
                             BoxShadow(
-                              color: ProTheme.primaryEmerald.withOpacity(0.5),
+                              color: ProTheme.primaryEmerald.withValues(alpha: 0.5),
                               blurRadius: 20,
                             )
                           ]

@@ -1,0 +1,75 @@
+{
+  "operation": "GET /api/v1/admin/monitoring/missions/live",
+  "method": "GET",
+  "path_template": "/api/v1/admin/monitoring/missions/live",
+  "fingerprint": "98dec7da",
+  "case_id": "2FnuE3",
+  "code_sample": "curl -X GET http://localhost:8001/api/v1/admin/monitoring/missions/live",
+  "sequence": [
+    {
+      "method": "GET",
+      "url": "http://localhost:8001/api/v1/admin/monitoring/missions/live",
+      "url_template": "http://localhost:8001/api/v1/admin/monitoring/missions/live",
+      "headers": {
+        "User-Agent": "schemathesis/4.25.2",
+        "Accept-Encoding": "gzip, deflate",
+        "Accept": "*/*",
+        "Connection": "keep-alive",
+        "X-Schemathesis-TestCaseId": "2FnuE3"
+      },
+      "response": {
+        "status_code": 401,
+        "headers": {
+          "date": "Wed, 02 Sep 2026 11:04:40 GMT",
+          "server": "uvicorn",
+          "www-authenticate": "[Filtered]",
+          "content-length": "30",
+          "content-type": "application/json"
+        },
+        "body": "{\"detail\":\"Not authenticated\"}"
+      },
+      "link": null,
+      "checks": [
+        {
+          "name": "status_code_conformance",
+          "status": "failure",
+          "message": "Undocumented HTTP status code\n\nReceived: 401\nDocumented: 200"
+        }
+      ],
+      "meta": {
+        "generation": {
+          "time": 2.129199856426567e-05,
+          "mode": "positive"
+        },
+        "components": {},
+        "phase": {
+          "name": "coverage",
+          "data": {
+            "type": "CoveragePhaseData",
+            "description": "Default positive test case",
+            "location": null,
+            "parameter": null,
+            "parameter_location": null,
+            "scenario": "default_positive_test"
+          }
+        },
+        "pool_draws": [],
+        "pool_misses": [],
+        "semantic_draws": [],
+        "dictionary_draws": [],
+        "constants_draws": [],
+        "raw_containers": {}
+      },
+      "path": "/api/v1/admin/monitoring/missions/live",
+      "path_parameters": {},
+      "query": {},
+      "case_headers": {},
+      "cookies": {},
+      "case_body": {
+        "encoding": "none"
+      },
+      "media_type": null,
+      "parent_index": null
+    }
+  ]
+}

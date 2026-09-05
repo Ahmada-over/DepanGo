@@ -3,7 +3,7 @@ import '../../../core/theme.dart';
 
 class Step2Describe extends StatefulWidget {
   final VoidCallback onNext;
-  const Step2Describe({Key? key, required this.onNext}) : super(key: key);
+  const Step2Describe({super.key, required this.onNext});
 
   @override
   State<Step2Describe> createState() => _Step2DescribeState();
@@ -67,7 +67,7 @@ class _Step2DescribeState extends State<Step2Describe> {
               border: Border.all(color: Colors.grey[200]!),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.02),
+                  color: Colors.black.withValues(alpha: 0.02),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -122,8 +122,8 @@ class _Step2DescribeState extends State<Step2Describe> {
                       color: AppTheme.primaryLight,
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    child: Column(
-                      children: const [
+                    child: const Column(
+                      children: [
                         Text(
                           "❄️ Climatisation",
                           style: TextStyle(

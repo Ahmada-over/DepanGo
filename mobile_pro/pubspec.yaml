@@ -7,6 +7,7 @@ environment:
   sdk: '>=3.0.0 <4.0.0'
 
 dependencies:
+  local_auth: ^2.1.8
   flutter:
     sdk: flutter
   flutter_riverpod: ^2.5.1
@@ -30,6 +31,7 @@ dependencies:
   firebase_auth: ^6.6.0
   pinput: ^6.0.2
   intl_phone_number_input: ^0.7.5
+  flutter_local_notifications: ^22.3.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

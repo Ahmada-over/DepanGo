@@ -119,3 +119,31 @@ class PaymentDomain:
     status: PaymentStatus
     method: PaymentMethod
     created_at: datetime = field(default_factory=datetime.utcnow)
+
+class TransactionType(str, Enum):
+    CREDIT = "credit"
+    DEBIT = "debit"
+
+class TransactionReason(str, Enum):
+    WELCOME_BONUS = "welcome_bonus"
+    LEAD_PURCHASE = "lead_purchase"
+    REFUND = "refund"
+    TOP_UP = "top_up"
+
+@dataclass
+class WalletDomain:
+    id: str
+    technician_id: str
+    balance: float = 0.0
+    created_at: datetime = field(default_factory=datetime.utcnow)
+    updated_at: datetime = field(default_factory=datetime.utcnow)
+
+@dataclass
+class WalletTransactionDomain:
+    id: str
+    wallet_id: str
+    amount: float
+    transaction_type: TransactionType
+    reason: TransactionReason
+    booking_id: Optional[str] = None
+    created_at: datetime = field(default_factory=datetime.utcnow)

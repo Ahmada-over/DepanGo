@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../models/models.dart';
 import '../core/theme.dart';
 import '../core/map_style.dart';
+import 'quote_review_screen.dart';
 
 class BookingDetailsScreen extends ConsumerWidget {
   final BookingModel booking;
@@ -60,7 +61,29 @@ class BookingDetailsScreen extends ConsumerWidget {
                   const SizedBox(height: 32),
                   const Text('Prix', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black)),
                   const SizedBox(height: 16),
-                  _buildPriceCard(),
+                  _buildPriceCard(context),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => QuoteReviewScreen(bookingId: booking.id),
+                          ),
+                        );
+                      },
+                      icon: const Icon(LucideIcons.file_text, size: 20),
+                      label: const Text('Consulter les Devis / Estimations', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryEmerald,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 40),
                 ],
               ),
@@ -252,25 +275,38 @@ class BookingDetailsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildPriceCard() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF1F3F5),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: const Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text('Prix de la commande', style: TextStyle(fontSize: 15, color: Colors.black87)),
-          Row(
-            children: [
-              Icon(LucideIcons.zap, color: Colors.amber, size: 18),
-              SizedBox(width: 4),
-              Text('Sur devis', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black)),
-            ],
-          )
-        ],
+  Widget _buildPriceCard(BuildContext context) {
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => QuoteReviewScreen(bookingId: booking.id),
+          ),
+        );
+      },
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF1F3F5),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Prix de la commande', style: TextStyle(fontSize: 15, color: Colors.black87)),
+            Row(
+              children: [
+                Icon(LucideIcons.zap, color: Colors.amber, size: 18),
+                SizedBox(width: 4),
+                Text('Sur devis', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black)),
+                SizedBox(width: 6),
+                Icon(LucideIcons.chevron_right, size: 16, color: Colors.grey),
+              ],
+            )
+          ],
+        ),
       ),
     );
   }

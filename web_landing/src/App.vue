@@ -1,5 +1,44 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
+import TermsOfService from './components/TermsOfService.vue';
+import PrivacyPolicy from './components/PrivacyPolicy.vue';
+
+const currentView = ref('home'); // 'home' | 'cgu' | 'privacy'
+
+const navigateTo = (view, sectionId = null) => {
+  currentView.value = view;
+  if (view === 'cgu') {
+    window.location.hash = '#cgu';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } else if (view === 'privacy') {
+    window.location.hash = '#privacy';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } else {
+    if (sectionId) {
+      window.location.hash = `#${sectionId}`;
+      setTimeout(() => {
+        const el = document.getElementById(sectionId);
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }, 50);
+    } else {
+      history.pushState('', document.title, window.location.pathname + window.location.search);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+};
+
+const handleHashChange = () => {
+  const hash = window.location.hash.toLowerCase();
+  if (hash === '#cgu' || hash === '#terms') {
+    currentView.value = 'cgu';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } else if (hash === '#privacy' || hash === '#confidentialite') {
+    currentView.value = 'privacy';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } else if (!hash || hash === '#' || hash === '#home') {
+    currentView.value = 'home';
+  }
+};
 
 const currentStep = ref(0);
 const steps = [
@@ -24,6 +63,9 @@ let interval;
 let interval2;
 
 onMounted(() => {
+  handleHashChange();
+  window.addEventListener('hashchange', handleHashChange);
+
   interval = setInterval(() => {
     currentStep.value = (currentStep.value + 1) % steps.length;
   }, 4000);
@@ -33,6 +75,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  window.removeEventListener('hashchange', handleHashChange);
   clearInterval(interval);
   clearInterval(interval2);
 });
@@ -59,25 +102,33 @@ const setStep2 = (index) => {
     <!-- Navbar -->
     <header class="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-white/20">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-        <div class="flex items-center space-x-3">
-          <img src="/logo-client.png" alt="depanGo Logo" class="h-10 w-10 object-contain rounded-xl" />
+        <div @click="navigateTo('home')" class="flex items-center space-x-3 cursor-pointer group">
+          <img src="/logo-client.png" alt="depanGo Logo" class="h-10 w-10 object-contain rounded-xl group-hover:scale-105 transition-transform" />
           <span class="text-2xl font-black text-[#0D776C] tracking-tight">depanGo</span>
         </div>
         <nav class="hidden md:flex space-x-8">
-          <a href="#how-it-works" class="text-gray-600 hover:text-[#0D776C] font-medium transition-colors">Comment ça marche</a>
-          <a href="#services" class="text-gray-600 hover:text-[#0D776C] font-medium transition-colors">Nos Services</a>
-          <a href="#pro" class="text-gray-600 hover:text-[#0D776C] font-medium transition-colors">Devenir Pro</a>
+          <a href="#how-it-works" @click.prevent="navigateTo('home', 'how-it-works')" class="text-gray-600 hover:text-[#0D776C] font-medium transition-colors">Comment ça marche</a>
+          <a href="#services" @click.prevent="navigateTo('home', 'services')" class="text-gray-600 hover:text-[#0D776C] font-medium transition-colors">Nos Services</a>
+          <a href="#pro" @click.prevent="navigateTo('home', 'pro')" class="text-gray-600 hover:text-[#0D776C] font-medium transition-colors">Devenir Pro</a>
         </nav>
         <div>
-          <a href="#download" class="bg-[#0D776C] text-white px-5 py-2.5 rounded-xl font-bold hover:bg-[#095f56] transition-colors shadow-md hover:shadow-lg">
+          <a href="#download" @click.prevent="navigateTo('home', 'download')" class="bg-[#0D776C] text-white px-5 py-2.5 rounded-xl font-bold hover:bg-[#095f56] transition-colors shadow-md hover:shadow-lg">
             Commencer
           </a>
         </div>
       </div>
     </header>
 
-    <!-- Hero Section -->
-    <section class="flex-grow flex items-center bg-gray-50 py-20 relative overflow-hidden">
+    <!-- CGU View -->
+    <TermsOfService v-if="currentView === 'cgu'" @back="navigateTo('home')" />
+
+    <!-- Privacy Policy View -->
+    <PrivacyPolicy v-else-if="currentView === 'privacy'" @back="navigateTo('home')" />
+
+    <!-- Home Page Content -->
+    <main v-else class="flex-grow">
+      <!-- Hero Section -->
+      <section class="flex-grow flex items-center bg-gray-50 py-20 relative overflow-hidden">
       <!-- Background Orbs -->
       <div class="absolute top-0 left-0 w-96 h-96 bg-teal-300 rounded-full mix-blend-multiply filter blur-[128px] opacity-40 "></div>
       <div class="absolute top-0 right-0 w-96 h-96 bg-emerald-300 rounded-full mix-blend-multiply filter blur-[128px] opacity-40 "></div>
@@ -502,7 +553,9 @@ const setStep2 = (index) => {
         </div>
       </div>
     </section>
-<!-- Footer with Contact & Socials -->
+    </main>
+
+    <!-- Footer with Contact & Socials -->
     <footer class="bg-slate-50 pt-16 pb-8 border-t border-slate-200 shadow-[inset_0_1px_3px_rgba(0,0,0,0.02)] relative overflow-hidden">
       <!-- Footer subtle accent -->
       <div class="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-1 bg-gradient-to-r from-transparent via-[#0D776C]/20 to-transparent"></div>
@@ -510,9 +563,9 @@ const setStep2 = (index) => {
         <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
           
           <div class="col-span-1 md:col-span-2">
-            <div class="flex items-center space-x-3 mb-6">
-              <img src="/logo-client.png" alt="depanGo Logo" class="h-10 w-10 object-contain rounded-xl grayscale opacity-70" />
-              <span class="text-2xl font-black text-gray-800 tracking-tight">depanGo</span>
+            <div @click="navigateTo('home')" class="flex items-center space-x-3 mb-6 cursor-pointer group">
+              <img src="/logo-client.png" alt="depanGo Logo" class="h-10 w-10 object-contain rounded-xl grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all" />
+              <span class="text-2xl font-black text-gray-800 tracking-tight group-hover:text-[#0D776C] transition-colors">depanGo</span>
             </div>
             <p class="text-gray-500 mb-6 max-w-sm leading-relaxed">
               La plateforme numéro 1 de mise en relation entre particuliers et professionnels du dépannage à domicile.
@@ -566,8 +619,8 @@ const setStep2 = (index) => {
         <div class="border-t border-gray-100 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-400">
           <p>© 2026 depanGo. Tous droits réservés.</p>
           <div class="mt-4 md:mt-0 space-x-6">
-            <a href="#" class="hover:text-[#0D776C] transition-colors">Conditions d'utilisation</a>
-            <a href="#" class="hover:text-[#0D776C] transition-colors">Politique de confidentialité</a>
+            <a href="/cgu.html" @click.prevent="navigateTo('cgu')" class="hover:text-[#0D776C] transition-colors cursor-pointer">Conditions d'utilisation</a>
+            <a href="/privacy.html" @click.prevent="navigateTo('privacy')" class="hover:text-[#0D776C] transition-colors cursor-pointer">Politique de confidentialité</a>
           </div>
         </div>
       </div>

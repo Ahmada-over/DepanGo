@@ -43,7 +43,9 @@
 					<string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
 					<key>UISceneStoryboardFile</key>
 					<string>Main</string>
-				</dict>
+					<key>NSFaceIDUsageDescription</key>
+	<string>Cette application a besoin de Face ID pour confirmer de manière sécurisée votre identité lors des interventions sur le terrain.</string>
+</dict>
 			</array>
 		</dict>
 	</dict>

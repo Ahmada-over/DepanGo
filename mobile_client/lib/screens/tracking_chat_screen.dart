@@ -17,6 +17,7 @@ import '../core/config.dart';
 import '../core/category_helper.dart';
 import '../models/models.dart';
 import '../providers/app_providers.dart';
+import 'quote_review_screen.dart';
 
 class TrackingChatScreen extends ConsumerStatefulWidget {
   final String? preferredTechnicianName;
@@ -924,6 +925,37 @@ class _TrackingChatScreenState extends ConsumerState<TrackingChatScreen> {
                               ),
                             ),
                           ),
+                          if (activeBooking != null) ...[
+                            const SizedBox(height: 10),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 46,
+                              child: OutlinedButton.icon(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => QuoteReviewScreen(bookingId: activeBooking.id),
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(LucideIcons.file_text,
+                                    color: AppTheme.primaryEmerald, size: 18),
+                                label: const Text(
+                                  'Consulter / Valider le Devis',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                      color: AppTheme.primaryDark),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  side: const BorderSide(color: AppTheme.primaryEmerald, width: 1.5),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12)),
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),

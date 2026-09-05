@@ -12,7 +12,11 @@ import '../core/theme.dart';
 import '../core/map_style.dart';
 import '../core/app_toast.dart';
 import '../core/category_helper.dart';
+import '../models/models.dart';
+import '../models/hardware_store.dart';
 import '../providers/pro_providers.dart';
+import '../providers/wallet_provider.dart';
+import 'quote_builder_screen.dart';
 
 class ActiveMissionScreen extends ConsumerStatefulWidget {
   const ActiveMissionScreen({super.key});
@@ -28,6 +32,8 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen> {
   BitmapDescriptor? _techMotoIcon;
   BitmapDescriptor? _techCarIcon;
   BitmapDescriptor? _clientDestinationIcon;
+  BitmapDescriptor? _hardwareStoreIcon;
+  bool _showHardwareStores = true;
 
   List<LatLng> _fullRouteCoordinates = [];
   List<LatLng> _activePolylineCoordinates = [];
@@ -126,16 +132,34 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen> {
         primaryColor: const Color(0xFFDC2626), // Red
         iconColor: Colors.white,
       );
+      final hardware = await _createCustomMarkerBitmap(
+        icon: LucideIcons.wrench,
+        primaryColor: const Color(0xFFD97706), // Amber
+        iconColor: Colors.white,
+        size: 90.0,
+      );
       if (mounted) {
         setState(() {
           _techMotoIcon = moto;
           _techCarIcon = car;
           _clientDestinationIcon = client;
+          _hardwareStoreIcon = hardware;
         });
       }
     } catch (e) {
       debugPrint('[Markers] Error: $e');
     }
+  }
+
+  String _extractCommuneName(String addressText) {
+    if (addressText.trim().isEmpty) return 'Dakar';
+    final parts = addressText.split(',').map((e) => e.trim()).toList();
+    if (parts.length >= 3) {
+      return '${parts[1]}, ${parts[2]}';
+    } else if (parts.length == 2) {
+      return parts[0];
+    }
+    return addressText;
   }
 
   Future<void> _fetchRoute(double startLat, double startLng, double endLat, double endLng) async {
@@ -422,23 +446,20 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen> {
             zoomControlsEnabled: false,
             compassEnabled: false,
             mapToolbarEnabled: false,
-            padding: const EdgeInsets.only(bottom: 260),
-            polylines: {
-              Polyline(
-                polylineId: const PolylineId('tech_to_client_route'),
-                color: ProTheme.primaryLight.withValues(alpha: 0.9),
-                width: 6,
-                startCap: Cap.roundCap,
-                endCap: Cap.roundCap,
-                jointType: JointType.round,
-                points: _activePolylineCoordinates.isNotEmpty
-                    ? _activePolylineCoordinates
-                    : [
-                        currentTechPosition,
-                        LatLng(activeMission.latitude, activeMission.longitude),
-                      ],
-              ),
-            },
+            padding: const EdgeInsets.fromLTRB(-100, 0, 0, -100),
+            polylines: _activePolylineCoordinates.isNotEmpty
+                ? {
+                    Polyline(
+                      polylineId: const PolylineId('tech_to_client_route'),
+                      color: ProTheme.primaryLight.withValues(alpha: 0.9),
+                      width: 5,
+                      startCap: Cap.roundCap,
+                      endCap: Cap.roundCap,
+                      jointType: JointType.round,
+                      points: _activePolylineCoordinates,
+                    ),
+                  }
+                : {},
             markers: {
               // Technician Vehicle Marker (moving in real time)
               Marker(
@@ -462,9 +483,24 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen> {
                 anchor: const Offset(0.5, 0.95),
                 infoWindow: InfoWindow(
                   title: 'Client : ${activeMission.clientName}',
-                  snippet: activeMission.addressText,
+                  snippet: _extractCommuneName(activeMission.addressText),
                 ),
               ),
+
+              // Quincailleries / Hardware Stores
+              if (_showHardwareStores && _hardwareStoreIcon != null)
+                ...kDakarHardwareStores.map((store) {
+                  return Marker(
+                    markerId: MarkerId(store.id),
+                    position: LatLng(store.latitude, store.longitude),
+                    icon: _hardwareStoreIcon!,
+                    anchor: const Offset(0.5, 0.95),
+                    infoWindow: InfoWindow(
+                      title: '🏪 ${store.name}',
+                      snippet: '${store.commune} • ${store.specialties.join(", ")}',
+                    ),
+                  );
+                }),
             },
           ),
 
@@ -713,16 +749,23 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen> {
                             children: [
                               const Icon(LucideIcons.map_pin, color: ProTheme.primaryLight, size: 16),
                               const SizedBox(width: 6),
-                              const Text('Adresse d\'intervention', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: ProTheme.textMuted)),
+                              const Text('Commune / Destination', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: ProTheme.textMuted)),
                               const Spacer(),
                               Text(dynamicDistanceText, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: ProTheme.primaryLight)),
                             ],
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            activeMission.addressText,
-                            style: const TextStyle(fontSize: 13, color: Colors.white, fontWeight: FontWeight.w600),
+                            _extractCommuneName(activeMission.addressText),
+                            style: const TextStyle(fontSize: 15, color: Colors.white, fontWeight: FontWeight.bold),
                           ),
+                          if (_extractCommuneName(activeMission.addressText) != activeMission.addressText) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              activeMission.addressText,
+                              style: const TextStyle(fontSize: 12, color: ProTheme.textMuted),
+                            ),
+                          ],
                           const SizedBox(height: 10),
                           const Divider(color: ProTheme.darkBorder, height: 1),
                           const SizedBox(height: 10),
@@ -831,7 +874,33 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen> {
                         ),
                       ),
 
-                    if (activeMission.status == 'on_site')
+                    if (activeMission.status == 'on_site') ...[
+                      SizedBox(
+                        height: 52,
+                        child: ElevatedButton.icon(
+                          onPressed: () async {
+                            final result = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => QuoteBuilderScreen(bookingId: activeMission.id),
+                              ),
+                            );
+                            if (result == true && mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Devis envoyé !'), backgroundColor: Colors.green),
+                              );
+                            }
+                          },
+                          icon: const Icon(LucideIcons.file_text, size: 22),
+                          label: const Text('📋 CRÉER UN DEVIS', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: ProTheme.amber,
+                            foregroundColor: Colors.black,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
                       SizedBox(
                         height: 52,
                         child: ElevatedButton.icon(
@@ -845,6 +914,7 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen> {
                           ),
                         ),
                       ),
+                    ],
 
                     const SizedBox(height: 10),
 
@@ -891,9 +961,13 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen> {
   }
 
   void _showCancelDialog(BuildContext context) {
-    String selectedReason = 'Client absent';
+    String selectedReason = 'Client injoignable / absent';
+    bool requestRefund = true;
+
     final reasons = [
-      'Client absent',
+      'Client injoignable / absent',
+      'Client a annulé la demande',
+      'Fausse demande / Numéro erroné',
       'Problème technique complexe / Matériel manquant',
       'Le client a refusé le devis',
       'Autre'
@@ -904,19 +978,68 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           backgroundColor: ProTheme.darkCard,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          title: const Text('Annuler l\'intervention', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('Annuler l\'intervention',
+              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Précisez le motif d\'annulation de cette intervention :', style: TextStyle(fontSize: 13, color: ProTheme.textMuted)),
+              const Text('Précisez le motif d\'annulation de cette intervention :',
+                  style: TextStyle(fontSize: 13, color: ProTheme.textMuted)),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 initialValue: selectedReason,
                 dropdownColor: ProTheme.darkSurface,
                 decoration: const InputDecoration(border: OutlineInputBorder()),
-                items: reasons.map((r) => DropdownMenuItem(value: r, child: Text(r, style: const TextStyle(fontSize: 12, color: Colors.white)))).toList(),
-                onChanged: (val) => setDialogState(() => selectedReason = val ?? reasons.first),
+                items: reasons
+                    .map((r) => DropdownMenuItem(
+                        value: r,
+                        child: Text(r,
+                            style: const TextStyle(fontSize: 12, color: Colors.white))))
+                    .toList(),
+                onChanged: (val) =>
+                    setDialogState(() => selectedReason = val ?? reasons.first),
+              ),
+              const SizedBox(height: 14),
+              InkWell(
+                onTap: () => setDialogState(() => requestRefund = !requestRefund),
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: requestRefund
+                        ? ProTheme.primaryLight.withValues(alpha: 0.15)
+                        : ProTheme.darkSurface,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: requestRefund
+                          ? ProTheme.primaryLight
+                          : ProTheme.darkBorder,
+                      width: 0.8,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        requestRefund
+                            ? Icons.check_box_rounded
+                            : Icons.check_box_outline_blank_rounded,
+                        size: 18,
+                        color: requestRefund
+                            ? ProTheme.primaryLight
+                            : ProTheme.textMuted,
+                      ),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          'Demander le remboursement des 500 FCFA (Garantie contact, max 2/mois)',
+                          style: TextStyle(fontSize: 11, color: Colors.white),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),
@@ -926,10 +1049,17 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen> {
               child: const Text('Retour', style: TextStyle(color: ProTheme.textMuted)),
             ),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-              onPressed: () {
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.redAccent,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              onPressed: () async {
+                final mission = ref.read(activeMissionProvider);
                 Navigator.pop(ctx);
-                _handleStatusUpdate('cancelled', selectedReason);
+                await _handleStatusUpdate('cancelled', selectedReason);
+                if (requestRefund && mission != null) {
+                  await ref.read(walletProvider.notifier).requestRefund(mission.id);
+                }
               },
               child: const Text('Confirmer l\'Annulation'),
             ),

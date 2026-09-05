@@ -4,10 +4,13 @@ import logging
 from datetime import datetime
 from typing import Optional, List
 from app.application.ports import (
+    WalletRepositoryPort,
     UserRepositoryPort, TechnicianRepositoryPort, CategoryRepositoryPort,
     BookingRepositoryPort, MessageRepositoryPort, ReviewRepositoryPort, PaymentRepositoryPort
 )
+import uuid
 from app.domain.models import (
+    WalletDomain, TransactionReason,
     UserDomain, UserRole, TechnicianProfileDomain, AvailabilityStatus,
     BookingDomain, BookingStatus, MessageDomain, ReviewDomain, PaymentDomain,
     PaymentStatus, PaymentMethod
@@ -62,6 +65,13 @@ class AuthUseCases:
                 transport_mode=transport_mode or "moto"
             )
             await self.tech_repo.create_profile(tech_profile)
+            # Create wallet with welcome bonus for new technician
+            from app.infrastructure.database.session import AsyncSessionLocal
+            from app.infrastructure.repositories.sqlalchemy_repositories import SQLAlchemyWalletRepository
+            async with AsyncSessionLocal() as wallet_session:
+                wallet_repo = SQLAlchemyWalletRepository(wallet_session)
+                wallet_uc = WalletUseCases(wallet_repo)
+                await wallet_uc.create_wallet_with_bonus(user_id)
 
         token = create_access_token(user_id)
         return {
@@ -143,7 +153,14 @@ class AuthUseCases:
                         transport_mode="moto"
                     )
                     await self.tech_repo.create_profile(tech_profile)
-                
+                    # Create wallet with welcome bonus for new technician
+                    from app.infrastructure.database.session import AsyncSessionLocal
+                    from app.infrastructure.repositories.sqlalchemy_repositories import SQLAlchemyWalletRepository
+                    async with AsyncSessionLocal() as wallet_session:
+                        wallet_repo = SQLAlchemyWalletRepository(wallet_session)
+                        wallet_uc = WalletUseCases(wallet_repo)
+                        await wallet_uc.create_wallet_with_bonus(user_id)
+
             token = create_access_token(user.id)
             return {
                 "access_token": token,
@@ -392,6 +409,14 @@ class BookingUseCases:
             if status not in valid_transitions.get(current_status, []):
                 raise ValueError(f"Invalid state transition from {current_status} to {status}")
 
+            if current_status == "pending" and status in ("matched", "accepted") and technician_id:
+                from app.infrastructure.database.session import AsyncSessionLocal
+                from app.infrastructure.repositories.sqlalchemy_repositories import SQLAlchemyWalletRepository
+                async with AsyncSessionLocal() as wallet_session:
+                    wallet_repo = SQLAlchemyWalletRepository(wallet_session)
+                    wallet_uc = WalletUseCases(wallet_repo)
+                    await wallet_uc.purchase_lead(technician_id=technician_id, booking_id=booking_id)
+
             updated = await self.booking_repo.update_status(
                 booking_id=booking_id,
                 status=status,
@@ -442,3 +467,125 @@ class BookingUseCases:
                     logger.info(f"[MATCHING] Booking {booking_id} expired after waiting for user action.")
         except Exception as e:
             logger.error(f"[MATCHING] Error expiring booking {booking_id}: {e}", exc_info=True)
+
+
+LEAD_COST_FCFA = 500
+WELCOME_BONUS_FCFA = 2000
+MAX_REFUNDS_PER_MONTH = 2
+
+class WalletUseCases:
+    def __init__(self, wallet_repo: WalletRepositoryPort):
+        self.wallet_repo = wallet_repo
+
+    async def create_wallet_with_bonus(self, technician_id: str) -> dict:
+        existing = await self.wallet_repo.get_by_technician_id(technician_id)
+        if existing:
+            return {
+                "id": existing.id,
+                "technician_id": existing.technician_id,
+                "balance": existing.balance
+            }
+        
+        wallet = WalletDomain(
+            id=str(uuid.uuid4()),
+            technician_id=technician_id,
+            balance=0.0
+        )
+        await self.wallet_repo.create(wallet)
+        
+        updated = await self.wallet_repo.credit(
+            technician_id=technician_id,
+            amount=WELCOME_BONUS_FCFA,
+            reason="welcome_bonus"
+        )
+        
+        return {
+            "id": updated.id,
+            "technician_id": updated.technician_id,
+            "balance": updated.balance
+        }
+
+    async def get_balance(self, technician_id: str) -> dict:
+        wallet = await self.wallet_repo.get_by_technician_id(technician_id)
+        if not wallet:
+            raise ValueError("Aucun wallet trouvé pour ce technicien.")
+        return {
+            "id": wallet.id,
+            "technician_id": wallet.technician_id,
+            "balance": wallet.balance
+        }
+
+    async def purchase_lead(self, technician_id: str, booking_id: str) -> dict:
+        wallet = await self.wallet_repo.get_by_technician_id(technician_id)
+        if not wallet:
+            raise ValueError("Aucun wallet trouvé. Veuillez créer un compte professionnel.")
+        if wallet.balance < LEAD_COST_FCFA:
+            raise ValueError(f"Solde insuffisant ({wallet.balance} FCFA). Rechargez votre wallet pour accepter cette mission. Coût : {LEAD_COST_FCFA} FCFA.")
+        
+        updated = await self.wallet_repo.debit(
+            technician_id=technician_id,
+            amount=LEAD_COST_FCFA,
+            reason="lead_purchase",
+            booking_id=booking_id
+        )
+        
+        return {
+            "id": updated.id,
+            "technician_id": updated.technician_id,
+            "balance": updated.balance,
+            "amount_debited": LEAD_COST_FCFA,
+            "booking_id": booking_id
+        }
+
+    async def request_refund(self, technician_id: str, booking_id: str) -> dict:
+        refund_count = await self.wallet_repo.count_refunds_this_month(technician_id)
+        if refund_count >= MAX_REFUNDS_PER_MONTH:
+            raise ValueError(f"Vous avez atteint la limite de {MAX_REFUNDS_PER_MONTH} remboursements par mois.")
+        
+        updated = await self.wallet_repo.credit(
+            technician_id=technician_id,
+            amount=LEAD_COST_FCFA,
+            reason="refund",
+            booking_id=booking_id
+        )
+        
+        return {
+            "id": updated.id,
+            "technician_id": updated.technician_id,
+            "balance": updated.balance,
+            "amount_refunded": LEAD_COST_FCFA,
+            "refunds_remaining": MAX_REFUNDS_PER_MONTH - refund_count - 1
+        }
+
+    async def top_up(self, technician_id: str, amount: float) -> dict:
+        if amount <= 0:
+            raise ValueError("Le montant de rechargement doit être positif.")
+        
+        updated = await self.wallet_repo.credit(
+            technician_id=technician_id,
+            amount=amount,
+            reason="top_up"
+        )
+        
+        return {
+            "id": updated.id,
+            "technician_id": updated.technician_id,
+            "balance": updated.balance,
+            "amount_credited": amount
+        }
+
+    async def get_transactions(self, technician_id: str) -> list:
+        wallet = await self.wallet_repo.get_by_technician_id(technician_id)
+        if not wallet:
+            raise ValueError("Aucun wallet trouvé pour ce technicien.")
+        transactions = await self.wallet_repo.get_transactions(wallet.id)
+        return [
+            {
+                "id": t.id,
+                "amount": t.amount,
+                "type": t.transaction_type.value if hasattr(t.transaction_type, 'value') else str(t.transaction_type),
+                "reason": t.reason.value if hasattr(t.reason, 'value') else str(t.reason),
+                "booking_id": t.booking_id,
+                "created_at": t.created_at.isoformat() if t.created_at else None
+            } for t in transactions
+        ]

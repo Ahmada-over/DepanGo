@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../services/biometric_service.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -12,6 +13,7 @@ import '../core/app_toast.dart';
 import '../core/config.dart';
 import '../models/models.dart';
 import 'connectivity_provider.dart';
+import '../services/local_notification_service.dart';
 
 // --- 1. Auth Provider ---
 final authProvider = StateNotifierProvider<AuthNotifier, UserModel?>((ref) {
@@ -281,6 +283,12 @@ class IncomingOfferNotifier extends StateNotifier<MatchOfferModel?> {
       duration: const Duration(seconds: 6),
     );
 
+    LocalNotificationService.instance.showNotification(
+      title: '🚨 Demande d\'Intervention Reçue !',
+      body: '${offer.categoryName} • ${offer.addressText} (~${offer.distanceKm.toStringAsFixed(1)} km)',
+      payload: offer.bookingId,
+    );
+
     _countdownTimer?.cancel();
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (remainingSeconds > 0) {
@@ -400,6 +408,21 @@ class ActiveMissionNotifier extends StateNotifier<BookingModel?> {
     if (state == null) return false;
     final bookingId = state!.id;
 
+    // --- BIOMETRIC MIDDLEWARE (OFFLINE RESILIENCY) ---
+    // On exige une authentification locale avant toute action sensible.
+    bool canProceed = await biometricService.authenticateAction(
+        'Veuillez vous authentifier pour valider cette étape d\'itinéraire.');
+    if (!canProceed) {
+      AppToast.show(
+        null,
+        title: 'Action refusée',
+        message: 'Authentification biométrique requise pour valider cette étape.',
+        type: AppToastType.error,
+      );
+      return false;
+    }
+    // --- FIN BIOMETRIC MIDDLEWARE ---
+
     try {
       final user = _ref.read(authProvider);
       final dio = _ref.read(apiClientProvider);
@@ -418,6 +441,9 @@ class ActiveMissionNotifier extends StateNotifier<BookingModel?> {
       }
     } catch (e) {
       debugPrint('[ActiveMission] Update status error: $e');
+      // If we are offline, we could queue the status update here!
+      // But for now, we just return false. (Offline resilience means they could pass the biometric check 
+      // even if network is down, and we queue the request for later).
     }
     return false;
   }
@@ -501,6 +527,10 @@ class ProWebSocketService {
                 title: 'Mise à jour d\'intervention',
                 message: 'Le statut de la mission a changé.',
                 type: AppToastType.info,
+              );
+              LocalNotificationService.instance.showNotification(
+                title: 'Mise à jour d\'intervention',
+                body: 'Le statut de la mission a changé.',
               );
             }
           } catch (e) {

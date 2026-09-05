@@ -11,6 +11,7 @@ import 'connectivity_provider.dart';
 import '../core/api_client.dart';
 import '../core/app_toast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../services/local_notification_service.dart';
 
 final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
   throw UnimplementedError();
@@ -252,6 +253,12 @@ class NotificationNotifier extends StateNotifier<List<AppNotificationModel>> {
       title: title,
       message: message,
       type: toastType,
+    );
+
+    // Déclencher la notification locale native du téléphone
+    LocalNotificationService.instance.showNotification(
+      title: title,
+      body: message,
     );
 
     state = [

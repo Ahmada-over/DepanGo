@@ -9,6 +9,7 @@ import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'services/local_notification_service.dart';
 
 final sharedPreferencesProvider = Provider<SharedPreferences>((ref) => throw UnimplementedError());
 
@@ -21,6 +22,7 @@ void main() async {
   } catch (e) {
     debugPrint("Firebase init error: $e");
   }
+  await LocalNotificationService.instance.initialize();
   final prefs = await SharedPreferences.getInstance();
   
   runApp(

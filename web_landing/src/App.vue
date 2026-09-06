@@ -621,6 +621,7 @@ const setStep2 = (index) => {
           <div class="mt-4 md:mt-0 space-x-6">
             <a href="/cgu.html" @click.prevent="navigateTo('cgu')" class="hover:text-[#0D776C] transition-colors cursor-pointer">Conditions d'utilisation</a>
             <a href="/privacy.html" @click.prevent="navigateTo('privacy')" class="hover:text-[#0D776C] transition-colors cursor-pointer">Politique de confidentialité</a>
+            <a href="/delete-account.html" class="hover:text-gray-600 transition-colors">Suppression de compte</a>
           </div>
         </div>
       </div>

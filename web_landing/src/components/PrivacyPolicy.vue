@@ -190,8 +190,9 @@
               <p class="text-xs sm:text-sm text-red-800 leading-relaxed mb-3">
                 Vous pouvez à tout moment solliciter la clôture de votre compte et la purge de vos données :
               </p>
-              <ol class="text-xs sm:text-sm text-red-800 space-y-1 list-decimal pl-5">
+              <ol class="text-xs sm:text-sm text-red-800 space-y-1.5 list-decimal pl-5">
                 <li>Directement depuis votre application mobile dans l'onglet <strong>« Mon Profil » → « Supprimer mon compte »</strong> ; ou</li>
+                <li>En ligne via notre page dédiée : <a href="/delete-account.html" class="font-bold underline text-red-900 hover:text-[#0D776C]">Formulaire Web de suppression de compte</a> ; ou</li>
                 <li>En envoyant une simple demande par email à <a href="mailto:privacy@depango.sn" class="font-bold underline">privacy@depango.sn</a> ou <a href="mailto:contact@depango.sn" class="font-bold underline">contact@depango.sn</a> avec pour objet <em>« Demande de suppression de compte »</em> et votre numéro de téléphone.</li>
               </ol>
               <p class="text-xs text-red-700 mt-2">

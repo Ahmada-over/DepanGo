@@ -28,8 +28,9 @@ class AuthUseCases:
         self.tech_repo = tech_repo
 
     async def register(self, name: str, phone: str, password: str, role: str, email: Optional[str] = None, category_ids: Optional[List[str]] = None, transport_mode: Optional[str] = "moto") -> dict:
-        user_email = email or f"{phone.replace(' ', '').replace('+', '')}@techconnect.sn"
-        existing = await self.user_repo.get_by_email(user_email)
+        existing = None
+        if email:
+            existing = await self.user_repo.get_by_email(email)
         if not existing:
             existing = await self.user_repo.get_by_phone(phone)
         if existing:
@@ -43,7 +44,7 @@ class AuthUseCases:
             id=user_id,
             name=name,
             phone=phone,
-            email=user_email,
+            email=email,
             role=user_role,
             password_hash=hashed
         )
@@ -132,7 +133,7 @@ class AuthUseCases:
                     id=user_id,
                     name=name,
                     phone=phone_number,
-                    email=f"{phone_number.replace('+', '')}@techconnect.sn",
+                    email=None,
                     role=user_role,
                     password_hash=""
                 )
@@ -508,7 +509,8 @@ class WalletUseCases:
     async def get_balance(self, technician_id: str) -> dict:
         wallet = await self.wallet_repo.get_by_technician_id(technician_id)
         if not wallet:
-            raise ValueError("Aucun wallet trouvé pour ce technicien.")
+            # Auto-initialisation pour les techniciens existants avec le bonus de bienvenue
+            return await self.create_wallet_with_bonus(technician_id)
         return {
             "id": wallet.id,
             "technician_id": wallet.technician_id,
@@ -518,9 +520,11 @@ class WalletUseCases:
     async def purchase_lead(self, technician_id: str, booking_id: str) -> dict:
         wallet = await self.wallet_repo.get_by_technician_id(technician_id)
         if not wallet:
-            raise ValueError("Aucun wallet trouvé. Veuillez créer un compte professionnel.")
-        if wallet.balance < LEAD_COST_FCFA:
-            raise ValueError(f"Solde insuffisant ({wallet.balance} FCFA). Rechargez votre wallet pour accepter cette mission. Coût : {LEAD_COST_FCFA} FCFA.")
+            await self.create_wallet_with_bonus(technician_id)
+            wallet = await self.wallet_repo.get_by_technician_id(technician_id)
+        current_bal = wallet.balance if wallet else 0.0
+        if not wallet or current_bal < LEAD_COST_FCFA:
+            raise ValueError(f"Solde insuffisant ({current_bal} FCFA). Rechargez votre wallet pour accepter cette mission. Coût : {LEAD_COST_FCFA} FCFA.")
         
         updated = await self.wallet_repo.debit(
             technician_id=technician_id,
@@ -538,6 +542,10 @@ class WalletUseCases:
         }
 
     async def request_refund(self, technician_id: str, booking_id: str) -> dict:
+        wallet = await self.wallet_repo.get_by_technician_id(technician_id)
+        if not wallet:
+            await self.create_wallet_with_bonus(technician_id)
+
         refund_count = await self.wallet_repo.count_refunds_this_month(technician_id)
         if refund_count >= MAX_REFUNDS_PER_MONTH:
             raise ValueError(f"Vous avez atteint la limite de {MAX_REFUNDS_PER_MONTH} remboursements par mois.")
@@ -561,6 +569,10 @@ class WalletUseCases:
         if amount <= 0:
             raise ValueError("Le montant de rechargement doit être positif.")
         
+        wallet = await self.wallet_repo.get_by_technician_id(technician_id)
+        if not wallet:
+            await self.create_wallet_with_bonus(technician_id)
+
         updated = await self.wallet_repo.credit(
             technician_id=technician_id,
             amount=amount,
@@ -577,7 +589,10 @@ class WalletUseCases:
     async def get_transactions(self, technician_id: str) -> list:
         wallet = await self.wallet_repo.get_by_technician_id(technician_id)
         if not wallet:
-            raise ValueError("Aucun wallet trouvé pour ce technicien.")
+            await self.create_wallet_with_bonus(technician_id)
+            wallet = await self.wallet_repo.get_by_technician_id(technician_id)
+        if not wallet:
+            return []
         transactions = await self.wallet_repo.get_transactions(wallet.id)
         return [
             {

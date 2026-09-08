@@ -37,9 +37,9 @@ class UserDomain:
     id: str
     name: str
     phone: str
-    email: str
     role: UserRole
     password_hash: str
+    email: Optional[str] = None
     created_at: datetime = field(default_factory=datetime.utcnow)
 
 @dataclass

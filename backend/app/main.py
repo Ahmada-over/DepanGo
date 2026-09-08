@@ -22,6 +22,7 @@ from app.presentation.api.v1.websockets import router as websockets_router
 from app.presentation.api.v1.admin import router as admin_router
 from app.presentation.api.v1.quotes import router as quotes_router
 from app.presentation.api.v1.wallet import router as wallet_router
+from app.presentation.api.v1.users import router as users_router
 
 
 
@@ -131,6 +132,7 @@ app.include_router(subscriptions_router, prefix=settings.API_V1_STR)
 app.include_router(admin_router, prefix=settings.API_V1_STR)
 app.include_router(quotes_router, prefix=settings.API_V1_STR)
 app.include_router(wallet_router, prefix=settings.API_V1_STR)
+app.include_router(users_router, prefix=settings.API_V1_STR)
 
 app.include_router(websockets_router)  # WebSocket routes have no /api/v1 prefix
 

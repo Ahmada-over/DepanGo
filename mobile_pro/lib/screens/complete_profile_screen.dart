@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/api_client.dart';
 import '../core/theme.dart';
+import '../providers/pro_providers.dart';
+import '../models/models.dart';
+import 'home_screen.dart';
 
 class CompleteProfileScreen extends ConsumerStatefulWidget {
   const CompleteProfileScreen({super.key});
@@ -24,10 +27,13 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
       if (res.statusCode == 200) {
         final res2 = await dio.get('/users/me');
         if (res2.statusCode == 200) {
-            // Re-authenticate or just rely on state? Wait, AuthNotifier doesn't have updateUser.
-            // But we don't have access to the model here. Let's just do a dummy reload if they implement it.
-            // Actually, we can just call ref.read(authProvider.notifier).loadPersistedUser() or something if we needed.
-            // We'll just remove the updateUser call because they likely need to implement it.
+            final updatedUser = UserModel.fromJson(res2.data);
+            await ref.read(authProvider.notifier).updateUser(updatedUser);
+            if (mounted) {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (_) => const HomeScreen()),
+              );
+            }
         }
       }
     } catch (e) {

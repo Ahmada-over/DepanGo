@@ -886,8 +886,11 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen> {
                               ),
                             );
                             if (result == true && mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Devis envoyé !'), backgroundColor: Colors.green),
+                              AppToast.show(
+                                context,
+                                title: 'Devis envoyé !',
+                                message: 'Le devis a été transmis au client.',
+                                type: AppToastType.success,
                               );
                             }
                           },

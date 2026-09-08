@@ -14,7 +14,7 @@ class UserModel(Base):
     role = Column(String, nullable=False) # admin | client | technician
     name = Column(String, nullable=False)
     phone = Column(String, nullable=False)
-    email = Column(String, unique=True, index=True, nullable=False)
+    email = Column(String, unique=True, index=True, nullable=True)
     password_hash = Column(String, nullable=True) # Now nullable for passwordless
     otp_code = Column(String, nullable=True)
     otp_expires_at = Column(DateTime, nullable=True)

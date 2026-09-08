@@ -613,12 +613,13 @@ class _CreateBookingScreenState extends ConsumerState<CreateBookingScreen> {
         );
       }
     } catch (e) {
+      debugPrint('[CreateBooking] Error creating booking: $e');
       setState(() => _isLoading = false);
       if (mounted) {
         AppToast.show(
           context,
-          title: 'Erreur',
-          message: e.toString(),
+          title: 'Échec de réservation',
+          message: 'Impossible de transmettre votre demande. Veuillez réessayer.',
           type: AppToastType.error,
         );
       }

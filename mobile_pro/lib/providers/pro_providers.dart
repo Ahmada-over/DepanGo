@@ -40,6 +40,13 @@ class AuthNotifier extends StateNotifier<UserModel?> {
     }
   }
 
+  Future<void> updateUser(UserModel user) async {
+    state = user;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('tech_user', jsonEncode(state!.toJson()));
+  }
+
+
   Future<bool> login(String phone, String password) async {
     try {
       final dio = _ref.read(apiClientProvider);

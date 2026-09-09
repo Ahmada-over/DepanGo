@@ -42,8 +42,8 @@ try:
             print("Firebase Admin initialized with local credentials file.")
         else:
             # Fallback for Cloud Run / production (uses Application Default Credentials)
-            firebase_admin.initialize_app()
-            print("Firebase Admin initialized with Application Default Credentials (Cloud Run).")
+            firebase_admin.initialize_app(options={'projectId': 'depango-d9e2f'})
+            print("Firebase Admin initialized with Application Default Credentials (Cloud Run) for project depango-d9e2f.")
 except Exception as e:
     print(f"Error initializing Firebase Admin: {e}")
 

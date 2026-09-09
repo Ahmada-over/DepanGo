@@ -144,12 +144,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         );
       }
     } catch (e) {
+      debugPrint('[Profile] Location error: $e');
       if (mounted) {
         AppToast.show(
           context,
-          title: 'Erreur GPS',
-          message: 'Impossible d\'obtenir la position : $e',
-          type: AppToastType.error,
+          title: 'Localisation',
+          message: 'Impossible d\'obtenir votre position actuelle.',
+          type: AppToastType.warning,
         );
       }
     } finally {
@@ -190,9 +191,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         }
       }
     } catch (e) {
+      debugPrint('[Profile] Photo upload error: $e');
       setState(() => _isUploadingImage = false);
       if (mounted) {
-        AppToast.show(context, title: 'Erreur', message: 'Impossible d\'uploader la photo : $e', type: AppToastType.error);
+        AppToast.show(context, title: 'Échec du téléchargement', message: 'Impossible de mettre à jour la photo.', type: AppToastType.error);
       }
     }
   }
@@ -225,8 +227,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         }
       }
     } catch (e) {
+      debugPrint('[Profile] Update profile error: $e');
       if (mounted) {
-        AppToast.show(context, title: 'Erreur d\'enregistrement', message: e.toString(), type: AppToastType.error);
+        AppToast.show(context, title: 'Échec de l\'enregistrement', message: 'Impossible d\'enregistrer vos informations.', type: AppToastType.error);
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);

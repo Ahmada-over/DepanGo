@@ -103,6 +103,17 @@ class SQLAlchemyUserRepository(UserRepositoryPort):
             created_at=model.created_at
         )
 
+    async def update_user_info(self, user_id: str, name: Optional[str] = None, email: Optional[str] = None, phone: Optional[str] = None) -> None:
+        values = {}
+        if name is not None: values["name"] = name
+        if email is not None: values["email"] = email
+        if phone is not None: values["phone"] = phone
+        
+        if values:
+            stmt = update(UserModel).where(UserModel.id == user_id).values(**values)
+            await self.db.execute(stmt)
+            await self.db.commit()
+
 class SQLAlchemyTechnicianRepository(TechnicianRepositoryPort):
     def __init__(self, db: AsyncSession):
         self.db = db
@@ -116,7 +127,8 @@ class SQLAlchemyTechnicianRepository(TechnicianRepositoryPort):
             longitude=profile.longitude,
             availability_status=profile.availability_status.value if isinstance(profile.availability_status, AvailabilityStatus) else str(profile.availability_status),
             average_rating=profile.average_rating,
-            verified=profile.verified
+            verified=profile.verified,
+            transport_mode=getattr(profile, 'transport_mode', 'moto')
         )
         self.db.add(model)
         await self.db.commit()

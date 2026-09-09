@@ -4,6 +4,7 @@ import '../models/quote.dart';
 import '../services/quote_service.dart';
 import '../core/config.dart';
 import '../core/theme.dart';
+import '../core/app_toast.dart';
 import '../providers/pro_providers.dart';
 
 class QuoteBuilderScreen extends ConsumerStatefulWidget {
@@ -108,8 +109,11 @@ class _QuoteBuilderScreenState extends ConsumerState<QuoteBuilderScreen> {
                   final price = double.tryParse(priceCtrl.text) ?? 0.0;
 
                   if (descCtrl.text.isEmpty || price <= 0) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Remplissez la description et le prix')),
+                    AppToast.show(
+                      context,
+                      title: 'Champs incomplets',
+                      message: 'Veuillez remplir la description et indiquer un prix supérieur à 0.',
+                      type: AppToastType.warning,
                     );
                     return;
                   }
@@ -181,8 +185,11 @@ class _QuoteBuilderScreenState extends ConsumerState<QuoteBuilderScreen> {
 
   Future<void> _submitQuote() async {
     if (_items.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ajoutez au moins une ligne au devis')),
+      AppToast.show(
+        context,
+        title: 'Devis vide',
+        message: 'Ajoutez au moins une ligne de prestation avant d\'envoyer le devis.',
+        type: AppToastType.warning,
       );
       return;
     }
@@ -211,17 +218,21 @@ class _QuoteBuilderScreenState extends ConsumerState<QuoteBuilderScreen> {
       await quoteService.createQuote(newQuote);
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('✅ Devis envoyé au client avec succès !'),
-          backgroundColor: Colors.green,
-        ),
+      AppToast.show(
+        context,
+        title: 'Devis envoyé !',
+        message: 'Le devis a été transmis au client avec succès.',
+        type: AppToastType.success,
       );
       Navigator.pop(context, true);
     } catch (e) {
+      debugPrint('[QuoteBuilder] Error submitting quote: $e');
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
+      AppToast.show(
+        context,
+        title: 'Échec de transmission',
+        message: 'Impossible de transmettre le devis. Veuillez réessayer.',
+        type: AppToastType.error,
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);

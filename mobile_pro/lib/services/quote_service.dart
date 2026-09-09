@@ -21,7 +21,7 @@ class QuoteService {
     if (response.statusCode == 200 || response.statusCode == 201) {
       return Quote.fromJson(jsonDecode(response.body));
     } else {
-      throw Exception('Failed to create quote: ${response.body}');
+      throw Exception('Failed to create quote');
     }
   }
 

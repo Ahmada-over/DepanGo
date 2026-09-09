@@ -7,6 +7,8 @@ import 'package:pinput/pinput.dart';
 import '../core/theme.dart';
 import '../core/app_toast.dart';
 import '../providers/app_providers.dart';
+import 'home_screen.dart';
+import 'complete_profile_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -16,23 +18,27 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  
   bool _loading = false;
   bool _codeSent = false;
   String _verificationId = '';
-  
+
   final _phoneController = TextEditingController();
   String _completePhoneNumber = '';
-  
+
   final _otpController = TextEditingController();
 
   Future<void> _verifyPhone() async {
-    final phone = _completePhoneNumber.isNotEmpty ? _completePhoneNumber : _phoneController.text.trim();
+    final phone = _completePhoneNumber.isNotEmpty
+        ? _completePhoneNumber
+        : _phoneController.text.trim();
     if (phone.isEmpty) {
-      AppToast.show(context, title: 'Erreur', message: 'Veuillez entrer votre numéro.', type: AppToastType.error);
+      AppToast.show(context,
+          title: 'Erreur',
+          message: 'Veuillez entrer votre numéro.',
+          type: AppToastType.error);
       return;
     }
-    
+
     setState(() => _loading = true);
 
     String formattedPhone = phone;
@@ -51,8 +57,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           await _signInWithCredential(credential);
         },
         verificationFailed: (FirebaseAuthException e) {
+          debugPrint('[Auth] Phone verification failed: ${e.code} - ${e.message}');
           setState(() => _loading = false);
-          AppToast.show(context, title: 'Erreur', message: 'Erreur: ${e.message}', type: AppToastType.error);
+          AppToast.show(context,
+              title: 'Échec d\'envoi',
+              message: 'Impossible de vérifier le numéro de téléphone.',
+              type: AppToastType.error);
         },
         codeSent: (String verificationId, int? resendToken) {
           setState(() {
@@ -60,7 +70,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             _codeSent = true;
             _verificationId = verificationId;
           });
-          AppToast.show(context, title: 'Info', message: 'Vérifiez vos SMS.', type: AppToastType.success);
+          AppToast.show(context,
+              title: 'Info',
+              message: 'Vérifiez vos SMS.',
+              type: AppToastType.success);
         },
         codeAutoRetrievalTimeout: (String verificationId) {
           _verificationId = verificationId;
@@ -68,14 +81,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       );
     } catch (e) {
       setState(() => _loading = false);
-      AppToast.show(context, title: 'Erreur', message: 'Impossible d\'envoyer le code.', type: AppToastType.error);
+      AppToast.show(context,
+          title: 'Erreur',
+          message: 'Impossible d\'envoyer le code.',
+          type: AppToastType.error);
     }
   }
 
   Future<void> _verifyOTP() async {
     final code = _otpController.text.trim();
     if (code.length != 6) return;
-    
+
     setState(() => _loading = true);
     try {
       final credential = PhoneAuthProvider.credential(
@@ -85,27 +101,46 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       await _signInWithCredential(credential);
     } catch (e) {
       setState(() => _loading = false);
-      AppToast.show(context, title: 'Erreur', message: 'Le code saisi est incorrect.', type: AppToastType.error);
+      AppToast.show(context,
+          title: 'Erreur',
+          message: 'Le code saisi est incorrect.',
+          type: AppToastType.error);
     }
   }
 
   Future<void> _signInWithCredential(PhoneAuthCredential credential) async {
     try {
-      final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+      final userCredential =
+          await FirebaseAuth.instance.signInWithCredential(credential);
       final idToken = await userCredential.user?.getIdToken();
-      
+
       if (idToken != null) {
-        final success = await ref.read(authProvider.notifier).firebaseLogin(
-          idToken,
-          name: null
-        );
+        final success = await ref
+            .read(authProvider.notifier)
+            .firebaseLogin(idToken, name: null);
         if (!success && mounted) {
-           AppToast.show(context, title: 'Erreur', message: 'Erreur lors de la connexion.', type: AppToastType.error);
-           setState(() => _loading = false);
+          AppToast.show(context,
+              title: 'Erreur',
+              message: 'Erreur lors de la connexion.',
+              type: AppToastType.error);
+          setState(() => _loading = false);
+        } else if (success && mounted) {
+          final currentUser = ref.read(authProvider);
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (_) => currentUser?.name == 'Utilisateur Inconnu'
+                  ? const CompleteProfileScreen()
+                  : const HomeScreen(),
+            ),
+            (route) => false,
+          );
         }
       }
     } catch (e) {
-      AppToast.show(context, title: 'Erreur', message: 'Authentification Firebase échouée.', type: AppToastType.error);
+      AppToast.show(context,
+          title: 'Erreur',
+          message: 'Authentification Firebase échouée.',
+          type: AppToastType.error);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -116,7 +151,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final defaultPinTheme = PinTheme(
       width: 56,
       height: 56,
-      textStyle: const TextStyle(fontSize: 20, color: AppTheme.textDark, fontWeight: FontWeight.w600),
+      textStyle: const TextStyle(
+          fontSize: 20, color: AppTheme.textDark, fontWeight: FontWeight.w600),
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey.shade300),
         borderRadius: BorderRadius.circular(12),
@@ -143,26 +179,36 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       height: 100,
                       width: 100,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) =>
-                          const Icon(LucideIcons.house, size: 80, color: AppTheme.primaryEmerald),
+                      errorBuilder: (context, error, stackTrace) => const Icon(
+                          LucideIcons.house,
+                          size: 80,
+                          color: AppTheme.primaryEmerald),
                     ),
                   ),
                 ),
               ),
               const SizedBox(height: 30),
-              Text(_codeSent ? 'Vérification SMS' : 'Connexion / Inscription', textAlign: TextAlign.center, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppTheme.textDark)),
+              Text(_codeSent ? 'Vérification SMS' : 'Connexion / Inscription',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.textDark)),
               const SizedBox(height: 8),
               Text(
-                _codeSent 
-                  ? 'Entrez le code à 6 chiffres envoyé au ${_phoneController.text}'
-                  : 'Connectez-vous pour continuer.',
+                _codeSent
+                    ? 'Entrez le code à 6 chiffres envoyé au ${_phoneController.text}'
+                    : 'Connectez-vous pour continuer.',
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 14, color: AppTheme.textMuted),
               ),
               const SizedBox(height: 40),
-
               if (!_codeSent) ...[
-                const Text('Numéro de Téléphone', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textDark)),
+                const Text('Numéro de Téléphone',
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textDark)),
                 const SizedBox(height: 6),
                 InternationalPhoneNumberInput(
                   onInputChanged: (PhoneNumber number) {
@@ -170,10 +216,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   },
                   searchBoxDecoration: InputDecoration(
                     hintText: 'Rechercher un pays',
-                    prefixIcon: const Icon(LucideIcons.search, color: Colors.grey),
+                    prefixIcon:
+                        const Icon(LucideIcons.search, color: Colors.grey),
                     filled: true,
                     fillColor: Colors.grey[100],
-                    contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                    contentPadding: const EdgeInsets.symmetric(
+                        vertical: 16, horizontal: 16),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
                       borderSide: BorderSide.none,
@@ -186,24 +234,36 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                   ignoreBlank: false,
                   autoValidateMode: AutovalidateMode.disabled,
-                  selectorTextStyle: const TextStyle(color: AppTheme.textDark, fontSize: 16, fontWeight: FontWeight.w600, letterSpacing: 1.5),
+                  selectorTextStyle: const TextStyle(
+                      color: AppTheme.textDark,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1.5),
                   initialValue: PhoneNumber(isoCode: 'SN'),
                   textFieldController: _phoneController,
                   formatInput: true,
-                  keyboardType: const TextInputType.numberWithOptions(signed: true, decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                      signed: true, decimal: true),
                   inputDecoration: InputDecoration(
                     hintText: '77 000 00 00',
-                    hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16, fontWeight: FontWeight.normal, letterSpacing: 1.5),
+                    hintStyle: TextStyle(
+                        color: Colors.grey[400],
+                        fontSize: 16,
+                        fontWeight: FontWeight.normal,
+                        letterSpacing: 1.5),
                     filled: true,
                     fillColor: Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                    contentPadding: const EdgeInsets.symmetric(
+                        vertical: 20, horizontal: 16),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide(color: Colors.grey[200]!, width: 1.5),
+                      borderSide:
+                          BorderSide(color: Colors.grey[200]!, width: 1.5),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: AppTheme.primaryEmerald, width: 2),
+                      borderSide: const BorderSide(
+                          color: AppTheme.primaryEmerald, width: 2),
                     ),
                   ),
                 ),
@@ -214,11 +274,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     onPressed: _loading ? null : _verifyPhone,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primaryEmerald,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
                     child: _loading
-                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                        : const Text('Continuer', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                                color: Colors.white, strokeWidth: 2))
+                        : const Text('Continuer',
+                            style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white)),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -229,7 +298,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   length: 6,
                   defaultPinTheme: defaultPinTheme,
                   focusedPinTheme: defaultPinTheme.copyDecorationWith(
-                    border: Border.all(color: AppTheme.primaryEmerald, width: 2),
+                    border:
+                        Border.all(color: AppTheme.primaryEmerald, width: 2),
                   ),
                   onCompleted: (pin) {
                     if (!_loading) _verifyOTP();
@@ -242,11 +312,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     onPressed: _loading ? null : _verifyOTP,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primaryEmerald,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
                     child: _loading
-                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                        : const Text('Valider le code', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                                color: Colors.white, strokeWidth: 2))
+                        : const Text('Valider le code',
+                            style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white)),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -255,7 +334,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     _codeSent = false;
                     _otpController.clear();
                   }),
-                  child: const Text('Modifier le numéro', style: TextStyle(color: AppTheme.textMuted)),
+                  child: const Text('Modifier le numéro',
+                      style: TextStyle(color: AppTheme.textMuted)),
                 ),
               ],
             ],

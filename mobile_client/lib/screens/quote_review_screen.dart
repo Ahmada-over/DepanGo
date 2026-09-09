@@ -5,6 +5,7 @@ import '../models/quote.dart';
 import '../services/quote_service.dart';
 import '../core/config.dart';
 import '../core/theme.dart';
+import '../core/app_toast.dart';
 import '../providers/app_providers.dart';
 
 class QuoteReviewScreen extends ConsumerStatefulWidget {
@@ -98,19 +99,23 @@ class _QuoteReviewScreenState extends ConsumerState<QuoteReviewScreen> {
       await service.updateQuoteStatus(quote.id, status);
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(status == 'accepted'
-              ? '✅ Devis accepté ! Les travaux peuvent commencer.'
-              : '❌ Devis refusé.'),
-          backgroundColor: status == 'accepted' ? Colors.green : Colors.redAccent,
-        ),
+      AppToast.show(
+        context,
+        title: status == 'accepted' ? 'Devis accepté !' : 'Devis refusé',
+        message: status == 'accepted'
+            ? 'Les travaux peuvent commencer.'
+            : 'Le professionnel en a été informé.',
+        type: status == 'accepted' ? AppToastType.success : AppToastType.warning,
       );
       Navigator.pop(context, status);
     } catch (e) {
+      debugPrint('[QuoteReview] Error responding to quote: $e');
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
+      AppToast.show(
+        context,
+        title: 'Échec de transmission',
+        message: 'Impossible de mettre à jour le statut du devis.',
+        type: AppToastType.error,
       );
     } finally {
       if (mounted) setState(() => _isActioning = false);

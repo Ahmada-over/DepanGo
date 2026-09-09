@@ -22,6 +22,9 @@ class UserRepositoryPort(ABC):
     @abstractmethod
     async def get_by_id(self, user_id: str) -> Optional[UserDomain]: pass
 
+    @abstractmethod
+    async def update_user_info(self, user_id: str, name: Optional[str] = None, email: Optional[str] = None, phone: Optional[str] = None) -> None: pass
+
 class SubscriptionRepositoryPort(ABC):
     @abstractmethod
     async def create(self, subscription: SubscriptionDomain) -> SubscriptionDomain: pass

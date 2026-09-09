@@ -6,23 +6,35 @@ class AppConfig {
   //  BASCULE ENVIRONNEMENT (PROD vs LOCAL)
   //
   // true  -> Mode PRODUCTION (Cloud Run: backend-depango-...run.app)
-  // false -> Mode LOCAL      (http://localhost:8001 ou 10.0.2.2:8001 sur Android)
+  // false -> Mode LOCAL (10.0.2.2 pour émulateur Android, 127.0.0.1 pour simulateur iOS)
   // =========================================================================
   static const bool isProduction = kReleaseMode;
 
   // Configuration des hôtes
   static const String _cloudHost =
       'backend-depango-346078879462.europe-west1.run.app';
+
+  // IP locale de la machine hôte pour les appareils PHYSIQUES (ex: iPhone en Wi-Fi)
+  static const String _physicalDeviceHost = '192.168.1.49';
   static const String _localPort = '8001';
+
+  // true  -> Vrai téléphone physique connecté en Wi-Fi (utilise _physicalDeviceHost)
+  // false -> Émulateur Android (10.0.2.2) ou Simulateur iOS (127.0.0.1)
+  static const bool isPhysicalDevice = true;
 
   static String get baseUrl {
     if (isProduction) {
       return _cloudHost;
     }
-    // Hôte local selon le device
+    // Web utilise localhost
     if (kIsWeb) return '127.0.0.1:$_localPort';
-    if (Platform.isAndroid) return '10.0.2.2:$_localPort'; // Émulateur Android
-    return '127.0.0.1:$_localPort'; // Simulateur iOS / macOS
+
+    // Vrai appareil physique
+    if (isPhysicalDevice) return '$_physicalDeviceHost:$_localPort';
+
+    // Émulateur Android vs Simulateur iOS
+    if (Platform.isAndroid) return '10.0.2.2:$_localPort';
+    return '127.0.0.1:$_localPort';
   }
 
   static String get apiBaseUrl =>

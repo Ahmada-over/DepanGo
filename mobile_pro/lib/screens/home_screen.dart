@@ -11,6 +11,7 @@ import '../core/config.dart';
 import '../core/theme.dart';
 import '../core/map_style.dart';
 import '../core/category_helper.dart';
+import '../core/app_toast.dart';
 import '../models/models.dart';
 import '../models/hardware_store.dart';
 import '../providers/pro_providers.dart';
@@ -728,17 +729,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     setState(() {
                       _showHardwareStores = !_showHardwareStores;
                     });
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        duration: const Duration(seconds: 2),
-                        backgroundColor: ProTheme.darkCard,
-                        content: Text(
-                          _showHardwareStores
-                              ? 'Affichage des quincailleries de Dakar activé'
-                              : 'Quincailleries masquées sur la carte',
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                      ),
+                    AppToast.show(
+                      context,
+                      title: _showHardwareStores ? 'Quincailleries' : 'Carte épurée',
+                      message: _showHardwareStores
+                          ? 'Affichage des quincailleries de Dakar activé.'
+                          : 'Quincailleries masquées sur la carte.',
+                      type: AppToastType.info,
                     );
                   },
                   tooltip: 'Quincailleries Dakar',

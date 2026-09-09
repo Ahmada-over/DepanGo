@@ -7,6 +7,8 @@ import 'package:pinput/pinput.dart';
 import '../core/theme.dart';
 import '../core/app_toast.dart';
 import '../providers/pro_providers.dart';
+import 'home_screen.dart';
+import 'complete_profile_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -54,8 +56,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           await _signInWithCredential(credential);
         },
         verificationFailed: (FirebaseAuthException e) {
+          debugPrint('[Auth] Phone verification failed: ${e.code} - ${e.message}');
           setState(() => _loading = false);
-          AppToast.show(context, title: 'Échec', message: 'Erreur: ${e.message}', type: AppToastType.error);
+          AppToast.show(context, title: 'Échec d\'envoi', message: 'Impossible de vérifier le numéro de téléphone.', type: AppToastType.error);
         },
         codeSent: (String verificationId, int? resendToken) {
           setState(() {
@@ -101,6 +104,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         final success = await ref.read(authProvider.notifier).firebaseLogin(idToken, name: null);
         if (!success && mounted) {
           AppToast.show(context, title: 'Erreur', message: 'Connexion échouée.', type: AppToastType.error);
+        } else if (success && mounted) {
+          final currentUser = ref.read(authProvider);
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (_) => currentUser?.name == 'Utilisateur Inconnu'
+                  ? const CompleteProfileScreen()
+                  : const HomeScreen(),
+            ),
+            (route) => false,
+          );
         }
       }
     } catch (e) {

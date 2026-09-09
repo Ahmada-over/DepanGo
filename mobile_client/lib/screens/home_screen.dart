@@ -1035,7 +1035,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   zoom: 14.0,
                                 ),
                                 style: kMinimalMapStyle,
-                                liteModeEnabled: true, // Optimisé pour Android
                                 zoomControlsEnabled: false,
                                 myLocationButtonEnabled: false,
                                 mapToolbarEnabled: false,

@@ -20,6 +20,9 @@ env/
 .pytest_cache/
 .coverage
 htmlcov/
+.schemathesis/
+.hypothesis/
+test_venv/
 
 # ===== IDEs =====
 .vscode/

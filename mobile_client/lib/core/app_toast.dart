@@ -8,6 +8,39 @@ final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey =
     GlobalKey<ScaffoldMessengerState>();
 
 class AppToast {
+  static String? _sanitize(String? text, {String? defaultFallback}) {
+    if (text == null) return null;
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return null;
+
+    final lower = trimmed.toLowerCase();
+    final isServerOrTechnical = lower.contains('dioexception') ||
+        lower.contains('socketexception') ||
+        lower.contains('httpexception') ||
+        lower.contains('handshakeexception') ||
+        lower.contains('formatexception') ||
+        lower.contains('clientexception') ||
+        lower.contains('internal server error') ||
+        lower.contains('bad gateway') ||
+        lower.contains('gateway timeout') ||
+        lower.contains('failed host lookup') ||
+        lower.contains('connection refused') ||
+        lower.contains('connection reset') ||
+        lower.contains('connection closed') ||
+        lower.contains('connection timeout') ||
+        lower.contains('status code') ||
+        lower.contains('exception:') ||
+        (trimmed.startsWith('error:') || trimmed.contains(' error:')) ||
+        (trimmed.contains('{') && trimmed.contains('}')) ||
+        (trimmed.contains('<html') || trimmed.contains('<!doctype'));
+
+    if (isServerOrTechnical) {
+      debugPrint('[AppToast Sanitizer] Suppressed server message: $trimmed');
+      return defaultFallback ?? 'Une erreur est survenue. Veuillez réessayer ultérieurement.';
+    }
+    return trimmed;
+  }
+
   static void show(
     BuildContext? context, {
     required String title,
@@ -15,6 +48,9 @@ class AppToast {
     AppToastType type = AppToastType.success,
     Duration duration = const Duration(seconds: 3),
   }) {
+    final safeTitle = _sanitize(title, defaultFallback: 'Erreur') ?? title;
+    final safeMessage = _sanitize(message);
+
     final messenger = rootScaffoldMessengerKey.currentState ??
         (context != null && context.mounted
             ? ScaffoldMessenger.maybeOf(context)
@@ -106,7 +142,7 @@ class AppToast {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        title,
+                        safeTitle,
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -114,10 +150,10 @@ class AppToast {
                           letterSpacing: 0.2,
                         ),
                       ),
-                      if (message != null && message.isNotEmpty) ...[
+                      if (safeMessage != null && safeMessage.isNotEmpty) ...[
                         const SizedBox(height: 2),
                         Text(
-                          message,
+                          safeMessage,
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.9),
                             fontSize: 12,

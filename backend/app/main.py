@@ -35,13 +35,15 @@ from firebase_admin import credentials
 # ---------------------------------------------------------------------------
 try:
     if not firebase_admin._apps:
-        # Assuming the JSON file is at the root of the backend directory
         cred_path = os.path.join(os.getcwd(), "firebase-credentials.json")
         if os.path.exists(cred_path):
             cred = credentials.Certificate(cred_path)
             firebase_admin.initialize_app(cred)
+            print("Firebase Admin initialized with local credentials file.")
         else:
-            print("WARNING: firebase-credentials.json not found!")
+            # Fallback for Cloud Run / production (uses Application Default Credentials)
+            firebase_admin.initialize_app()
+            print("Firebase Admin initialized with Application Default Credentials (Cloud Run).")
 except Exception as e:
     print(f"Error initializing Firebase Admin: {e}")
 

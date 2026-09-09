@@ -69,6 +69,8 @@ async def lifespan(app: FastAPI):
         try:
             await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS otp_code VARCHAR;"))
             await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS otp_expires_at TIMESTAMP;"))
+            # Rendre l'email optionnel pour les inscriptions par téléphone
+            await conn.execute(text("ALTER TABLE users ALTER COLUMN email DROP NOT NULL;"))
         except Exception as e:
             print(f"Migration error (safe to ignore if columns exist): {e}")
 

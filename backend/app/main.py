@@ -63,6 +63,14 @@ async def lifespan(app: FastAPI):
     # Create DB tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        
+        # Auto-migration pour ajouter les colonnes manquantes sans casser l'existant
+        from sqlalchemy import text
+        try:
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS otp_code VARCHAR;"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS otp_expires_at TIMESTAMP;"))
+        except Exception as e:
+            print(f"Migration error (safe to ignore if columns exist): {e}")
 
     # Seed system data only (categories — no passwords, no demo users)
     async with AsyncSessionLocal() as session:

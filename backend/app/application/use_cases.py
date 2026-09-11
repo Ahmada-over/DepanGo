@@ -37,7 +37,8 @@ class AuthUseCases:
             raise ValueError("Un compte avec cet email ou ce numéro de téléphone existe déjà.")
         
         user_id = str(uuid.uuid4())
-        hashed = hash_password(password)
+        from fastapi.concurrency import run_in_threadpool
+        hashed = await run_in_threadpool(hash_password, password)
         user_role = UserRole.TECHNICIAN if role.lower() == "technician" else UserRole.CLIENT
         
         user = UserDomain(
@@ -93,7 +94,8 @@ class AuthUseCases:
             raise ValueError("Veuillez fournir un numéro de téléphone ou un email.")
         
         user = await self.user_repo.get_by_identifier(identifier)
-        if not user or not verify_password(password, user.password_hash):
+        from fastapi.concurrency import run_in_threadpool
+        if not user or not (await run_in_threadpool(verify_password, password, user.password_hash)):
             raise ValueError("Identifiants incorrects (numéro/email ou mot de passe invalide)")
         
         token = create_access_token(user.id)
@@ -112,7 +114,8 @@ class AuthUseCases:
     async def firebase_login(self, id_token: str, name: Optional[str] = None, role: str = "technician") -> dict:
         try:
             from firebase_admin import auth
-            decoded_token = auth.verify_id_token(id_token)
+            from fastapi.concurrency import run_in_threadpool
+            decoded_token = await run_in_threadpool(auth.verify_id_token, id_token)
             phone_number = decoded_token.get("phone_number")
             if not phone_number:
                 raise ValueError("Numéro de téléphone introuvable dans le token Firebase.")

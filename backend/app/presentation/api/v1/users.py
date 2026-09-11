@@ -12,6 +12,8 @@ class UserProfileUpdateRequest(BaseModel):
     name: Optional[str] = None
     email: Optional[str] = None
     phone: Optional[str] = None
+    category_id: Optional[str] = None
+    transport_mode: Optional[str] = None
 
 @router.get("/me")
 async def get_my_profile(
@@ -44,6 +46,11 @@ async def update_profile(
 
     if req.name or req.email or req.phone:
         await user_repo.update_user_info(current_user_id, name=req.name, email=req.email, phone=req.phone)
+
+    if req.category_id or req.transport_mode:
+        from app.infrastructure.repositories.sqlalchemy_repositories import SQLAlchemyTechnicianRepository
+        tech_repo = SQLAlchemyTechnicianRepository(db)
+        await tech_repo.update_profile_info(current_user_id, category_id=req.category_id, transport_mode=req.transport_mode)
 
     updated = await user_repo.get_by_id(current_user_id)
     return {

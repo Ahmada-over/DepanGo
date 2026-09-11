@@ -143,16 +143,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       'icon': LucideIcons.snowflake,
       'catId': 'cat_hvac'
     },
-    {
-      'name': 'Plomberie',
-      'icon': LucideIcons.droplet,
-      'catId': 'cat_plumbing'
-    },
-    {
-      'name': 'Électricité',
-      'icon': LucideIcons.zap,
-      'catId': 'cat_electrical'
-    },
+    {'name': 'Plomberie', 'icon': LucideIcons.droplet, 'catId': 'cat_plumbing'},
+    {'name': 'Électricité', 'icon': LucideIcons.zap, 'catId': 'cat_electrical'},
     {
       'name': 'Lave-Linge & Frigo',
       'icon': LucideIcons.refrigerator,
@@ -232,7 +224,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       SizedBox(width: 8),
                       Text(
                         'Reconnexion au réseau en cours...',
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                            fontSize: 13, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
@@ -386,7 +379,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         backgroundColor: AppTheme.primaryEmerald,
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 6),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8)),
                       ),
                       child: const Text('Se Connecter',
                           style: TextStyle(
@@ -425,9 +419,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               children: [
                 const Icon(LucideIcons.search, color: AppTheme.textMuted),
                 const SizedBox(width: 10),
-                const Expanded(
+                Expanded(
                   child: TextField(
-                    decoration: InputDecoration(
+                    readOnly:
+                        true, // Empêche le clavier de s'ouvrir inutilement sur l'accueil
+                    onTap: () {
+                      // Ouverture future d'une page de recherche complète
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text(
+                                'La recherche globale sera bientôt disponible !'),
+                            duration: Duration(seconds: 2)),
+                      );
+                    },
+                    decoration: const InputDecoration(
                       hintText: 'Rechercher un service (Clim, Plomberie...)',
                       hintStyle:
                           TextStyle(color: AppTheme.textMuted, fontSize: 13),
@@ -435,14 +440,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(10),
+                InkWell(
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text('Filtres à venir...'),
+                          duration: Duration(seconds: 2)),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(LucideIcons.sliders_horizontal,
+                        size: 18, color: AppTheme.textDark),
                   ),
-                  child: const Icon(LucideIcons.sliders_horizontal,
-                      size: 18, color: AppTheme.textDark),
                 ),
               ],
             ),
@@ -479,7 +493,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.bold)),
-                const Text('Techniciens qualifiés en 30 min',
+                const Text('Techniciens qualifiés en 30 secondes',
                     style: TextStyle(
                         color: Colors.white,
                         fontSize: 22,
@@ -509,7 +523,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         foregroundColor: AppTheme.primaryDark,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8)),
                         padding: const EdgeInsets.symmetric(
                             horizontal: 18, vertical: 10),
                       ),
@@ -874,7 +889,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          const Icon(LucideIcons.star, size: 13, color: Colors.amber),
+                          const Icon(LucideIcons.star,
+                              size: 13, color: Colors.amber),
                           Text(' ${rec['rating']} (${rec['reviews']})  •  ',
                               style: const TextStyle(
                                   fontSize: 10, color: AppTheme.textMuted)),
@@ -1005,14 +1021,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // Map Card Preview (Uber style)
                   GestureDetector(
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const LocationPickerScreen()),
+                        MaterialPageRoute(
+                            builder: (_) => const LocationPickerScreen()),
                       );
                     },
                     child: Container(
@@ -1031,7 +1048,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             const AbsorbPointer(
                               child: GoogleMap(
                                 initialCameraPosition: CameraPosition(
-                                  target: LatLng(14.6928, -17.4467), // Default Dakar
+                                  target: LatLng(
+                                      14.6928, -17.4467), // Default Dakar
                                   zoom: 14.0,
                                 ),
                                 style: kMinimalMapStyle,
@@ -1040,7 +1058,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 mapToolbarEnabled: false,
                               ),
                             ),
-                            
+
                             // Center Marker
                             const Center(
                               child: Padding(
@@ -1050,32 +1068,44 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   size: 32,
                                   color: AppTheme.primaryEmerald,
                                   shadows: [
-                                    Shadow(color: Colors.black45, blurRadius: 4, offset: Offset(0, 2))
+                                    Shadow(
+                                        color: Colors.black45,
+                                        blurRadius: 4,
+                                        offset: Offset(0, 2))
                                   ],
                                 ),
                               ),
                             ),
-                            
+
                             // Bottom Label Overlay
                             Positioned(
-                              bottom: 0, left: 0, right: 0,
+                              bottom: 0,
+                              left: 0,
+                              right: 0,
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 10),
                                 decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.bottomCenter,
-                                    end: Alignment.topCenter,
-                                    colors: [Colors.black.withValues(alpha: 0.7), Colors.transparent],
-                                  )
-                                ),
+                                    gradient: LinearGradient(
+                                  begin: Alignment.bottomCenter,
+                                  end: Alignment.topCenter,
+                                  colors: [
+                                    Colors.black.withValues(alpha: 0.7),
+                                    Colors.transparent
+                                  ],
+                                )),
                                 child: Row(
                                   children: [
-                                    const Icon(LucideIcons.locate, color: Colors.white, size: 16),
+                                    const Icon(LucideIcons.locate,
+                                        color: Colors.white, size: 16),
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: Text(
                                         currentLocation,
-                                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                                        style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 13),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
@@ -1089,9 +1119,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // Text instructions
                   Center(
                     child: Text(
@@ -1188,7 +1218,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             decoration: BoxDecoration(
                               color: notif.isRead
                                   ? Colors.white
-                                  : AppTheme.primaryLight.withValues(alpha: 0.3),
+                                  : AppTheme.primaryLight
+                                      .withValues(alpha: 0.3),
                               borderRadius: BorderRadius.circular(14),
                               border: Border.all(
                                   color: notif.isRead
@@ -1201,7 +1232,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 CircleAvatar(
                                   radius: 16,
                                   backgroundColor: notif.type == 'chat'
-                                      ? AppTheme.primaryEmerald.withValues(alpha: 0.15)
+                                      ? AppTheme.primaryEmerald
+                                          .withValues(alpha: 0.15)
                                       : AppTheme.primaryEmerald
                                           .withValues(alpha: 0.2),
                                   child: Icon(
@@ -1256,8 +1288,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(LucideIcons.user,
-                size: 64, color: AppTheme.textMuted),
+            const Icon(LucideIcons.user, size: 64, color: AppTheme.textMuted),
             const SizedBox(height: 16),
             const Text('Non Connecté',
                 style: TextStyle(
@@ -1325,7 +1356,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(LucideIcons.badge_check, size: 16, color: AppTheme.primaryEmerald),
+                Icon(LucideIcons.badge_check,
+                    size: 16, color: AppTheme.primaryEmerald),
                 SizedBox(width: 6),
                 Text('Compte Client Certifié',
                     style: TextStyle(
@@ -1351,17 +1383,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                   subtitle: const Text('Nom, email, téléphone',
                       style: TextStyle(fontSize: 11)),
-                  trailing: const Icon(LucideIcons.chevron_right, color: Colors.grey),
+                  trailing:
+                      const Icon(LucideIcons.chevron_right, color: Colors.grey),
                   onTap: () => _showEditProfileDialog(context, user),
                 ),
                 const Divider(height: 1),
                 ListTile(
-                  leading:
-                      const Icon(LucideIcons.clock, color: AppTheme.primaryEmerald),
+                  leading: const Icon(LucideIcons.clock,
+                      color: AppTheme.primaryEmerald),
                   title: const Text('Historique de mes commandes',
                       style:
                           TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                  trailing: const Icon(LucideIcons.chevron_right, color: Colors.grey),
+                  trailing:
+                      const Icon(LucideIcons.chevron_right, color: Colors.grey),
                   onTap: () => setState(() => _currentIndex = 1),
                 ),
                 const Divider(height: 1),
@@ -1501,7 +1535,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(top: BorderSide(color: Colors.black.withValues(alpha: 0.05))),
+        border: Border(
+            top: BorderSide(color: Colors.black.withValues(alpha: 0.05))),
       ),
       child: BottomNavigationBar(
         currentIndex: _currentIndex > 3 ? 3 : _currentIndex,
@@ -1556,25 +1591,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       fontSize: 18,
                       color: AppTheme.primaryDark)),
               const SizedBox(height: 16),
-              ..._popularServices
-                  .map((cat) => ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor:
-                              AppTheme.primaryEmerald.withValues(alpha: 0.1),
-                          child:
-                              Icon(cat['icon'], color: AppTheme.primaryEmerald),
-                        ),
-                        title: Text(cat['name'],
-                            style:
-                                const TextStyle(fontWeight: FontWeight.w600)),
-                        trailing:
-                            const Icon(LucideIcons.chevron_right, color: Colors.grey),
-                        onTap: () {
-                          Navigator.pop(ctx);
-                          _openBooking(context, cat['catId'], cat['name']);
-                        },
-                      ))
-                  ,
+              ..._popularServices.map((cat) => ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor:
+                          AppTheme.primaryEmerald.withValues(alpha: 0.1),
+                      child: Icon(cat['icon'], color: AppTheme.primaryEmerald),
+                    ),
+                    title: Text(cat['name'],
+                        style: const TextStyle(fontWeight: FontWeight.w600)),
+                    trailing: const Icon(LucideIcons.chevron_right,
+                        color: Colors.grey),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _openBooking(context, cat['catId'], cat['name']);
+                    },
+                  )),
             ],
           ),
         );

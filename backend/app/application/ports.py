@@ -69,6 +69,9 @@ class TechnicianRepositoryPort(ABC):
     async def update_categories(self, user_id: str, category_ids: List[str]) -> None: pass
 
     @abstractmethod
+    async def update_profile_info(self, user_id: str, category_id: Optional[str] = None, transport_mode: Optional[str] = None) -> None: pass
+
+    @abstractmethod
     async def get_all_registered(self) -> List[TechnicianProfileDomain]: pass
 
 class CategoryRepositoryPort(ABC):

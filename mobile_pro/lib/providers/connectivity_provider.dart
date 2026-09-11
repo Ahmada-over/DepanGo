@@ -52,19 +52,15 @@ class ServerConnectivityNotifier extends StateNotifier<bool> {
        return; // Don't ping if device has no wifi/data at all
     }
     
-    // Immediate ping
+    // Immediate ping once
     _pingServer();
-    
-    _pingTimer = Timer.periodic(const Duration(seconds: 5), (_) {
-      _pingServer();
-    });
   }
   
   Future<void> _pingServer() async {
       if (!_hasNetwork) return;
       try {
         final dio = Dio(BaseOptions(connectTimeout: const Duration(seconds: 2)));
-        final response = await dio.get('${AppConfig.apiBaseUrl.replaceAll('/api/v1', '')}/');
+        final response = await dio.get('${AppConfig.apiBaseUrl}/health');
         if (response.statusCode != null) {
           setOnline();
         }

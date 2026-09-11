@@ -14,16 +14,40 @@ class CompleteProfileScreen extends ConsumerStatefulWidget {
 
 class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
   final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
   bool _loading = false;
+  
+  String? _selectedCategory;
+  String _selectedTransport = 'moto';
+  
+  final _categories = [
+    {'id': 'cat_plumbing', 'name': 'Plomberie'},
+    {'id': 'cat_electrical', 'name': 'Électricité'},
+    {'id': 'cat_cleaning', 'name': 'Nettoyage'},
+    {'id': 'cat_ac', 'name': 'Climatisation'},
+  ];
+
+  final _transports = [
+    {'id': 'moto', 'name': 'Moto'},
+    {'id': 'car', 'name': 'Voiture'},
+    {'id': 'bicycle', 'name': 'Vélo'},
+    {'id': 'none', 'name': 'Aucun'},
+  ];
 
   Future<void> _saveProfile() async {
     final name = _nameController.text.trim();
-    if (name.isEmpty) return;
+    final email = _emailController.text.trim();
+    if (name.isEmpty || _selectedCategory == null) return;
     
     setState(() => _loading = true);
     try {
       final dio = ref.read(apiClientProvider);
-      final res = await dio.put('/users/me', data: {'name': name});
+      final res = await dio.put('/users/me', data: {
+        'name': name,
+        if (email.isNotEmpty) 'email': email,
+        'category_id': _selectedCategory,
+        'transport_mode': _selectedTransport,
+      });
       if (res.statusCode == 200) {
         final res2 = await dio.get('/users/me');
         if (res2.statusCode == 200) {
@@ -58,12 +82,65 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
               controller: _nameController,
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
-                hintText: 'Ex: Ibrahima Diallo',
-                hintStyle: const TextStyle(color: ProTheme.textMuted),
+                hintText: 'Prénom & Nom (Ex: Ousmane Sy)',
+                hintStyle: const TextStyle(color: Colors.white54),
                 filled: true,
-                fillColor: ProTheme.darkSurface,
+                fillColor: ProTheme.darkCard,
+                prefixIcon: const Icon(Icons.person_outline, color: ProTheme.primaryEmerald),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
               ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _emailController,
+              keyboardType: TextInputType.emailAddress,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: 'Adresse Email (Optionnel)',
+                hintStyle: const TextStyle(color: Colors.white54),
+                filled: true,
+                fillColor: ProTheme.darkCard,
+                prefixIcon: const Icon(Icons.mail_outline, color: ProTheme.primaryEmerald),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+              ),
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              value: _selectedCategory,
+              dropdownColor: ProTheme.darkCard,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: 'Sélectionnez votre profession',
+                hintStyle: const TextStyle(color: Colors.white54),
+                filled: true,
+                fillColor: ProTheme.darkCard,
+                prefixIcon: const Icon(Icons.work_outline, color: ProTheme.primaryEmerald),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+              ),
+              items: _categories.map((cat) => DropdownMenuItem(
+                value: cat['id'],
+                child: Text(cat['name']!),
+              )).toList(),
+              onChanged: (val) => setState(() => _selectedCategory = val),
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              value: _selectedTransport,
+              dropdownColor: ProTheme.darkCard,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: 'Moyen de transport',
+                hintStyle: const TextStyle(color: Colors.white54),
+                filled: true,
+                fillColor: ProTheme.darkCard,
+                prefixIcon: const Icon(Icons.directions_car_outlined, color: ProTheme.primaryEmerald),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+              ),
+              items: _transports.map((trans) => DropdownMenuItem(
+                value: trans['id'],
+                child: Text(trans['name']!),
+              )).toList(),
+              onChanged: (val) => setState(() => _selectedTransport = val!),
             ),
             const Spacer(),
             ElevatedButton(

@@ -118,6 +118,18 @@ class SQLAlchemyTechnicianRepository(TechnicianRepositoryPort):
     def __init__(self, db: AsyncSession):
         self.db = db
 
+    async def update_profile_info(self, user_id: str, category_id: Optional[str] = None, transport_mode: Optional[str] = None) -> None:
+        values = {}
+        if category_id:
+            values["category_ids"] = [category_id]
+        if transport_mode:
+            values["transport_mode"] = transport_mode
+            
+        if values:
+            stmt = update(TechnicianProfileModel).where(TechnicianProfileModel.user_id == user_id).values(**values)
+            await self.db.execute(stmt)
+            await self.db.commit()
+
     async def create_profile(self, profile: TechnicianProfileDomain) -> TechnicianProfileDomain:
         model = TechnicianProfileModel(
             id=profile.id,

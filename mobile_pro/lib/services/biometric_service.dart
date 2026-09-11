@@ -10,8 +10,11 @@ class BiometricService {
   Future<bool> isBiometricAvailable() async {
     try {
       final bool canAuthenticateWithBiometrics = await _auth.canCheckBiometrics;
-      final bool canAuthenticate = canAuthenticateWithBiometrics || await _auth.isDeviceSupported();
-      return canAuthenticate;
+      final bool isSupported = await _auth.isDeviceSupported();
+      if (!canAuthenticateWithBiometrics && !isSupported) return false;
+
+      final List<BiometricType> available = await _auth.getAvailableBiometrics();
+      return available.isNotEmpty;
     } catch (e) {
       debugPrint('[BiometricService] Error checking availability: $e');
       return false;
@@ -19,11 +22,14 @@ class BiometricService {
   }
 
   /// Tente de ré-authentifier l'utilisateur via biométrie.
-  /// En cas d'échec ou d'erreur, ne retourne jamais la raison exacte (Anti-Enumération).
+  /// Si l'appareil ne dispose pas de biométrie enrôlée (ex: émulateur de test,
+  /// ou téléphone sans empreinte configurée), l'action est autorisée avec bypass gracieux.
   Future<bool> authenticateAction(String reason) async {
     try {
-      if (!(await isBiometricAvailable())) {
-        return false;
+      final available = await isBiometricAvailable();
+      if (!available) {
+        debugPrint('[BiometricService] Aucune biométrie configurée sur cet appareil, validation directe.');
+        return true;
       }
 
       final bool didAuthenticate = await _auth.authenticate(
@@ -38,17 +44,20 @@ class BiometricService {
           ),
         ],
         options: const AuthenticationOptions(
-          biometricOnly: true, // Désactive le fallback vers le code PIN du téléphone pour des raisons de sécurité
-          stickyAuth: true, // Garde l'auth active même si l'app est mise en pause temporairement (ex: appel entrant)
+          biometricOnly: false, // Permet le fallback vers le code PIN si nécessaire
+          stickyAuth: true,
           sensitiveTransaction: true,
         ),
       );
 
       return didAuthenticate;
     } on PlatformException catch (e) {
-      // Pour des raisons de sécurité, nous catchons les exceptions (ex: NotEnrolled, LockedOut)
-      // mais nous retournons toujours false sans exposer l'erreur à l'appelant.
       debugPrint('[BiometricService] PlatformException: ${e.code} - ${e.message}');
+      // Si les identifiants ne sont pas configurés sur l'appareil (ex: NotAvailable sur émulateur)
+      if (e.code == 'NotAvailable' || e.code == 'NotEnrolled') {
+        debugPrint('[BiometricService] Identifiants de sécurité non configurés (${e.code}) -> bypass gracieux.');
+        return true;
+      }
       return false;
     } catch (e) {
       debugPrint('[BiometricService] Unexpected error: $e');

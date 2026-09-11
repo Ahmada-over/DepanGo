@@ -129,6 +129,10 @@ async def root():
         "docs": "/docs" if settings.ENVIRONMENT == "development" else "disabled",
     }
 
+@app.get(f"{settings.API_V1_STR}/health")
+async def health():
+    return {"status": "ok"}
+
 
 # ---------------------------------------------------------------------------
 # API V1 Routers

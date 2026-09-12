@@ -25,13 +25,14 @@ async def get_my_profile(
     user = await repo.get_by_id(current_user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    created_at_str = user.created_at.isoformat() if hasattr(user.created_at, "isoformat") else str(user.created_at)
     return {
         "id": user.id,
         "name": user.name,
         "email": user.email,
         "phone": user.phone,
         "role": user.role.value if hasattr(user.role, "value") else str(user.role),
-        "created_at": user.created_at
+        "created_at": created_at_str
     }
 
 @router.put("/me")
@@ -44,7 +45,7 @@ async def update_profile(
     """Update own user profile information (name, email, phone)."""
     user_repo = SQLAlchemyUserRepository(db)
 
-    if req.name or req.email or req.phone:
+    if req.name is not None or req.email is not None or req.phone is not None:
         await user_repo.update_user_info(current_user_id, name=req.name, email=req.email, phone=req.phone)
 
     if req.category_id or req.transport_mode:
@@ -53,9 +54,24 @@ async def update_profile(
         await tech_repo.update_profile_info(current_user_id, category_id=req.category_id, transport_mode=req.transport_mode)
 
     updated = await user_repo.get_by_id(current_user_id)
+    created_at_str = (
+        updated.created_at.isoformat()
+        if updated and hasattr(updated.created_at, "isoformat")
+        else str(updated.created_at) if updated else None
+    )
+    user_data = {
+        "id": updated.id,
+        "name": updated.name,
+        "email": updated.email,
+        "phone": updated.phone,
+        "role": updated.role.value if hasattr(updated.role, "value") else str(updated.role),
+        "created_at": created_at_str,
+    } if updated else None
+
     return {
         "status": "success",
         "message": "Profil mis à jour avec succès",
+        "user": user_data,
         "profile": {
             "name": updated.name,
             "email": updated.email,

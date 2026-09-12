@@ -9,18 +9,21 @@ import 'package:geocoding/geocoding.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../core/config.dart';
 import '../core/theme.dart';
+import '../core/design_tokens.dart';
 import '../core/map_style.dart';
 import '../core/category_helper.dart';
 import '../core/app_toast.dart';
-import '../models/models.dart';
 import '../models/hardware_store.dart';
 import '../providers/pro_providers.dart';
 import '../providers/connectivity_provider.dart';
+import '../services/pro_haptic_service.dart';
 import 'active_mission_screen.dart';
 import 'history_screen.dart';
 import 'profile_screen.dart';
 import 'wallet_screen.dart';
 import '../providers/wallet_provider.dart';
+import '../widgets/circular_countdown_timer.dart';
+import '../widgets/slide_to_accept.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -347,12 +350,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         return;
       }
 
-      Position? pos = await Geolocator.getLastKnownPosition();
-      final Position position = pos ??
-          await Geolocator.getCurrentPosition(
-            desiredAccuracy: LocationAccuracy.high,
-            timeLimit: const Duration(seconds: 8),
-          );
+      Position position;
+      try {
+        position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high,
+          timeLimit: const Duration(seconds: 5),
+        );
+      } catch (_) {
+        final lastKnown = await Geolocator.getLastKnownPosition();
+        if (lastKnown == null) return;
+        position = lastKnown;
+      }
 
       if (mounted) {
         ref.read(liveLocationProvider.notifier).state = position;
@@ -398,6 +406,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue))
         : (_techMotoIcon ??
             BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange));
+
+    final double bottomInset = MediaQuery.of(context).padding.bottom;
+    final double contextualSlotBottom = bottomInset + 92.0; // 80px dock + 12px gap
+    final double mapControlsBottom = contextualSlotBottom + 96.0; // Au-dessus de la carte KPI / Mission
 
     return Scaffold(
       backgroundColor: ProTheme.darkBg,
@@ -483,238 +495,258 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             },
           ),
 
-          // 2. Top Header Bar (Driver Controls)
+          // 2. High-Tech Cockpit Driver Bar (Slate 900 Glass / Pill)
           Positioned(
-            top: MediaQuery.of(context).padding.top + 12,
-            left: 16,
-            right: 16,
-            child: Row(
-              children: [
-                // Profile Avatar Button
-                InkWell(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const ProfileScreen()),
-                    );
-                  },
-                  borderRadius: BorderRadius.circular(30),
-                  child: Container(
-                    padding: const EdgeInsets.all(3),
-                    decoration: BoxDecoration(
-                      color: ProTheme.darkCard,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: ProTheme.darkBorder, width: 2),
-                    ),
-                    child: CircleAvatar(
-                      radius: 20,
-                      backgroundColor: ProTheme.primaryEmerald,
-                      child: Text(
-                        (user?.name.isNotEmpty == true ? user!.name[0] : 'T')
-                            .toUpperCase(),
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold, color: Colors.white),
-                      ),
-                    ),
-                  ),
+            top: MediaQuery.of(context).padding.top + 10,
+            left: 14,
+            right: 14,
+            child: Container(
+              height: 60,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0F172A), // Slate 900
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+                border: Border.all(
+                  color: isOnline
+                      ? ProTheme.primaryLight.withValues(alpha: 0.6)
+                      : const Color(0xFF334155),
+                  width: 1.5,
                 ),
-                const SizedBox(width: 10),
-
-                // Availability Status Pill (Switch)
-                Expanded(
-                  child: InkWell(
+                boxShadow: [
+                  BoxShadow(
+                    color: isOnline
+                        ? ProTheme.primaryEmerald.withValues(alpha: 0.25)
+                        : Colors.black54,
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  // Profile Avatar Button
+                  InkWell(
                     onTap: () {
-                      ref.read(isOnlineProvider.notifier).toggleOnline();
+                      ProHapticService.instance.onSelectionClick();
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const ProfileScreen()),
+                      );
                     },
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(30),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 10),
+                      padding: const EdgeInsets.all(2),
                       decoration: BoxDecoration(
-                        color: ProTheme.darkCard,
-                        borderRadius: BorderRadius.circular(24),
+                        shape: BoxShape.circle,
                         border: Border.all(
                           color: isOnline
                               ? ProTheme.primaryLight
-                              : Colors.redAccent.withValues(alpha: 0.5),
-                          width: 1.5,
+                              : const Color(0xFF475569),
+                          width: 2,
                         ),
-                        boxShadow: const [
-                          BoxShadow(
-                              color: Colors.black45,
-                              blurRadius: 10,
-                              offset: Offset(0, 4))
-                        ],
+                      ),
+                      child: CircleAvatar(
+                        radius: 19,
+                        backgroundColor: ProTheme.primaryEmerald,
+                        child: Text(
+                          (user?.name.isNotEmpty == true ? user!.name[0] : 'T')
+                              .toUpperCase(),
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+
+                  // Center Driver Availability Switch
+                  Expanded(
+                    child: InkWell(
+                      onTap: () {
+                        if (!isOnline) {
+                          ProHapticService.instance.onSliderConfirmed();
+                        } else {
+                          ProHapticService.instance.onOfferDismissed();
+                        }
+                        ref.read(isOnlineProvider.notifier).toggleOnline();
+                      },
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: isOnline
+                              ? ProTheme.primaryEmerald.withValues(alpha: 0.15)
+                              : Colors.white.withValues(alpha: 0.04),
+                          borderRadius: BorderRadius.circular(AppRadius.pill),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 12,
+                              height: 12,
+                              decoration: BoxDecoration(
+                                color: isOnline
+                                    ? const Color(0xFF10B981)
+                                    : const Color(0xFFEF4444),
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: isOnline
+                                        ? const Color(0x9910B981)
+                                        : const Color(0x66EF4444),
+                                    blurRadius: isOnline ? 10 : 4,
+                                    spreadRadius: isOnline ? 2 : 0,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    isOnline ? 'EN LIGNE' : 'EN PAUSE',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: 0.6,
+                                      color: isOnline
+                                          ? const Color(0xFF34D399)
+                                          : const Color(0xFF94A3B8),
+                                    ),
+                                  ),
+                                  Text(
+                                    isOnline
+                                        ? 'Prêt pour missions'
+                                        : 'Touchez pour activer',
+                                    style: const TextStyle(
+                                      fontSize: 9,
+                                      color: Color(0xFF64748B),
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Icon(
+                              isOnline
+                                  ? LucideIcons.power
+                                  : LucideIcons.play,
+                              color: isOnline
+                                  ? const Color(0xFF34D399)
+                                  : const Color(0xFF94A3B8),
+                              size: 18,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+
+                  // Wallet Quick Capsule
+                  InkWell(
+                    onTap: () {
+                      ProHapticService.instance.onSelectionClick();
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const WalletScreen()),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E293B),
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                        border: Border.all(
+                          color: walletState.balance >= 500
+                              ? const Color(0xFFF59E0B).withValues(alpha: 0.6)
+                              : const Color(0xFFEF4444).withValues(alpha: 0.6),
+                          width: 1.2,
+                        ),
                       ),
                       child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Container(
-                            width: 12,
-                            height: 12,
-                            decoration: BoxDecoration(
-                              color: isOnline
-                                  ? ProTheme.success
-                                  : Colors.redAccent,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: isOnline
-                                      ? Colors.black.withValues(alpha: 0.2)
-                                      : Colors.black.withValues(alpha: 0.2),
-                                  blurRadius: 6,
-                                  spreadRadius: 0,
-                                )
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  isOnline
-                                      ? 'Disponible en ligne'
-                                      : 'En pause (hors ligne)',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                    color: isOnline
-                                        ? Colors.white
-                                        : ProTheme.textMuted,
-                                    letterSpacing: 0.4,
-                                  ),
-                                ),
-                                Text(
-                                  isOnline
-                                      ? 'Prêt à recevoir des dépannages'
-                                      : 'Touchez pour passer en ligne',
-                                  style: const TextStyle(
-                                      fontSize: 10, color: ProTheme.textMuted),
-                                ),
-                              ],
-                            ),
-                          ),
                           Icon(
-                            isOnline
-                                ? LucideIcons.power
-                                : LucideIcons.play,
-                            color:
-                                isOnline ? ProTheme.success : Colors.redAccent,
-                            size: 20,
+                            LucideIcons.wallet,
+                            size: 15,
+                            color: walletState.balance >= 500
+                                ? const Color(0xFFFBBF24)
+                                : const Color(0xFFEF4444),
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            '${walletState.balance.toStringAsFixed(0)} F',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                            ),
                           ),
                         ],
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-
-                // Wallet Quick Pill
-                InkWell(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const WalletScreen()),
-                    );
-                  },
-                  borderRadius: BorderRadius.circular(24),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: ProTheme.darkCard,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: walletState.balance >= 500
-                            ? ProTheme.primaryLight.withValues(alpha: 0.6)
-                            : Colors.redAccent.withValues(alpha: 0.6),
-                        width: 1.5,
-                      ),
-                      boxShadow: const [
-                        BoxShadow(
-                            color: Colors.black45,
-                            blurRadius: 10,
-                            offset: Offset(0, 4))
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          LucideIcons.wallet,
-                          size: 16,
-                          color: walletState.balance >= 500
-                              ? ProTheme.primaryLight
-                              : Colors.redAccent,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          '${walletState.balance.toStringAsFixed(0)} F',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: walletState.balance >= 500
-                                ? ProTheme.textWhite
-                                : Colors.redAccent,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
 
-          // Live Commune Indicator Pill
-          if (_currentCommuneName != null)
-            Positioned(
-              top: MediaQuery.of(context).padding.top + 72,
-              left: 16,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: ProTheme.darkCard.withValues(alpha: 0.92),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: ProTheme.primaryEmerald.withValues(alpha: 0.4),
-                    width: 1,
+          // Live Demand & Zone Capsule (under Cockpit Bar)
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 78,
+            left: 16,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xEE0B1120),
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+                border: Border.all(
+                  color: const Color(0xFF1E293B),
+                  width: 1.2,
+                ),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black54,
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
                   ),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black45,
-                      blurRadius: 8,
-                      offset: Offset(0, 2),
-                    )
-                  ],
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(LucideIcons.map_pin,
-                        color: ProTheme.primaryLight, size: 14),
-                    const SizedBox(width: 6),
-                    Text(
-                      _currentCommuneName!,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(LucideIcons.zap, color: Color(0xFFF59E0B), size: 13),
+                  const SizedBox(width: 5),
+                  Text(
+                    _currentCommuneName != null
+                        ? '$_currentCommuneName • Forte demande ⚡'
+                        : 'Dakar • Forte demande ⚡',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
+          ),
 
           // 3. Floating Action Controls (Quincailleries & Recenter)
           Positioned(
             right: 16,
-            bottom: activeMission != null ? 220 : 130,
+            bottom: mapControlsBottom,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -761,7 +793,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           // 4. Active Mission Floating Banner
           if (activeMission != null)
             Positioned(
-              bottom: 110,
+              bottom: contextualSlotBottom,
               left: 16,
               right: 16,
               child: InkWell(
@@ -772,17 +804,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         builder: (_) => const ActiveMissionScreen()),
                   );
                 },
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(AppRadius.lg),
                 child: Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
                     color: ProTheme.darkCard,
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: ProTheme.darkBorder, width: 1.0),
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                    border: Border.all(color: ProTheme.amber.withValues(alpha: 0.5), width: 1.5),
                     boxShadow: const [
                       BoxShadow(
                           color: Colors.black54,
-                          blurRadius: 14,
+                          blurRadius: 16,
                           offset: Offset(0, 6))
                     ],
                   ),
@@ -792,31 +824,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
                           color: ProTheme.amber.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(AppRadius.md),
                         ),
                         child: const Icon(LucideIcons.navigation,
-                            color: ProTheme.amber, size: 24),
+                            color: ProTheme.amber, size: 22),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             Row(
                               children: [
                                 const Text(
-                                  'Mission en cours',
+                                  'MISSION EN COURS',
                                   style: TextStyle(
                                       fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                      color: ProTheme.amber),
+                                      fontWeight: FontWeight.w900,
+                                      color: ProTheme.amber,
+                                      letterSpacing: 0.6),
                                 ),
                                 const Spacer(),
                                 Text(
-                                  activeMission.status,
+                                  activeMission.status.toUpperCase(),
                                   style: const TextStyle(
                                       fontSize: 10,
-                                      fontWeight: FontWeight.bold,
+                                      fontWeight: FontWeight.w900,
                                       color: ProTheme.primaryLight),
                                 ),
                               ],
@@ -832,7 +866,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             Text(
                               _extractCommuneName(activeMission.addressText),
                               style: const TextStyle(
-                                  fontSize: 13,
+                                  fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                   color: Colors.white70),
                               maxLines: 1,
@@ -851,7 +885,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ),
                       ),
                       const Icon(LucideIcons.chevron_right,
-                          color: Colors.white),
+                          color: Colors.white70),
                     ],
                   ),
                 ),
@@ -861,19 +895,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           // 5. Quick KPI Bottom Bar
           if (activeMission == null)
             Positioned(
-              bottom: 24,
+              bottom: contextualSlotBottom,
               left: 16,
               right: 16,
               child: Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  color: ProTheme.darkCard,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: ProTheme.darkBorder),
+                  color: ProTheme.darkCard.withValues(alpha: 0.95),
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  border: Border.all(color: ProTheme.darkBorder, width: 1.0),
                   boxShadow: const [
                     BoxShadow(
-                        color: Colors.black54,
-                        blurRadius: 12,
+                        color: Colors.black45,
+                        blurRadius: 14,
                         offset: Offset(0, 4))
                   ],
                 ),
@@ -885,10 +919,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         '${profile?.averageRating.toStringAsFixed(1) ?? '5.0'} ★',
                         LucideIcons.star,
                         Colors.amber),
-                    Container(width: 1, height: 36, color: ProTheme.darkBorder),
-                    _buildKpiItem('Véhicule', isCar ? 'Voiture' : 'Moto',
-                        LucideIcons.bike, ProTheme.primaryLight),
-                    Container(width: 1, height: 36, color: ProTheme.darkBorder),
+                    Container(width: 1, height: 32, color: ProTheme.darkBorder),
+                    _buildKpiItem(
+                        'Véhicule',
+                        isCar ? 'Voiture' : 'Moto',
+                        isCar ? LucideIcons.car : LucideIcons.bike,
+                        ProTheme.primaryLight),
+                    Container(width: 1, height: 32, color: ProTheme.darkBorder),
                     _buildKpiItem(
                         'Statut',
                         isOnline ? 'En Ligne' : 'Pause',
@@ -904,42 +941,155 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             _buildIncomingOfferOverlay(context, incomingOffer),
         ],
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentBottomNav,
-        backgroundColor: ProTheme.darkBg,
-        selectedItemColor: ProTheme.primaryLight,
-        unselectedItemColor: ProTheme.textMuted,
-        type: BottomNavigationBarType.fixed,
-        onTap: (idx) {
-          setState(() => _currentBottomNav = idx);
-          if (idx == 1) {
-            if (activeMission != null) {
-              Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => const ActiveMissionScreen()));
-            } else {
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const HistoryScreen()));
-            }
-          } else if (idx == 2) {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const HistoryScreen()));
-          } else if (idx == 3) {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const ProfileScreen()));
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(
-              icon: Icon(LucideIcons.map), label: 'Carte Live'),
-          BottomNavigationBarItem(
-              icon: Icon(LucideIcons.clock), label: 'Mission'),
-          BottomNavigationBarItem(
-              icon: Icon(LucideIcons.receipt), label: 'Historique'),
-          BottomNavigationBarItem(
-              icon: Icon(LucideIcons.user), label: 'Profil Pro'),
-        ],
+      extendBody: true,
+      bottomNavigationBar: _buildFloatingDock(context, activeMission),
+    );
+  }
+
+  Widget _buildFloatingDock(BuildContext context, dynamic activeMission) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.only(left: 20, right: 20, bottom: 16),
+        child: Container(
+          height: 64,
+          decoration: BoxDecoration(
+            color: const Color(0xFF0F172A), // Slate 900
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+            border: Border.all(color: const Color(0xFF334155), width: 1.5),
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black54,
+                blurRadius: 16,
+                offset: Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildDockItem(
+                index: 0,
+                icon: LucideIcons.map,
+                label: 'Carte',
+                isSelected: _currentBottomNav == 0,
+                onTap: () {
+                  ProHapticService.instance.onSelectionClick();
+                  setState(() => _currentBottomNav = 0);
+                },
+              ),
+              _buildDockItem(
+                index: 1,
+                icon: LucideIcons.clock,
+                label: 'Mission',
+                isSelected: _currentBottomNav == 1,
+                badge: activeMission != null,
+                onTap: () {
+                  ProHapticService.instance.onSelectionClick();
+                  setState(() => _currentBottomNav = 1);
+                  if (activeMission != null) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const ActiveMissionScreen()),
+                    );
+                  } else {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const HistoryScreen()),
+                    );
+                  }
+                },
+              ),
+              _buildDockItem(
+                index: 2,
+                icon: LucideIcons.receipt,
+                label: 'Historique',
+                isSelected: _currentBottomNav == 2,
+                onTap: () {
+                  ProHapticService.instance.onSelectionClick();
+                  setState(() => _currentBottomNav = 2);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const HistoryScreen()),
+                  );
+                },
+              ),
+              _buildDockItem(
+                index: 3,
+                icon: LucideIcons.user,
+                label: 'Profil',
+                isSelected: _currentBottomNav == 3,
+                onTap: () {
+                  ProHapticService.instance.onSelectionClick();
+                  setState(() => _currentBottomNav = 3);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDockItem({
+    required int index,
+    required IconData icon,
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+    bool badge = false,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppRadius.pill),
+      child: Container(
+        constraints: const BoxConstraints(
+            minWidth: AppTouchTarget.standard,
+            minHeight: AppTouchTarget.standard),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        color: Colors.transparent,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Icon(
+                  icon,
+                  size: isSelected ? 23 : 21,
+                  color:
+                      isSelected ? ProTheme.primaryLight : ProTheme.textMuted,
+                ),
+                if (badge)
+                  Positioned(
+                    top: -2,
+                    right: -4,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: ProTheme.amber,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 3),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600,
+                color: isSelected ? ProTheme.primaryLight : ProTheme.textMuted,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -951,25 +1101,38 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16, color: color),
-            const SizedBox(width: 4),
-            Text(value,
-                style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white)),
+            Icon(icon, size: 15, color: color),
+            const SizedBox(width: 6),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                letterSpacing: -0.2,
+              ),
+            ),
           ],
         ),
-        const SizedBox(height: 2),
-        Text(label,
-            style: const TextStyle(fontSize: 11, color: ProTheme.textMuted)),
+        const SizedBox(height: 3),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            color: ProTheme.textMuted,
+          ),
+        ),
       ],
     );
   }
 
   Widget _buildIncomingOfferOverlay(
-      BuildContext context, MatchOfferModel offer) {
-    final notifier = ref.watch(incomingOfferProvider.notifier);
+      BuildContext context, IncomingOfferState offerState) {
+    final offer = offerState.offer;
+    final remainingSeconds = offerState.remainingSeconds;
+    final totalSeconds = offerState.totalSeconds;
+    final notifier = ref.read(incomingOfferProvider.notifier);
 
     return Positioned.fill(
       child: Container(
@@ -980,108 +1143,135 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             children: [
               Container(
                 margin: const EdgeInsets.all(16),
-                padding: const EdgeInsets.all(22),
+                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: ProTheme.darkCard,
-                  borderRadius: BorderRadius.circular(28),
-                  border: Border.all(color: ProTheme.darkBorder, width: 1.0),
-                  boxShadow: [
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: ProTheme.darkBorder, width: 1.5),
+                  boxShadow: const [
                     BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.2),
-                        blurRadius: 8,
-                        spreadRadius: 0),
+                      color: Colors.black87,
+                      blurRadius: 16,
+                      offset: Offset(0, 6),
+                    ),
                   ],
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Top Pulsing Alert
+                    // Top Bar: Alerte, Timer Canvas haute visibilité, Bouton Fermer discret
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 6),
                           decoration: BoxDecoration(
-                            color: ProTheme.amber.withValues(alpha: 0.2),
+                            color: ProTheme.amber.withValues(alpha: 0.18),
                             borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: ProTheme.amber.withValues(alpha: 0.4),
+                              width: 1,
+                            ),
                           ),
                           child: const Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(LucideIcons.zap,
-                                  color: ProTheme.amber, size: 18),
-                              SizedBox(width: 4),
-                              Text('Nouvelle demande',
-                                  style: TextStyle(
-                                      color: ProTheme.amber,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12)),
+                                  color: ProTheme.amber, size: 16),
+                              SizedBox(width: 5),
+                              Text(
+                                'Nouvelle intervention',
+                                style: TextStyle(
+                                  color: ProTheme.amber,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                  letterSpacing: 0.4,
+                                ),
+                              ),
                             ],
                           ),
                         ),
-                        // Countdown Timer Pill
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.redAccent.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: Colors.redAccent),
-                          ),
-                          child: Text(
-                            '${notifier.remainingSeconds}s',
-                            style: const TextStyle(
-                                color: Colors.redAccent,
-                                fontWeight: FontWeight.w900,
-                                fontSize: 14),
+
+                        // Compte à rebours circulaire dynamique haute visibilité
+                        CircularCountdownTimer(
+                          remainingSeconds: remainingSeconds,
+                          totalSeconds: totalSeconds,
+                          size: 58,
+                        ),
+
+                        // Bouton discret "Ignorer" (Touch target >= 48px)
+                        IconButton(
+                          onPressed: () => notifier.declineOffer(),
+                          icon: const Icon(LucideIcons.x,
+                              color: ProTheme.textMuted, size: 22),
+                          tooltip: 'Ignorer l\'offre',
+                          style: IconButton.styleFrom(
+                            backgroundColor: ProTheme.darkSurface,
+                            padding: const EdgeInsets.all(12),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 16),
 
-                    // Client & Panne Info
-                    Text(
-                      offer.clientName,
-                      style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white),
-                    ),
-                    const SizedBox(height: 4),
-
-                    // French Category Pill
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: CategoryHelper.getCategoryColor(offer.categoryId)
-                            .withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        '${CategoryHelper.getCategoryEmoji(offer.categoryId)} ${CategoryHelper.getCategoryName(offer.categoryId)}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color:
-                              CategoryHelper.getCategoryColor(offer.categoryId),
+                    // Nom Client & Catégorie
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                offer.clientName,
+                                style: const TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  letterSpacing: 0.2,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: CategoryHelper.getCategoryColor(
+                                          offer.categoryId)
+                                      .withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  '${CategoryHelper.getCategoryEmoji(offer.categoryId)} ${CategoryHelper.getCategoryName(offer.categoryId)}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: CategoryHelper.getCategoryColor(
+                                        offer.categoryId),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
+                      ],
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
 
+                    // Adresse & Distance
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: ProTheme.darkSurface,
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: ProTheme.darkBorder, width: 1),
                       ),
                       child: Row(
                         children: [
                           const Icon(LucideIcons.map_pin,
-                              color: ProTheme.primaryLight, size: 20),
-                          const SizedBox(width: 8),
+                              color: ProTheme.primaryLight, size: 22),
+                          const SizedBox(width: 10),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1089,9 +1279,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 Text(
                                   _extractCommuneName(offer.addressText),
                                   style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white),
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -1100,8 +1291,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   Text(
                                     offer.addressText,
                                     style: const TextStyle(
-                                        fontSize: 11,
-                                        color: ProTheme.textMuted),
+                                      fontSize: 12,
+                                      color: ProTheme.textMuted,
+                                      fontWeight: FontWeight.w500,
+                                    ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -1111,18 +1304,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
+                                horizontal: 10, vertical: 5),
                             decoration: BoxDecoration(
                               color: ProTheme.primaryEmerald
-                                  .withValues(alpha: 0.2),
+                                  .withValues(alpha: 0.25),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
                               '${offer.distanceKm.toStringAsFixed(1)} km',
                               style: const TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: ProTheme.primaryLight),
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: ProTheme.primaryLight,
+                              ),
                             ),
                           ),
                         ],
@@ -1130,13 +1324,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                     const SizedBox(height: 10),
 
-                    // Diagnostic Description & Optional Photo
+                    // Description / Diagnostic
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: ProTheme.darkSurface,
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1153,9 +1347,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 height: 52,
                                 fit: BoxFit.cover,
                                 errorBuilder: (_, __, ___) => const Icon(
-                                    LucideIcons.image_off,
-                                    size: 40,
-                                    color: Colors.grey),
+                                  LucideIcons.image_off,
+                                  size: 36,
+                                  color: Colors.grey,
+                                ),
                               ),
                             ),
                             const SizedBox(width: 10),
@@ -1166,72 +1361,51 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   ? '"${offer.description}"'
                                   : '"Diagnostic et devis sur place"',
                               style: const TextStyle(
-                                  fontSize: 13,
-                                  color: ProTheme.textMuted,
-                                  fontStyle: FontStyle.italic),
+                                fontSize: 13,
+                                color: Colors.white70,
+                                fontStyle: FontStyle.italic,
+                              ),
                             ),
                           ),
                         ],
                       ),
                     ),
-                    // 500 FCFA Cost & Balance Check Badge
+                    const SizedBox(height: 10),
+
+                    // État solde (affiché uniquement si recharge requise, aucun montant de débit affiché)
                     Builder(
                       builder: (ctx) {
                         final wallet = ref.watch(walletProvider);
                         final hasEnough = wallet.balance >= 500;
+                        if (hasEnough) return const SizedBox.shrink();
                         return Container(
+                          margin: const EdgeInsets.only(bottom: 12),
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 10),
+                              horizontal: 12, vertical: 10),
                           decoration: BoxDecoration(
-                            color: hasEnough
-                                ? ProTheme.primaryEmerald.withValues(alpha: 0.15)
-                                : Colors.redAccent.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(14),
+                            color: Colors.redAccent.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: hasEnough
-                                  ? ProTheme.primaryLight.withValues(alpha: 0.4)
-                                  : Colors.redAccent.withValues(alpha: 0.4),
+                              color: Colors.redAccent.withValues(alpha: 0.3),
                               width: 1,
                             ),
                           ),
-                          child: Row(
+                          child: const Row(
                             children: [
                               Icon(
-                                hasEnough
-                                    ? LucideIcons.wallet
-                                    : Icons.warning_amber_rounded,
+                                Icons.warning_amber_rounded,
                                 size: 18,
-                                color: hasEnough
-                                    ? ProTheme.primaryLight
-                                    : Colors.redAccent,
+                                color: Colors.redAccent,
                               ),
-                              const SizedBox(width: 10),
+                              SizedBox(width: 8),
                               Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      hasEnough
-                                          ? 'Coût d\'accès client : 500 FCFA'
-                                          : 'Solde insuffisant pour accepter',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                        color: hasEnough
-                                            ? ProTheme.textWhite
-                                            : Colors.redAccent,
-                                      ),
-                                    ),
-                                    Text(
-                                      hasEnough
-                                          ? 'Déduit de votre solde (${wallet.balance.toStringAsFixed(0)} F dispo).'
-                                          : 'Solde actuel: ${wallet.balance.toStringAsFixed(0)} F. Recharge requise.',
-                                      style: const TextStyle(
-                                        fontSize: 11,
-                                        color: ProTheme.textMuted,
-                                      ),
-                                    ),
-                                  ],
+                                child: Text(
+                                  'Solde insuffisant pour recevoir cette mission. Veuillez recharger votre compte.',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.redAccent,
+                                  ),
                                 ),
                               ),
                             ],
@@ -1239,98 +1413,62 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         );
                       },
                     ),
-                    const SizedBox(height: 18),
 
-                    // Accept & Reject Buttons
+                    // SLIDE TO ACCEPT GESTUEL (Anti-clic accidentel)
                     Builder(
                       builder: (ctx) {
                         final wallet = ref.watch(walletProvider);
                         final hasEnough = wallet.balance >= 500;
 
-                        return Row(
-                          children: [
-                            Expanded(
-                              child: SizedBox(
-                                height: 52,
-                                child: OutlinedButton(
-                                  onPressed: () => notifier.declineOffer(),
-                                  style: OutlinedButton.styleFrom(
-                                    side: const BorderSide(
-                                        color: ProTheme.darkBorder),
-                                    shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(14)),
-                                  ),
-                                  child: const Text('Refuser',
-                                      style: TextStyle(
-                                          color: ProTheme.textMuted,
-                                          fontWeight: FontWeight.bold)),
+                        if (!hasEnough) {
+                          return SizedBox(
+                            width: double.infinity,
+                            height: 54,
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (_) => const WalletScreen()),
+                                );
+                              },
+                              icon: const Icon(Icons.add_circle_outline_rounded,
+                                  color: Colors.black, size: 20),
+                              label: const Text(
+                                'Recharger mon compte',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                  color: Colors.black,
+                                ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: ProTheme.amber,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(999),
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              flex: 2,
-                              child: SizedBox(
-                                height: 52,
-                                child: hasEnough
-                                    ? ElevatedButton.icon(
-                                        onPressed: () async {
-                                          final accepted =
-                                              await notifier.acceptOffer();
-                                          if (accepted) {
-                                            ref
-                                                .read(walletProvider.notifier)
-                                                .fetchWallet();
-                                            if (context.mounted) {
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                    builder: (_) =>
-                                                        const ActiveMissionScreen()),
-                                              );
-                                            }
-                                          }
-                                        },
-                                        icon: const Icon(LucideIcons.circle_check,
-                                            color: Colors.white),
-                                        label: const Text('Accepter (500 F)',
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 14)),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor:
-                                              ProTheme.primaryEmerald,
-                                          shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(14)),
-                                        ),
-                                      )
-                                    : ElevatedButton.icon(
-                                        onPressed: () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                                builder: (_) =>
-                                                    const WalletScreen()),
-                                          );
-                                        },
-                                        icon: const Icon(Icons.add_circle_outline_rounded,
-                                            color: Colors.black),
-                                        label: const Text('Recharger le wallet',
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 14,
-                                                color: Colors.black)),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: ProTheme.amber,
-                                          shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(14)),
-                                        ),
-                                      ),
-                              ),
-                            ),
-                          ],
+                          );
+                        }
+
+                        return SlideToAccept(
+                          label: 'GLISSER POUR ACCEPTER',
+                          activeColor: const Color(0xFF10B981),
+                          onConfirmed: () async {
+                            final accepted = await notifier.acceptOffer();
+                            if (accepted) {
+                              ref.read(walletProvider.notifier).fetchWallet();
+                              if (context.mounted) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const ActiveMissionScreen(),
+                                  ),
+                                );
+                              }
+                            }
+                          },
                         );
                       },
                     ),

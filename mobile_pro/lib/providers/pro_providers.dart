@@ -14,6 +14,7 @@ import '../core/config.dart';
 import '../models/models.dart';
 import 'connectivity_provider.dart';
 import '../services/local_notification_service.dart';
+import '../services/pro_haptic_service.dart';
 
 // --- 1. Auth Provider ---
 final authProvider = StateNotifierProvider<AuthNotifier, UserModel?>((ref) {
@@ -230,12 +231,17 @@ class OnlineStatusNotifier extends StateNotifier<bool> {
         return;
       }
 
-      Position? pos = await Geolocator.getLastKnownPosition();
-      final Position position = pos ??
-          await Geolocator.getCurrentPosition(
-            desiredAccuracy: LocationAccuracy.high,
-            timeLimit: const Duration(seconds: 8),
-          );
+      Position position;
+      try {
+        position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high,
+          timeLimit: const Duration(seconds: 5),
+        );
+      } catch (_) {
+        final lastKnown = await Geolocator.getLastKnownPosition();
+        if (lastKnown == null) return;
+        position = lastKnown;
+      }
 
       _ref.read(liveLocationProvider.notifier).state = position;
 
@@ -263,27 +269,51 @@ class OnlineStatusNotifier extends StateNotifier<bool> {
 final liveLocationProvider = StateProvider<Position?>((ref) => null);
 
 // --- 5. Incoming Match Offer Provider ---
+class IncomingOfferState {
+  final MatchOfferModel offer;
+  final int remainingSeconds;
+  final int totalSeconds;
+
+  IncomingOfferState({
+    required this.offer,
+    required this.remainingSeconds,
+    required this.totalSeconds,
+  });
+
+  IncomingOfferState copyWith({int? remainingSeconds}) => IncomingOfferState(
+        offer: offer,
+        remainingSeconds: remainingSeconds ?? this.remainingSeconds,
+        totalSeconds: totalSeconds,
+      );
+}
+
 final incomingOfferProvider =
-    StateNotifierProvider<IncomingOfferNotifier, MatchOfferModel?>((ref) {
+    StateNotifierProvider<IncomingOfferNotifier, IncomingOfferState?>((ref) {
   return IncomingOfferNotifier(ref);
 });
 
-class IncomingOfferNotifier extends StateNotifier<MatchOfferModel?> {
+class IncomingOfferNotifier extends StateNotifier<IncomingOfferState?> {
   final Ref _ref;
   final AudioPlayer _audioPlayer = AudioPlayer();
   Timer? _countdownTimer;
-  int remainingSeconds = 90;
 
   IncomingOfferNotifier(this._ref) : super(null);
 
   void receiveOffer(MatchOfferModel offer) {
-    state = offer;
-    remainingSeconds = offer.timeoutSeconds;
-    _playSound();
+    final timeout = offer.timeoutSeconds > 0 ? offer.timeoutSeconds : 90;
+    state = IncomingOfferState(
+      offer: offer,
+      remainingSeconds: timeout,
+      totalSeconds: timeout,
+    );
+
+    // Déclenchement de l'alerte haptique cadencée et audio en boucle
+    _startAudioLoop();
+    ProHapticService.instance.startOfferAlert(duration: Duration(seconds: timeout));
 
     AppToast.show(
       null,
-      title: ' Demande d\'Intervention Reçue !',
+      title: '🚨 Demande d\'Intervention Reçue !',
       message:
           '${offer.categoryName} • ${offer.addressText} (~${offer.distanceKm.toStringAsFixed(1)} km)',
       type: AppToastType.warning,
@@ -298,26 +328,40 @@ class IncomingOfferNotifier extends StateNotifier<MatchOfferModel?> {
 
     _countdownTimer?.cancel();
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (remainingSeconds > 0) {
-        remainingSeconds--;
+      if (state == null) {
+        timer.cancel();
+        return;
+      }
+      if (state!.remainingSeconds > 1) {
+        state = state!.copyWith(remainingSeconds: state!.remainingSeconds - 1);
       } else {
         dismissOffer();
       }
     });
   }
 
-  Future<void> _playSound() async {
+  Future<void> _startAudioLoop() async {
     try {
+      await _audioPlayer.setReleaseMode(ReleaseMode.loop);
       await _audioPlayer.play(AssetSource('sounds/notification.mp3'));
     } catch (e) {
       debugPrint('[Audio] Play error: $e');
     }
   }
 
+  void _stopAudio() {
+    try {
+      _audioPlayer.stop();
+    } catch (_) {}
+  }
+
   Future<bool> acceptOffer() async {
     if (state == null) return false;
-    final bookingId = state!.bookingId;
-    dismissOffer();
+    final bookingId = state!.offer.bookingId;
+
+    _stopAudio();
+    ProHapticService.instance.onSliderConfirmed();
+    _countdownTimer?.cancel();
 
     try {
       final user = _ref.read(authProvider);
@@ -326,7 +370,9 @@ class IncomingOfferNotifier extends StateNotifier<MatchOfferModel?> {
         'status': 'matched',
         'technician_id': user?.id,
       });
+
       if (res.statusCode == 200) {
+        state = null;
         _ref.read(activeMissionProvider.notifier).fetchActiveMission();
         AppToast.show(
           null,
@@ -339,12 +385,13 @@ class IncomingOfferNotifier extends StateNotifier<MatchOfferModel?> {
     } catch (e) {
       debugPrint('[Offer] Accept error: $e');
     }
+    state = null;
     return false;
   }
 
   Future<bool> declineOffer() async {
     if (state == null) return false;
-    final bookingId = state!.bookingId;
+    final bookingId = state!.offer.bookingId;
     dismissOffer();
 
     try {
@@ -358,6 +405,8 @@ class IncomingOfferNotifier extends StateNotifier<MatchOfferModel?> {
   }
 
   void dismissOffer() {
+    _stopAudio();
+    ProHapticService.instance.onOfferDismissed();
     _countdownTimer?.cancel();
     state = null;
   }
@@ -414,21 +463,6 @@ class ActiveMissionNotifier extends StateNotifier<BookingModel?> {
   Future<bool> updateStatus(String newStatus, [String? cancelReason]) async {
     if (state == null) return false;
     final bookingId = state!.id;
-
-    // --- BIOMETRIC MIDDLEWARE (OFFLINE RESILIENCY) ---
-    // On exige une authentification locale avant toute action sensible.
-    bool canProceed = await biometricService.authenticateAction(
-        'Veuillez vous authentifier pour valider cette étape d\'itinéraire.');
-    if (!canProceed) {
-      AppToast.show(
-        null,
-        title: 'Action refusée',
-        message: 'Authentification biométrique requise pour valider cette étape.',
-        type: AppToastType.error,
-      );
-      return false;
-    }
-    // --- FIN BIOMETRIC MIDDLEWARE ---
 
     try {
       final user = _ref.read(authProvider);

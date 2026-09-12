@@ -9,13 +9,14 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../core/config.dart';
 import '../core/theme.dart';
+import '../core/design_tokens.dart';
 import '../core/map_style.dart';
 import '../core/app_toast.dart';
 import '../core/category_helper.dart';
-import '../models/models.dart';
 import '../models/hardware_store.dart';
 import '../providers/pro_providers.dart';
 import '../providers/wallet_provider.dart';
+import '../widgets/slide_to_confirm.dart';
 import 'quote_builder_screen.dart';
 
 class ActiveMissionScreen extends ConsumerStatefulWidget {
@@ -843,91 +844,96 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // WORKFLOW ACTION BUTTONS
+                    // WORKFLOW ACTION BUTTONS (Slide to Confirm anti-erreur)
                     if (activeMission.status == 'matched')
-                      SizedBox(
-                        height: 52,
-                        child: ElevatedButton.icon(
-                          onPressed: _actionLoading ? null : () => _handleStatusUpdate('in_progress'),
-                          icon: const Icon(LucideIcons.bike, size: 22),
-                          label: const Text('🚗 PASSER : EN ROUTE', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900)),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: ProTheme.amber,
-                            foregroundColor: Colors.black,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          ),
-                        ),
+                      SlideToConfirm(
+                        label: "GLISSER : EN ROUTE VERS LE CLIENT",
+                        activeColor: const Color(0xFFF59E0B), // Warm Amber
+                        icon: LucideIcons.bike,
+                        onConfirmed: () => _handleStatusUpdate('in_progress'),
                       ),
 
                     if (activeMission.status == 'in_progress')
-                      SizedBox(
-                        height: 52,
-                        child: ElevatedButton.icon(
-                          onPressed: _actionLoading ? null : () => _handleStatusUpdate('on_site'),
-                          icon: const Icon(LucideIcons.map_pin, size: 22),
-                          label: const Text('📍 PASSER : SUR PLACE', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900)),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: ProTheme.primaryLight,
-                            foregroundColor: Colors.black,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          ),
-                        ),
+                      SlideToConfirm(
+                        label: "GLISSER : JE SUIS SUR PLACE",
+                        activeColor: const Color(0xFF14B8A6), // Teal / Cyan
+                        icon: LucideIcons.map_pin,
+                        onConfirmed: () => _handleStatusUpdate('on_site'),
                       ),
 
                     if (activeMission.status == 'on_site') ...[
-                      SizedBox(
-                        height: 52,
-                        child: ElevatedButton.icon(
-                          onPressed: () async {
-                            final result = await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => QuoteBuilderScreen(bookingId: activeMission.id),
-                              ),
-                            );
-                            if (result == true && mounted) {
-                              AppToast.show(
+                      Container(
+                        height: AppTouchTarget.standard, // 52px touch target
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: ProTheme.darkSurface,
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                          border: Border.all(color: const Color(0xFF334155), width: 1.5),
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(AppRadius.md),
+                            onTap: () async {
+                              final result = await Navigator.push(
                                 context,
-                                title: 'Devis envoyé !',
-                                message: 'Le devis a été transmis au client.',
-                                type: AppToastType.success,
+                                MaterialPageRoute(
+                                  builder: (_) => QuoteBuilderScreen(bookingId: activeMission.id),
+                                ),
                               );
-                            }
-                          },
-                          icon: const Icon(LucideIcons.file_text, size: 22),
-                          label: const Text('📋 CRÉER UN DEVIS', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900)),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: ProTheme.amber,
-                            foregroundColor: Colors.black,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              if (result == true && mounted) {
+                                AppToast.show(
+                                  context,
+                                  title: 'Devis envoyé !',
+                                  message: 'Le devis a été transmis au client.',
+                                  type: AppToastType.success,
+                                );
+                              }
+                            },
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(LucideIcons.file_text, size: 20, color: Color(0xFFF59E0B)),
+                                SizedBox(width: 8),
+                                Text(
+                                  '📋 CRÉER UN DEVIS DÉTAILLÉ',
+                                  style: TextStyle(
+                                    color: Color(0xFFF59E0B),
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 10),
-                      SizedBox(
-                        height: 52,
-                        child: ElevatedButton.icon(
-                          onPressed: _actionLoading ? null : () => _handleStatusUpdate('completed'),
-                          icon: const Icon(LucideIcons.circle_check, size: 22),
-                          label: const Text('✅ CLÔTURER LE DOSSIER', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900)),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: ProTheme.success,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          ),
-                        ),
+                      const SizedBox(height: 12),
+                      SlideToConfirm(
+                        label: "GLISSER : CLÔTURER L'INTERVENTION",
+                        activeColor: const Color(0xFF10B981), // Emerald Green
+                        icon: LucideIcons.circle_check,
+                        onConfirmed: () => _handleStatusUpdate('completed'),
                       ),
                     ],
 
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
 
                     // Cancel Action Button
                     SizedBox(
-                      height: 44,
+                      height: AppTouchTarget.min,
                       child: TextButton.icon(
                         onPressed: () => _showCancelDialog(context),
                         icon: const Icon(LucideIcons.x, color: Colors.redAccent, size: 18),
-                        label: const Text('Annuler l\'intervention', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 12)),
+                        label: const Text(
+                          'Annuler l\'intervention',
+                          style: TextStyle(
+                            color: Colors.redAccent,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -1036,7 +1042,7 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen> {
                       const SizedBox(width: 8),
                       const Expanded(
                         child: Text(
-                          'Demander le remboursement des 500 FCFA (Garantie contact, max 2/mois)',
+                          'Demander le remboursement (Garantie contact, max 2/mois)',
                           style: TextStyle(fontSize: 11, color: Colors.white),
                         ),
                       ),

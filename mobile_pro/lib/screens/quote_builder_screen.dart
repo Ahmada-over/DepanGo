@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import '../models/quote.dart';
 import '../services/quote_service.dart';
 import '../core/config.dart';
 import '../core/theme.dart';
+import '../core/design_tokens.dart';
 import '../core/app_toast.dart';
+import '../services/pro_haptic_service.dart';
 import '../providers/pro_providers.dart';
 
 class QuoteBuilderScreen extends ConsumerStatefulWidget {
@@ -27,8 +30,10 @@ class _QuoteBuilderScreenState extends ConsumerState<QuoteBuilderScreen> {
   bool _isLoading = false;
 
   void _addItem() {
-    showDialog(
+    showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (ctx) {
         final descCtrl = TextEditingController();
         final qtyCtrl = TextEditingController(text: '1');
@@ -36,105 +41,331 @@ class _QuoteBuilderScreenState extends ConsumerState<QuoteBuilderScreen> {
         String category = 'labor';
 
         return StatefulBuilder(
-          builder: (context, setDialogState) => AlertDialog(
-            backgroundColor: ProTheme.darkCard,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            title: const Text('Ajouter une ligne', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  DropdownButtonFormField<String>(
-                    value: category,
-                    dropdownColor: ProTheme.darkSurface,
-                    items: const [
-                      DropdownMenuItem(value: 'labor', child: Text('🔧 Main d\'œuvre', style: TextStyle(color: Colors.white))),
-                      DropdownMenuItem(value: 'material', child: Text('📦 Matériel', style: TextStyle(color: Colors.white))),
-                      DropdownMenuItem(value: 'travel', child: Text('🚗 Déplacement', style: TextStyle(color: Colors.white))),
-                    ],
-                    onChanged: (val) {
-                      if (val != null) setDialogState(() => category = val);
-                    },
-                    decoration: const InputDecoration(labelText: 'Catégorie', labelStyle: TextStyle(color: Colors.white70)),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: descCtrl,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: const InputDecoration(
-                      labelText: 'Description',
-                      labelStyle: TextStyle(color: Colors.white70),
-                      hintText: 'Ex: Remplacement tuyau PVC',
-                      hintStyle: TextStyle(color: Colors.white30),
+          builder: (sheetContext, setSheetState) {
+            return Container(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(sheetContext).viewInsets.bottom + AppSpacing.xl,
+                left: AppSpacing.lg,
+                right: AppSpacing.lg,
+                top: AppSpacing.md,
+              ),
+              decoration: const BoxDecoration(
+                color: ProTheme.darkCard,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+                border: Border(top: BorderSide(color: Color(0xFF334155), width: 1.5)),
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 1. Barre de drag supérieure
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.white38,
+                          borderRadius: BorderRadius.circular(AppRadius.pill),
+                        ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: qtyCtrl,
-                          style: const TextStyle(color: Colors.white),
-                          decoration: const InputDecoration(labelText: 'Qté', labelStyle: TextStyle(color: Colors.white70)),
-                          keyboardType: TextInputType.number,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        flex: 2,
-                        child: TextField(
-                          controller: priceCtrl,
-                          style: const TextStyle(color: Colors.white),
-                          decoration: const InputDecoration(
-                            labelText: 'Prix Unitaire (FCFA)',
-                            labelStyle: TextStyle(color: Colors.white70),
+                    const SizedBox(height: 14),
+
+                    // 2. En-tête
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Ajouter une prestation',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
                           ),
-                          keyboardType: TextInputType.number,
+                        ),
+                        SizedBox(
+                          width: AppTouchTarget.min,
+                          height: AppTouchTarget.min,
+                          child: IconButton(
+                            icon: const Icon(LucideIcons.x, color: Colors.white70, size: 20),
+                            onPressed: () => Navigator.pop(sheetContext),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // 3. Sélecteur de catégorie en Chips tactiles (50px de hauteur)
+                    const Text(
+                      'CATÉGORIE',
+                      style: TextStyle(
+                        color: ProTheme.textMuted,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildCategoryChip(
+                            label: 'Main d\'œuvre',
+                            icon: LucideIcons.wrench,
+                            isSelected: category == 'labor',
+                            onTap: () {
+                              ProHapticService.instance.onSelectionClick();
+                              setSheetState(() => category = 'labor');
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _buildCategoryChip(
+                            label: 'Matériel / Pièces',
+                            icon: LucideIcons.package,
+                            isSelected: category == 'material',
+                            onTap: () {
+                              ProHapticService.instance.onSelectionClick();
+                              setSheetState(() => category = 'material');
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 18),
+
+                    // 4. Description détaillée
+                    const Text(
+                      'DESCRIPTION DE LA PRESTATION',
+                      style: TextStyle(
+                        color: ProTheme.textMuted,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: descCtrl,
+                      style: const TextStyle(color: Colors.white, fontSize: 15),
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: ProTheme.darkSurface,
+                        hintText: 'Ex: Remplacement robinet mitigeur...',
+                        hintStyle: const TextStyle(color: Colors.white30, fontSize: 14),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                          borderSide: const BorderSide(color: ProTheme.darkBorder),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                          borderSide: const BorderSide(color: ProTheme.darkBorder),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                          borderSide: const BorderSide(color: ProTheme.primaryLight, width: 1.5),
                         ),
                       ),
-                    ],
-                  ),
-                ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // 5. Quantité et Prix Unitaire
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 1,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'QUANTITÉ',
+                                style: TextStyle(
+                                  color: ProTheme.textMuted,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.8,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              TextField(
+                                controller: qtyCtrl,
+                                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                                keyboardType: TextInputType.number,
+                                textAlign: TextAlign.center,
+                                decoration: InputDecoration(
+                                  filled: true,
+                                  fillColor: ProTheme.darkSurface,
+                                  contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(AppRadius.md),
+                                    borderSide: const BorderSide(color: ProTheme.darkBorder),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(AppRadius.md),
+                                    borderSide: const BorderSide(color: ProTheme.darkBorder),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(AppRadius.md),
+                                    borderSide: const BorderSide(color: ProTheme.primaryLight, width: 1.5),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          flex: 2,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'PRIX UNITAIRE (FCFA)',
+                                style: TextStyle(
+                                  color: ProTheme.textMuted,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.8,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              TextField(
+                                controller: priceCtrl,
+                                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                                keyboardType: TextInputType.number,
+                                decoration: InputDecoration(
+                                  filled: true,
+                                  fillColor: ProTheme.darkSurface,
+                                  hintText: 'Ex: 10000',
+                                  hintStyle: const TextStyle(color: Colors.white30, fontSize: 14),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(AppRadius.md),
+                                    borderSide: const BorderSide(color: ProTheme.darkBorder),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(AppRadius.md),
+                                    borderSide: const BorderSide(color: ProTheme.darkBorder),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(AppRadius.md),
+                                    borderSide: const BorderSide(color: ProTheme.primaryLight, width: 1.5),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+
+                    // 6. Bouton d'ajout pleine largeur 54px
+                    SizedBox(
+                      width: double.infinity,
+                      height: 54,
+                      child: ElevatedButton.icon(
+                        icon: const Icon(LucideIcons.plus, size: 20),
+                        label: const Text(
+                          'AJOUTER CETTE LIGNE',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: ProTheme.primaryLight,
+                          foregroundColor: Colors.black,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppRadius.pill),
+                          ),
+                        ),
+                        onPressed: () {
+                          final qty = int.tryParse(qtyCtrl.text) ?? 1;
+                          final price = double.tryParse(priceCtrl.text) ?? 0.0;
+
+                          if (descCtrl.text.trim().isEmpty || price <= 0) {
+                            AppToast.show(
+                              context,
+                              title: 'Champs incomplets',
+                              message: 'Veuillez saisir une description et un prix supérieur à 0.',
+                              type: AppToastType.warning,
+                            );
+                            return;
+                          }
+
+                          ProHapticService.instance.onSliderConfirmed();
+                          setState(() {
+                            _items.add(QuoteItem(
+                              description: descCtrl.text.trim(),
+                              category: category,
+                              quantity: qty,
+                              unitPrice: price,
+                              totalPrice: qty * price,
+                            ));
+                          });
+                          Navigator.pop(sheetContext);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildCategoryChip({
+    required String label,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        child: AnimatedContainer(
+          duration: AppMotion.fast,
+          height: 50,
+          decoration: BoxDecoration(
+            color: isSelected ? ProTheme.primaryLight.withValues(alpha: 0.15) : ProTheme.darkSurface,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            border: Border.all(
+              color: isSelected ? ProTheme.primaryLight : const Color(0xFF334155),
+              width: isSelected ? 1.8 : 1.0,
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Annuler', style: TextStyle(color: Colors.white54)),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 18,
+                color: isSelected ? ProTheme.primaryLight : ProTheme.textMuted,
               ),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: ProTheme.primaryLight),
-                onPressed: () {
-                  final qty = int.tryParse(qtyCtrl.text) ?? 1;
-                  final price = double.tryParse(priceCtrl.text) ?? 0.0;
-
-                  if (descCtrl.text.isEmpty || price <= 0) {
-                    AppToast.show(
-                      context,
-                      title: 'Champs incomplets',
-                      message: 'Veuillez remplir la description et indiquer un prix supérieur à 0.',
-                      type: AppToastType.warning,
-                    );
-                    return;
-                  }
-
-                  setState(() {
-                    _items.add(QuoteItem(
-                      description: descCtrl.text,
-                      category: category,
-                      quantity: qty,
-                      unitPrice: price,
-                      totalPrice: qty * price,
-                    ));
-                  });
-                  Navigator.pop(ctx);
-                },
-                child: const Text('Ajouter'),
+              const SizedBox(height: 3),
+              Text(
+                label,
+                style: TextStyle(
+                  color: isSelected ? Colors.white : ProTheme.textMuted,
+                  fontSize: 11,
+                  fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
@@ -146,8 +377,8 @@ class _QuoteBuilderScreenState extends ConsumerState<QuoteBuilderScreen> {
 
   double get _totalLabor => _items.where((i) => i.category == 'labor').fold(0.0, (sum, i) => sum + i.totalPrice);
   double get _totalMaterials => _items.where((i) => i.category == 'material').fold(0.0, (sum, i) => sum + i.totalPrice);
-  double get _totalTravel => _items.where((i) => i.category == 'travel').fold(0.0, (sum, i) => sum + i.totalPrice);
-  double get _grandTotal => _totalLabor + _totalMaterials + _totalTravel;
+  double get _totalTravel => 0.0;
+  double get _grandTotal => _totalLabor + _totalMaterials;
 
   String _formatPrice(double price) {
     return price.toStringAsFixed(0).replaceAllMapped(
@@ -158,27 +389,24 @@ class _QuoteBuilderScreenState extends ConsumerState<QuoteBuilderScreen> {
 
   IconData _categoryIcon(String cat) {
     switch (cat) {
-      case 'labor': return Icons.build;
-      case 'material': return Icons.inventory_2;
-      case 'travel': return Icons.directions_car;
-      default: return Icons.receipt;
+      case 'labor': return LucideIcons.wrench;
+      case 'material': return LucideIcons.package;
+      default: return LucideIcons.receipt;
     }
   }
 
   String _categoryLabel(String cat) {
     switch (cat) {
       case 'labor': return 'Main d\'œuvre';
-      case 'material': return 'Matériel';
-      case 'travel': return 'Déplacement';
+      case 'material': return 'Matériel / Pièces';
       default: return cat;
     }
   }
 
   Color _categoryColor(String cat) {
     switch (cat) {
-      case 'labor': return Colors.blue;
-      case 'material': return Colors.orange;
-      case 'travel': return Colors.green;
+      case 'labor': return const Color(0xFF0284C7);
+      case 'material': return const Color(0xFFD97706);
       default: return Colors.grey;
     }
   }
@@ -408,27 +636,64 @@ class _QuoteBuilderScreenState extends ConsumerState<QuoteBuilderScreen> {
 
                   const SizedBox(height: 20),
 
-                  // --- Récapitulatif ---
+                  // --- Récapitulatif Pro ---
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: ProTheme.darkCard,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: ProTheme.primaryLight.withValues(alpha: 0.3)),
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      border: Border.all(color: const Color(0xFF334155), width: 1.0),
                     ),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildSummaryRow('🔧 Main d\'œuvre', _totalLabor),
-                        _buildSummaryRow('📦 Matériel', _totalMaterials),
-                        _buildSummaryRow('🚗 Déplacement', _totalTravel),
-                        const Divider(color: Colors.white24, height: 24),
+                        const Text(
+                          'RÉCAPITULATIF DU DEVIS',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.8,
+                            color: ProTheme.textMuted,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        _buildSummaryRow(
+                          'Main d\'œuvre',
+                          _totalLabor,
+                          icon: LucideIcons.wrench,
+                          iconColor: const Color(0xFF38BDF8),
+                        ),
+                        const SizedBox(height: 8),
+                        _buildSummaryRow(
+                          'Matériel / Pièces',
+                          _totalMaterials,
+                          icon: LucideIcons.package,
+                          iconColor: const Color(0xFFFBBF24),
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          child: Divider(color: Color(0xFF334155), height: 1),
+                        ),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text('TOTAL', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.white)),
+                            const Text(
+                              'TOTAL CLIENT',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.white,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
                             Text(
                               '${_formatPrice(_grandTotal)} FCFA',
-                              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: ProTheme.primaryLight),
+                              style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w900,
+                                color: ProTheme.primaryLight,
+                                letterSpacing: -0.5,
+                              ),
                             ),
                           ],
                         ),
@@ -458,16 +723,17 @@ class _QuoteBuilderScreenState extends ConsumerState<QuoteBuilderScreen> {
     );
   }
 
-  Widget _buildSummaryRow(String label, double amount) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: const TextStyle(color: Colors.white70, fontSize: 14)),
-          Text('${_formatPrice(amount)} FCFA', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+  Widget _buildSummaryRow(String label, double amount, {IconData? icon, Color? iconColor}) {
+    return Row(
+      children: [
+        if (icon != null) ...[
+          Icon(icon, size: 15, color: iconColor ?? Colors.white70),
+          const SizedBox(width: 8),
         ],
-      ),
+        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w600)),
+        const Spacer(),
+        Text('${_formatPrice(amount)} FCFA', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
+      ],
     );
   }
 }

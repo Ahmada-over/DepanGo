@@ -1,7 +1,10 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/theme.dart';
+import '../core/design_tokens.dart';
+import '../services/client_haptic_service.dart';
 import '../providers/app_providers.dart';
 import 'tracking_chat_screen.dart';
 
@@ -26,17 +29,30 @@ class MatchingScreen extends ConsumerStatefulWidget {
 class _MatchingScreenState extends ConsumerState<MatchingScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _pulseController;
+  int _lastTickWave = -1;
+
   @override
   void initState() {
     super.initState();
     _pulseController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat();
+      duration: const Duration(milliseconds: 2400),
+    )..addListener(_handlePulseHaptics)
+     ..repeat();
+  }
+
+  void _handlePulseHaptics() {
+    final val = _pulseController.value;
+    final currentWave = (val * 3).floor();
+    if (currentWave != _lastTickWave) {
+      _lastTickWave = currentWave;
+      ClientHapticService.instance.onSoftPulse();
+    }
   }
 
   @override
   void dispose() {
+    _pulseController.removeListener(_handlePulseHaptics);
     _pulseController.dispose();
     super.dispose();
   }
@@ -87,33 +103,60 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen>
         children: [
           const Spacer(),
 
-          // Pulse radar animation
+          // Multi-ring concentric radar animation
           AnimatedBuilder(
             animation: _pulseController,
             builder: (context, child) {
-              return Stack(
-                alignment: Alignment.center,
-                children: [
-                  Container(
-                    width: 220 * _pulseController.value,
-                    height: 220 * _pulseController.value,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: AppTheme.primaryEmerald
-                          .withValues(alpha: 1.0 - _pulseController.value),
+              final val = _pulseController.value;
+              return SizedBox(
+                width: 320,
+                height: 320,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // Wave 1
+                    _buildWaveRing(val, 0.0, 0.7),
+                    // Wave 2
+                    _buildWaveRing(val, 0.2, 0.9),
+                    // Wave 3
+                    _buildWaveRing(val, 0.4, 1.0),
+
+                    // Glowing aura
+                    Container(
+                      width: 110,
+                      height: 110,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppTheme.primaryEmerald.withValues(alpha: 0.15),
+                      ),
                     ),
-                  ),
-                  Container(
-                    width: 140,
-                    height: 140,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: AppTheme.primaryEmerald,
+
+                    // Pulsing Center Core (84px) with breathing scale
+                    Transform.scale(
+                      scale: 1.0 + 0.06 * math.sin(val * 2 * math.pi),
+                      child: Container(
+                        width: 84,
+                        height: 84,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF10B981), Color(0xFF059669)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppTheme.primaryEmerald.withValues(alpha: 0.45),
+                              blurRadius: 18,
+                              spreadRadius: 2,
+                            ),
+                          ],
+                        ),
+                        child: const Icon(LucideIcons.search, size: 36, color: Colors.white),
+                      ),
                     ),
-                    child:
-                        const Icon(LucideIcons.search, size: 50, color: Colors.white),
-                  ),
-                ],
+                  ],
+                ),
               );
             },
           ),
@@ -170,17 +213,49 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen>
 
           const Spacer(),
 
-          OutlinedButton(
-            onPressed: () => Navigator.pop(context),
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Colors.white38),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          SizedBox(
+            height: AppTouchTarget.standard,
+            child: OutlinedButton(
+              onPressed: () => Navigator.pop(context),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Colors.white24, width: 1.2),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.pill)),
+                padding: const EdgeInsets.symmetric(horizontal: 32),
+              ),
+              child: const Text(
+                'Annuler la recherche',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
-            child: const Text('Annuler la recherche',
-                style: TextStyle(color: Colors.white70)),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildWaveRing(double controllerVal, double begin, double end) {
+    if (controllerVal < begin || controllerVal > end) {
+      return const SizedBox.shrink();
+    }
+    final progress = ((controllerVal - begin) / (end - begin)).clamp(0.0, 1.0);
+    final curvedProgress = Curves.easeOutQuad.transform(progress);
+    final size = 84.0 + (226.0 * curvedProgress);
+    final opacity = (1.0 - curvedProgress) * 0.45;
+
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: AppTheme.primaryEmerald.withValues(alpha: opacity),
+          width: 2.0,
+        ),
+        color: AppTheme.primaryEmerald.withValues(alpha: opacity * 0.25),
       ),
     );
   }

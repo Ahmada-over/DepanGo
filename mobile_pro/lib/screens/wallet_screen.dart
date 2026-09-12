@@ -260,7 +260,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen>
                 const Icon(LucideIcons.zap, color: Color(0xFFFDE047), size: 14),
                 const SizedBox(width: 6),
                 Text(
-                  '${wallet.availableLeads} mission(s) disponible(s) • 500 F / contact',
+                  '${wallet.availableLeads} mission(s) disponible(s)',
                   style: const TextStyle(
                     color: Color(0xFFE2E8F0),
                     fontSize: 12,
@@ -331,7 +331,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen>
           const SizedBox(height: 10),
           _buildInfoRow(
             Icons.phone_in_talk_rounded,
-            '500 FCFA déduits uniquement lorsque vous acceptez un client.',
+            'Débité uniquement lorsque vous confirmez l\'accord avec le client.',
           ),
           const SizedBox(height: 6),
           _buildInfoRow(

@@ -167,41 +167,62 @@ class AuthNotifier extends StateNotifier<UserModel?> {
     return false;
   }
 
-  Future<void> updateProfile({
+  Future<bool> updateProfile({
     required String name,
     required String email,
     required String phone,
   }) async {
-    if (state == null) return;
-    state = UserModel(
-      id: state!.id,
-      name: name,
-      email: email,
-      phone: phone,
-      role: state!.role,
-      token: state!.token,
-    );
+    if (state == null) return false;
     try {
       final dio = ref.read(apiClientProvider);
-      await dio.patch(
-        '/technicians/me/profile?user_id=${state!.id}',
-        data: {'name': name, 'email': email, 'phone': phone},
+      final res = await dio.put(
+        '/users/me',
+        data: {
+          'name': name,
+          if (email.isNotEmpty) 'email': email,
+          if (phone.isNotEmpty) 'phone': phone,
+        },
       );
+      if (res.statusCode == 200) {
+        final currentToken = state?.token ?? '';
+        state = UserModel(
+          id: state!.id,
+          name: name,
+          email: email,
+          phone: phone,
+          role: state!.role,
+          token: currentToken,
+        );
+        final sessionData = <String, dynamic>{
+          'id': state!.id,
+          'name': name,
+          'email': email,
+          'phone': phone,
+          'role': state!.role,
+          'token': currentToken,
+        };
+        await prefs.setString('user_session', jsonEncode(sessionData));
+        return true;
+      }
     } catch (e) {
       debugPrint('Client profile update error: $e');
     }
+    return false;
   }
 
   String? get token => state?.token;
 
-  
   void updateUser(Map<String, dynamic> data) async {
-    final token = state?.token ?? '';
+    final token = state?.token ?? (data['token'] as String? ?? '');
     final user = UserModel.fromJson(data, token: token);
     state = user;
-    final sessionData = data;
+    final sessionData = Map<String, dynamic>.from(data);
     sessionData['token'] = token;
-    await prefs.setString('user_session', jsonEncode(sessionData));
+    try {
+      await prefs.setString('user_session', jsonEncode(sessionData));
+    } catch (e) {
+      debugPrint('Error saving user session: $e');
+    }
   }
 
   void logout() {

@@ -5,8 +5,11 @@ import '../models/quote.dart';
 import '../services/quote_service.dart';
 import '../core/config.dart';
 import '../core/theme.dart';
+import '../core/design_tokens.dart';
 import '../core/app_toast.dart';
 import '../providers/app_providers.dart';
+import '../widgets/slide_to_confirm.dart';
+import '../services/client_haptic_service.dart';
 
 class QuoteReviewScreen extends ConsumerStatefulWidget {
   final String bookingId;
@@ -59,34 +62,118 @@ class _QuoteReviewScreenState extends ConsumerState<QuoteReviewScreen> {
   }
 
   Future<void> _respondToQuote(Quote quote, String status) async {
-    final action = status == 'accepted' ? 'accepter' : 'refuser';
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('${status == 'accepted' ? 'Accepter' : 'Refuser'} le devis ?'),
-        content: Text(
-          status == 'accepted'
-              ? 'Vous acceptez ce devis de ${_formatPrice(quote.grandTotal)} FCFA. Le professionnel pourra commencer les travaux.'
-              : 'Vous refusez ce devis. Le professionnel en sera informé.',
+    if (status == 'accepted') {
+      ClientHapticService.instance.onConfirmed();
+    } else {
+      final confirmed = await showModalBottomSheet<bool>(
+        context: context,
+        backgroundColor: Colors.white,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Annuler'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: status == 'accepted' ? AppTheme.primaryEmerald : Colors.redAccent,
+        builder: (ctx) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFCBD5E1),
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                  ),
+                ),
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFEF2F2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Center(
+                    child: Icon(LucideIcons.triangle_alert,
+                        color: Colors.redAccent, size: 28),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Refuser ce devis ?',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.textDark,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Si vous refusez ce devis, l\'artisan sera immédiatement notifié et l\'intervention ne pourra pas débuter.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppTheme.textMuted,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: AppTouchTarget.standard,
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Color(0xFFE2E8F0)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius.circular(AppRadius.pill),
+                            ),
+                          ),
+                          child: const Text(
+                            'Annuler',
+                            style: TextStyle(
+                              color: AppTheme.textDark,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: SizedBox(
+                        height: AppTouchTarget.standard,
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.pop(ctx, true),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.redAccent,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius.circular(AppRadius.pill),
+                            ),
+                          ),
+                          child: const Text(
+                            'Confirmer le refus',
+                            style: TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(status == 'accepted' ? 'Accepter' : 'Refuser'),
           ),
-        ],
-      ),
-    );
+        ),
+      );
 
-    if (confirmed != true) return;
+      if (confirmed != true) return;
+    }
 
     setState(() => _isActioning = true);
 
@@ -335,30 +422,75 @@ class _QuoteReviewScreenState extends ConsumerState<QuoteReviewScreen> {
           // --- Totals ---
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 16),
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildTotalRow('🔧 Main d\'œuvre', quote.totalLabor),
-                _buildTotalRow('📦 Matériel', quote.totalMaterials),
-                _buildTotalRow('🚗 Déplacement', quote.totalTravel),
-                const Divider(height: 20),
+                const Text(
+                  'RÉCAPITULATIF DU DEVIS',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.8,
+                    color: AppTheme.textMuted,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _buildSoberTotalRow(
+                  icon: LucideIcons.wrench,
+                  label: 'Main d\'œuvre',
+                  amount: quote.totalLabor,
+                  color: const Color(0xFF0284C7),
+                ),
+                const SizedBox(height: 8),
+                _buildSoberTotalRow(
+                  icon: LucideIcons.package,
+                  label: 'Matériel / Pièces',
+                  amount: quote.totalMaterials,
+                  color: const Color(0xFFD97706),
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Divider(height: 1, thickness: 1, color: Color(0xFFE2E8F0)),
+                ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
                   children: [
-                    const Text('TOTAL', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+                    const Text(
+                      'TOTAL',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                        color: AppTheme.textDark,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
                     Text(
                       '${_formatPrice(quote.grandTotal)} FCFA',
                       style: const TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w900,
                         color: AppTheme.primaryEmerald,
+                        letterSpacing: -0.5,
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Déplacement inclus • Règlement direct après validation des travaux',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                    color: AppTheme.textMuted,
+                  ),
                 ),
               ],
             ),
@@ -394,40 +526,33 @@ class _QuoteReviewScreenState extends ConsumerState<QuoteReviewScreen> {
               ),
             ),
 
-          // --- Accept / Reject buttons ---
+          // --- Accept / Reject actions ---
           if (isPending) ...[
             const Divider(height: 1),
             Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Column(
                 children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _isActioning ? null : () => _respondToQuote(quote, 'rejected'),
-                      icon: const Icon(LucideIcons.x, size: 18),
-                      label: const Text('Refuser'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.redAccent,
-                        side: const BorderSide(color: Colors.redAccent),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                    ),
+                  SlideToConfirm(
+                    label: "GLISSER POUR ACCEPTER LE DEVIS",
+                    sublabel: "TOTAL : ${_formatPrice(quote.grandTotal)} FCFA",
+                    activeColor: AppTheme.primaryEmerald,
+                    icon: LucideIcons.circle_check,
+                    onConfirmed: () => _respondToQuote(quote, 'accepted'),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    flex: 2,
-                    child: ElevatedButton.icon(
-                      onPressed: _isActioning ? null : () => _respondToQuote(quote, 'accepted'),
-                      icon: _isActioning
-                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : const Icon(LucideIcons.check, size: 18),
-                      label: Text(_isActioning ? 'Envoi...' : 'Accepter le devis'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryEmerald,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    height: AppTouchTarget.min,
+                    child: TextButton.icon(
+                      onPressed: _isActioning ? null : () => _respondToQuote(quote, 'rejected'),
+                      icon: const Icon(LucideIcons.x, size: 16, color: Colors.redAccent),
+                      label: const Text(
+                        'Refuser ce devis',
+                        style: TextStyle(
+                          color: Colors.redAccent,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
@@ -466,16 +591,34 @@ class _QuoteReviewScreenState extends ConsumerState<QuoteReviewScreen> {
     );
   }
 
-  Widget _buildTotalRow(String label, double amount) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: TextStyle(fontSize: 13, color: Colors.grey[600])),
-          Text('${_formatPrice(amount)} FCFA', style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
-        ],
-      ),
+  Widget _buildSoberTotalRow({
+    required IconData icon,
+    required String label,
+    required double amount,
+    required Color color,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, size: 15, color: color),
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.textDark,
+          ),
+        ),
+        const Spacer(),
+        Text(
+          '${_formatPrice(amount)} FCFA',
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: AppTheme.textDark,
+          ),
+        ),
+      ],
     );
   }
 }

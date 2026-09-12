@@ -14,12 +14,12 @@ class AppConfig {
   static const String _cloudHost = 'backend-depango-346078879462.europe-west1.run.app';
 
   // IP locale de la machine hôte pour les appareils PHYSIQUES (ex: iPhone en Wi-Fi)
-  static const String _physicalDeviceHost = '192.168.1.75';
+  static const String _physicalDeviceHost = '192.168.1.17';
   static const String _localPort = '8001';
 
-  // true  -> Vrai téléphone physique connecté au Wi-Fi (utilise _physicalDeviceHost: 192.168.1.75)
+  // true  -> Vrai téléphone physique connecté au Wi-Fi (utilise _physicalDeviceHost: 192.168.1.17)
   // false -> Émulateur Android Pixel (utilise 10.0.2.2) ou Simulateur iOS (utilise 127.0.0.1)
-  static const bool isPhysicalDevice = false;
+  static const bool isPhysicalDevice = true;
 
   static String get baseUrl {
     if (isProduction) {

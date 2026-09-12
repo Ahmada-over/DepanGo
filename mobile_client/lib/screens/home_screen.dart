@@ -1,9 +1,12 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:techconnect_mobile/screens/tracking_chat_screen.dart';
 import '../core/theme.dart';
+import '../core/design_tokens.dart';
+import '../services/client_haptic_service.dart';
 import 'location_picker_screen.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../core/map_style.dart';
@@ -206,7 +209,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
+      extendBody: true,
       body: SafeArea(
+        bottom: false,
         child: Column(
           children: [
             if (!isOnline)
@@ -255,7 +260,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      padding: const EdgeInsets.only(
+          left: 16.0, right: 16.0, top: 12.0, bottom: 100.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -266,72 +272,38 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             _buildActiveBookingBanner(ref.watch(activeBookingProvider)!),
             const SizedBox(height: 16),
           ],
-          // 1. Header Location Picker (Opens ModalBottomSheet on tap)
+          // 1. Top Greeting & User Actions
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
-                child: InkWell(
-                  onTap: () => _showLocationModalBottomSheet(context),
-                  borderRadius: BorderRadius.circular(12),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4.0),
-                    child: Row(
-                      children: [
-                        const Icon(LucideIcons.map_pin,
-                            color: AppTheme.primaryEmerald, size: 24),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _isFetchingLocation
-                                        ? Shimmer.fromColors(
-                                            baseColor: Colors.grey[400]!,
-                                            highlightColor: Colors.grey[100]!,
-                                            child: const Text(
-                                              'Recherche de votre position...',
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 13,
-                                                  color: AppTheme.textDark),
-                                            ),
-                                          )
-                                        : Text(
-                                            selectedLocation,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 13,
-                                                color: AppTheme.textDark),
-                                          ),
-                                  ),
-                                  const Icon(LucideIcons.chevron_down,
-                                      size: 18, color: AppTheme.textDark),
-                                ],
-                              ),
-                              const Text(
-                                'Changer ma position d\'intervention',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                    fontSize: 11, color: AppTheme.textMuted),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      user?.name != null && user!.name.isNotEmpty
+                          ? 'Bonjour, ${user.name} 👋'
+                          : 'Bonjour 👋',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.textDark,
+                        letterSpacing: -0.5,
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 2),
+                    const Text(
+                      'De quel dépannage avez-vous besoin ?',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppTheme.textMuted,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 8),
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -346,6 +318,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             icon: const Icon(LucideIcons.bell,
                                 color: AppTheme.textDark),
                             onPressed: () {
+                              ClientHapticService.instance.onSelectionClick();
                               Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -358,8 +331,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               top: 8,
                               right: 8,
                               child: Container(
-                                width: 8,
-                                height: 8,
+                                width: 9,
+                                height: 9,
                                 decoration: const BoxDecoration(
                                     color: Colors.redAccent,
                                     shape: BoxShape.circle),
@@ -372,68 +345,171 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   if (user == null)
                     ElevatedButton(
                       onPressed: () {
+                        ClientHapticService.instance.onSelectionClick();
                         Navigator.of(context).push(MaterialPageRoute(
                             builder: (_) => const LoginScreen()));
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.primaryEmerald,
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 6),
+                            horizontal: 14, vertical: 8),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8)),
+                            borderRadius: BorderRadius.circular(AppRadius.pill)),
                       ),
                       child: const Text('Se Connecter',
                           style: TextStyle(
-                              fontSize: 11,
+                              fontSize: 12,
                               fontWeight: FontWeight.bold,
                               color: Colors.white)),
                     )
                   else
-                    IconButton(
-                      icon: const Icon(LucideIcons.user,
-                          color: AppTheme.primaryEmerald),
-                      onPressed: () {
+                    GestureDetector(
+                      onTap: () {
+                        ClientHapticService.instance.onSelectionClick();
                         setState(() => _currentIndex = 3);
                       },
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                              color: AppTheme.primaryEmerald, width: 2),
+                        ),
+                        child: CircleAvatar(
+                          radius: 17,
+                          backgroundColor: AppTheme.primaryEmerald,
+                          child: Text(
+                            user.name.isNotEmpty
+                                ? user.name[0].toUpperCase()
+                                : 'U',
+                            style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white),
+                          ),
+                        ),
+                      ),
                     ),
                 ],
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
 
-          // 2. Search Bar with Filter
+          // 2. Dakar Location Capsule Pill
+          InkWell(
+            onTap: () {
+              ClientHapticService.instance.onSelectionClick();
+              _showLocationModalBottomSheet(context);
+            },
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryEmerald.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(LucideIcons.map_pin,
+                        color: AppTheme.primaryEmerald, size: 16),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          'LIEU D\'INTERVENTION',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.6,
+                            color: AppTheme.textMuted,
+                          ),
+                        ),
+                        _isFetchingLocation
+                            ? Shimmer.fromColors(
+                                baseColor: Colors.grey[400]!,
+                                highlightColor: Colors.grey[100]!,
+                                child: const Text(
+                                  'Détection de votre position...',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                    color: AppTheme.textDark,
+                                  ),
+                                ),
+                              )
+                            : Text(
+                                selectedLocation,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                  color: AppTheme.textDark,
+                                ),
+                              ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  const Icon(LucideIcons.chevron_down,
+                      size: 16, color: AppTheme.textMuted),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // 3. Smart Search Bar & Quick Suggestion Chips
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+            height: 50,
+            padding: const EdgeInsets.symmetric(horizontal: 14),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
               boxShadow: [
                 BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4)),
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                ),
               ],
             ),
             child: Row(
               children: [
-                const Icon(LucideIcons.search, color: AppTheme.textMuted),
+                const Icon(LucideIcons.search,
+                    color: AppTheme.primaryEmerald, size: 20),
                 const SizedBox(width: 10),
                 Expanded(
                   child: TextField(
-                    readOnly:
-                        true, // Empêche le clavier de s'ouvrir inutilement sur l'accueil
+                    readOnly: true,
                     onTap: () {
-                      // Ouverture future d'une page de recherche complète
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text(
-                                'La recherche globale sera bientôt disponible !'),
-                            duration: Duration(seconds: 2)),
-                      );
+                      ClientHapticService.instance.onSelectionClick();
+                      _showQuickBookingCategories(context);
                     },
                     decoration: const InputDecoration(
-                      hintText: 'Rechercher un service (Clim, Plomberie...)',
+                      hintText: 'Rechercher une panne ou un artisan...',
                       hintStyle:
                           TextStyle(color: AppTheme.textMuted, fontSize: 13),
                       border: InputBorder.none,
@@ -442,182 +518,176 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
                 InkWell(
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('Filtres à venir...'),
-                          duration: Duration(seconds: 2)),
-                    );
+                    ClientHapticService.instance.onSelectionClick();
+                    _showQuickBookingCategories(context);
                   },
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
                   child: Container(
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(7),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
                     ),
                     child: const Icon(LucideIcons.sliders_horizontal,
-                        size: 18, color: AppTheme.textDark),
+                        size: 16, color: AppTheme.textDark),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
 
-          // 3. Green Gradient Hero Banner
+          // 4. Prestige Green Hero Banner (LISIBILITÉ MAXIMALE & ZERO JARGON)
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(22),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 colors: [
-                  Color(0xFF065F46),
+                  Color(0xFF064E3B),
                   Color(0xFF047857),
-                  Color(0xFF10B981)
+                  Color(0xFF059669),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(AppRadius.xl),
               boxShadow: [
                 BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 6,
-                    offset: const Offset(0, 6)),
+                  color: const Color(0xFF064E3B).withValues(alpha: 0.3),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
               ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Un problème à la maison ?',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold)),
-                const Text('Techniciens qualifiés en 30 secondes',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                const Row(
-                  children: [
-                    Icon(LucideIcons.zap, color: Colors.amber, size: 16),
-                    SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        'Attribution automatique PostGIS  •  Paiement direct',
-                        style: TextStyle(color: Colors.white70, fontSize: 11),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
+                const Text(
+                  'Un artisan chez vous en 30 minutes',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.5,
+                    height: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Tarification transparente avant validation • Dépanneurs certifiés',
+                  style:
+                      TextStyle(color: Colors.white70, fontSize: 12, height: 1.3),
                 ),
                 const SizedBox(height: 16),
-                Row(
-                  children: [
-                    ElevatedButton.icon(
-                      onPressed: () => _showQuickBookingCategories(context),
-                      icon: const Icon(LucideIcons.zap, size: 16),
-                      label: const Text('Commander en 1-Clic'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: AppTheme.primaryDark,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8)),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 18, vertical: 10),
-                      ),
-                    ),
-                  ],
+                ElevatedButton.icon(
+                  onPressed: () {
+                    ClientHapticService.instance.onSoftPulse();
+                    _showQuickBookingCategories(context);
+                  },
+                  icon: const Icon(LucideIcons.arrow_right, size: 18),
+                  label: const Text(
+                    'Demander un dépannage express',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: const Color(0xFF064E3B),
+                    elevation: 0,
+                    minimumSize: const Size(double.infinity, 48),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.pill)),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 12),
+                  ),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 24),
 
-          // 4. Popular Services Grid Section
+          // 5. Bento Grid of Star Services (2x2)
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Services Populaires',
-                  style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.textDark)),
+              const Text(
+                'Services d\'Artisanat',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: AppTheme.textDark,
+                  letterSpacing: -0.3,
+                ),
+              ),
               GestureDetector(
                 onTap: () {
+                  ClientHapticService.instance.onSelectionClick();
                   Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const AllServicesScreen()));
+                    context,
+                    MaterialPageRoute(builder: (_) => const AllServicesScreen()),
+                  );
                 },
-                child: const Text('Tout voir >',
-                    style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.primaryEmerald)),
+                child: const Text(
+                  'Tous les services >',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.primaryEmerald,
+                  ),
+                ),
               ),
             ],
           ),
           const SizedBox(height: 14),
 
-          GridView.builder(
+          GridView.count(
+            crossAxisCount: 2,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 4,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 0.85,
-            ),
-            itemCount: _popularServices.length,
-            itemBuilder: (context, index) {
-              final item = _popularServices[index];
-              return GestureDetector(
-                onTap: () => _openBooking(context, item['catId'], item['name']),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFF1F5F9)),
-                    boxShadow: [
-                      BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.02),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2)),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryLight.withValues(alpha: 0.5),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(item['icon'] as IconData,
-                            color: AppTheme.primaryEmerald, size: 22),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        item['name'] as String,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.textDark),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 1.22,
+            children: [
+              _buildBentoServiceCard(
+                title: 'Clim & Froid',
+                subtitle: 'Recharge & Dépannage',
+                icon: LucideIcons.snowflake,
+                tintColor: const Color(0xFF0284C7),
+                bgColor: const Color(0xFFE0F2FE),
+                onTap: () => _openBooking(context, 'cat_hvac', 'Froid & Clim'),
+              ),
+              _buildBentoServiceCard(
+                title: 'Plomberie',
+                subtitle: 'Fuites & Sanitaire',
+                icon: LucideIcons.droplet,
+                tintColor: const Color(0xFF059669),
+                bgColor: const Color(0xFFECFDF5),
+                onTap: () =>
+                    _openBooking(context, 'cat_plumbing', 'Plomberie'),
+              ),
+              _buildBentoServiceCard(
+                title: 'Électricité',
+                subtitle: 'Pannes & Tableaux',
+                icon: LucideIcons.zap,
+                tintColor: const Color(0xFFD97706),
+                bgColor: const Color(0xFFFEF3C7),
+                onTap: () =>
+                    _openBooking(context, 'cat_electrical', 'Électricité'),
+              ),
+              _buildBentoServiceCard(
+                title: 'Électroménager',
+                subtitle: 'Fours, Machines, Froid',
+                icon: LucideIcons.microwave,
+                tintColor: const Color(0xFF7C3AED),
+                bgColor: const Color(0xFFF3E8FF),
+                onTap: () => _openBooking(
+                    context, 'cat_appliances', 'Électroménager'),
+              ),
+            ],
           ),
           const SizedBox(height: 24),
 
-          // 5. Registered SaaS Technicians Section
+          // 6. Registered Elite Technicians Section
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -626,17 +696,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Techniciens Certifiés SaaS Pro',
+                      'Artisans d\'Élite Disponibles',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
                           color: AppTheme.textDark),
                     ),
                     Text(
-                      'Chaque technicien n\'accepte que les demandes de ses spécialités',
-                      style: TextStyle(fontSize: 10, color: AppTheme.textMuted),
+                      'Interventions rapides par des professionnels vérifiés',
+                      style: TextStyle(fontSize: 11, color: AppTheme.textMuted),
                     ),
                   ],
                 ),
@@ -644,11 +714,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               IconButton(
                 icon: const Icon(LucideIcons.refresh_ccw,
                     size: 18, color: AppTheme.primaryEmerald),
-                onPressed: () => ref.refresh(registeredTechniciansProvider),
+                onPressed: () {
+                  ClientHapticService.instance.onSelectionClick();
+                  ref.refresh(registeredTechniciansProvider);
+                },
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
 
           ref.watch(registeredTechniciansProvider).when(
                 data: (techs) {
@@ -660,14 +733,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     );
                   }
                   return SizedBox(
-                    height: 110,
+                    height: 122,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
                       physics: const BouncingScrollPhysics(),
                       itemCount: techs.length,
                       itemBuilder: (context, index) {
                         final t = techs[index];
-                        final name = t['name'] ?? 'Technicien Pro';
+                        final name = t['name'] ?? 'Artisan Pro';
                         final rating = t['average_rating'] ?? 5.0;
                         final status = t['availability_status'] ?? 'online';
                         final catList =
@@ -677,19 +750,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             .join(', ');
 
                         return Container(
-                          width: 175,
+                          width: 195,
                           margin: const EdgeInsets.only(right: 12),
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
                             color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(AppRadius.lg),
                             border: Border.all(
-                                color: Colors.black.withValues(alpha: 0.1)),
+                                color: const Color(0xFFF1F5F9), width: 1.5),
                             boxShadow: [
                               BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.02),
-                                  blurRadius: 6,
-                                  offset: const Offset(0, 2)),
+                                  color: Colors.black.withValues(alpha: 0.03),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3)),
                             ],
                           ),
                           child: Column(
@@ -698,42 +771,73 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               Row(
                                 children: [
                                   CircleAvatar(
-                                    radius: 14,
+                                    radius: 16,
                                     backgroundColor: AppTheme.primaryEmerald,
                                     child: Text(
                                         name.isNotEmpty
                                             ? name[0].toUpperCase()
-                                            : 'T',
+                                            : 'A',
                                         style: const TextStyle(
-                                            fontSize: 11,
+                                            fontSize: 12,
                                             fontWeight: FontWeight.bold,
                                             color: Colors.white)),
                                   ),
                                   const SizedBox(width: 8),
                                   Expanded(
-                                    child: Text(name,
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 12,
-                                            color: AppTheme.textDark),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Flexible(
+                                              child: Text(
+                                                name,
+                                                style: const TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 12,
+                                                    color: AppTheme.textDark),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 3),
+                                            const Icon(LucideIcons.badge_check,
+                                                size: 13,
+                                                color: AppTheme.primaryEmerald),
+                                          ],
+                                        ),
+                                        Text(
+                                          cats.isNotEmpty ? cats : 'Artisan polyvalent',
+                                          style: const TextStyle(
+                                              fontSize: 10,
+                                              color: AppTheme.textMuted),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 6),
+                              const Spacer(),
                               Row(
                                 children: [
-                                  Icon(LucideIcons.circle,
-                                      size: 8,
+                                  Container(
+                                    width: 7,
+                                    height: 7,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
                                       color: status == 'online'
                                           ? AppTheme.primaryEmerald
-                                          : Colors.grey),
+                                          : Colors.grey,
+                                    ),
+                                  ),
                                   const SizedBox(width: 4),
                                   Text(
                                       status == 'online'
-                                          ? 'En Ligne'
-                                          : 'Hors Ligne',
+                                          ? 'Disponible'
+                                          : 'En intervention',
                                       style: TextStyle(
                                           fontSize: 10,
                                           color: status == 'online'
@@ -742,20 +846,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                           fontWeight: FontWeight.bold)),
                                   const Spacer(),
                                   const Icon(LucideIcons.star,
-                                      size: 12, color: Colors.amber),
-                                  Text(' $rating',
-                                      style: const TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.bold,
-                                          color: AppTheme.textDark)),
+                                      size: 13, color: Colors.amber),
+                                  const SizedBox(width: 2),
+                                  Text(
+                                    rating is double
+                                        ? rating.toStringAsFixed(1)
+                                        : '$rating',
+                                    style: const TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w800,
+                                        color: AppTheme.textDark),
+                                  ),
                                 ],
                               ),
-                              const Spacer(),
-                              Text('Métiers: $cats',
-                                  style: const TextStyle(
-                                      fontSize: 9, color: AppTheme.textMuted),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis),
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  const Icon(LucideIcons.map_pin,
+                                      size: 11, color: AppTheme.textMuted),
+                                  const SizedBox(width: 3),
+                                  const Expanded(
+                                    child: Text(
+                                      'À ~1.5 km • Dakar',
+                                      style: TextStyle(
+                                          fontSize: 10,
+                                          color: AppTheme.textMuted),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ],
                           ),
                         );
@@ -764,7 +885,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   );
                 },
                 loading: () => SizedBox(
-                  height: 180,
+                  height: 122,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: 3,
@@ -775,7 +896,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         baseColor: Colors.grey[300]!,
                         highlightColor: Colors.grey[100]!,
                         child: Container(
-                          width: 140,
+                          width: 180,
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(20),
@@ -1492,6 +1613,110 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  Widget _buildBentoServiceCard({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color tintColor,
+    required Color bgColor,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: () {
+        ClientHapticService.instance.onSelectionClick();
+        onTap();
+      },
+      borderRadius: BorderRadius.circular(AppRadius.lg),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(
+            color: tintColor.withValues(alpha: 0.18),
+            width: 1.2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: tintColor.withValues(alpha: 0.08),
+              blurRadius: 16,
+              offset: const Offset(0, 5),
+            ),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: bgColor,
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                  child: Center(
+                    child: Icon(icon, color: tintColor, size: 22),
+                  ),
+                ),
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Icon(
+                    LucideIcons.arrow_up_right,
+                    size: 14,
+                    color: tintColor,
+                  ),
+                ),
+              ],
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w900,
+                    color: AppTheme.textDark,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textMuted,
+                    letterSpacing: 0.1,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildFeatureBadge(IconData icon, String text) {
     return Column(
       children: [
@@ -1532,43 +1757,78 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildBottomNavBar() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(
-            top: BorderSide(color: Colors.black.withValues(alpha: 0.05))),
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.only(left: 20, right: 20, bottom: 12),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+            child: Container(
+              height: 64,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.82),
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+                border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.9), width: 1.2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 20,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildClientNavItem(0, LucideIcons.house, 'Accueil'),
+                  _buildClientNavItem(1, LucideIcons.list, 'Demandes'),
+                  _buildClientNavItem(2, LucideIcons.heart, 'Favoris'),
+                  _buildClientNavItem(3, LucideIcons.user, 'Profil'),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
-      child: BottomNavigationBar(
-        currentIndex: _currentIndex > 3 ? 3 : _currentIndex,
-        onTap: (idx) => setState(() => _currentIndex = idx),
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppTheme.primaryEmerald,
-        unselectedItemColor: AppTheme.textMuted,
-        selectedFontSize: 11,
-        unselectedFontSize: 11,
-        elevation: 0,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(LucideIcons.house),
-            activeIcon: Icon(LucideIcons.house, color: AppTheme.primaryEmerald),
-            label: 'Accueil',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(LucideIcons.list),
-            activeIcon: Icon(LucideIcons.list, color: AppTheme.primaryEmerald),
-            label: 'Demandes',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(LucideIcons.heart),
-            activeIcon: Icon(LucideIcons.heart, color: AppTheme.primaryEmerald),
-            label: 'Favoris',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(LucideIcons.user),
-            activeIcon: Icon(LucideIcons.user, color: AppTheme.primaryEmerald),
-            label: 'Profil',
-          ),
-        ],
+    );
+  }
+
+  Widget _buildClientNavItem(int index, IconData icon, String label) {
+    final bool isSelected = _currentIndex == index;
+    return InkWell(
+      onTap: () {
+        ClientHapticService.instance.onSelectionClick();
+        setState(() => _currentIndex = index);
+      },
+      borderRadius: BorderRadius.circular(AppRadius.pill),
+      child: Container(
+        constraints: const BoxConstraints(
+            minWidth: AppTouchTarget.standard,
+            minHeight: AppTouchTarget.standard),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        color: Colors.transparent,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: isSelected ? 22 : 20,
+              color: isSelected ? AppTheme.primaryEmerald : AppTheme.textMuted,
+            ),
+            const SizedBox(height: 3),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
+                color: isSelected ? AppTheme.primaryEmerald : AppTheme.textMuted,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
